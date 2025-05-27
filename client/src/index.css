@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-apple-gray-100 text-apple-gray-600 antialiased font-sans;
+    font-feature-settings: 'liga' 1, 'calt' 1; /* Enable ligatures */
+  }
+
+  /* Dark mode base styles */
+  .dark body {
+    @apply bg-apple-gray-950 text-apple-gray-300;
+  }
+
+  /* Consistent focus rings (Apple Blue) */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-apple-blue ring-offset-2 dark:ring-offset-apple-gray-950;
+  }
+   /* Scrollbar styling (optional, for a more custom feel) */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-apple-gray-100 dark:bg-apple-gray-900;
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-apple-gray-300 dark:bg-apple-gray-700;
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-apple-gray-400 dark:bg-apple-gray-600;
+  }
+}
+
+@layer components {
+  /* Custom component classes can be defined here if needed */
+  .glassmorphism {
+    @apply bg-white/70 dark:bg-apple-gray-900/70 backdrop-blur-apple shadow-apple-md border border-white/20 dark:border-apple-gray-800/30;
+  }
+}
