@@ -41,7 +41,7 @@ const seedAdmin = async () => {
 
         await User.create({
             username: adminUsername.toLowerCase(),
-            password: adminPassword, // Password will be hashed by the pre-save hook in User model
+            password: adminPassword, 
             role: 'admin',
         });
         console.log(`Admin user '${adminUsername}' created successfully.`);
