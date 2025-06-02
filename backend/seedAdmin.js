@@ -1,12 +1,11 @@
 // server/seedAdmin.js
-import dotenv from 'dotenv'; // Import dotenv
-dotenv.config(); // <<<<<<< LOAD ENV VARIABLES FIRST THING
+import dotenv from 'dotenv';
+dotenv.config(); // LOAD ENV VARIABLES FIRST THING
 
 import mongoose from 'mongoose';
-// import connectDB from './config/db.js'; // We'll call mongoose.connect directly for simplicity here or ensure connectDB also has dotenv
-import User from './models/User.js';
+import User from './models/User.js'; // Assuming User model handles password hashing pre-save
 
-const connectDBForSeed = async () => { // Local connect function for the seeder
+const connectDBForSeed = async () => {
     try {
         if (!process.env.MONGO_URI) {
             console.error('MONGO_URI not found in .env file. Make sure .env is configured.');
@@ -20,40 +19,63 @@ const connectDBForSeed = async () => { // Local connect function for the seeder
     }
 };
 
+// --- Define your admin users here ---
+const adminUsersToSeed = [
+    {
+        username: 'admin1',
+        password: 'AdminPassword1!', // CHANGE THESE PASSWORDS!
+    },
+    {
+        username: 'admin2',
+        password: 'AnotherSecurePassword2@', // CHANGE THESE PASSWORDS!
+    },
+    // Add more admin objects as needed
+    // {
+    //     username: 'superadmin',
+    //     password: 'SuperStrongPassword3#',
+    // },
+];
+// --- ---
 
-const seedAdmin = async () => {
+const seedAdmins = async () => {
     try {
-        await connectDBForSeed(); // Connect to DB first
+        await connectDBForSeed();
 
-        // Optional: clean existing admins if desired for a fresh seed
-        // await User.deleteMany({ role: 'admin' });
-        // console.log('Previous admin users deleted (if any).');
+        for (const adminData of adminUsersToSeed) {
+            const adminUsername = adminData.username.toLowerCase();
+            const adminPassword = adminData.password;
 
-        const adminUsername = 'admin'; // Or get from .env if you prefer
-        const adminPassword = 'yoursecureadminpassword'; // CHANGE THIS!
+            if (!adminUsername || !adminPassword) {
+                console.warn(`Skipping admin entry due to missing username or password: ${JSON.stringify(adminData)}`);
+                continue;
+            }
 
-        const adminExists = await User.findOne({ username: adminUsername.toLowerCase() });
-        if (adminExists) {
-            console.log(`Admin user '${adminUsername}' already exists.`);
-            mongoose.connection.close();
-            process.exit();
+            const adminExists = await User.findOne({ username: adminUsername });
+            if (adminExists) {
+                console.log(`Admin user '${adminUsername}' already exists. Skipping.`);
+            } else {
+                await User.create({
+                    username: adminUsername,
+                    password: adminPassword, // Password will be hashed by the pre-save hook in User model
+                    role: 'admin',
+                });
+                console.log(`Admin user '${adminUsername}' created successfully.`);
+            }
         }
 
-        await User.create({
-            username: adminUsername.toLowerCase(),
-            password: adminPassword, 
-            role: 'admin',
-        });
-        console.log(`Admin user '${adminUsername}' created successfully.`);
-        mongoose.connection.close(); // Close the connection after seeding
-        process.exit();
+        console.log('Admin seeding process completed.');
+
     } catch (error) {
-        console.error('Error seeding admin user:', error);
+        console.error('Error during admin seeding process:', error);
+        process.exitCode = 1; // Indicate an error exit
+    } finally {
+        // Ensure connection is closed whether success or failure (if connected)
         if (mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2) {
-            mongoose.connection.close();
+            await mongoose.connection.close();
+            console.log('MongoDB connection closed.');
         }
-        process.exit(1);
+        // process.exit() will be handled by Node.js based on process.exitCode
     }
 };
 
-seedAdmin();
+seedAdmins();

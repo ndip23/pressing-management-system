@@ -17,10 +17,10 @@ connectDB();
 const app = express();
 
 // CORS Middleware
+const TEMPORARY_VERCEL_URL = 'https://pressing-management-system.vercel.app'; // Your Vercel URL
+
 const corsOptions = {
-    origin: process.env.NODE_ENV === 'production'
-        ? (process.env.FRONTEND_URL || '').split(',') // Allows comma-separated URLs in .env
-        : 'http://localhost:3000', // Your React dev server
+    origin: TEMPORARY_VERCEL_URL, // <<<< TEMPORARILY HARDCODE
     credentials: true,
 };
 app.use(cors(corsOptions));
