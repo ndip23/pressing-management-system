@@ -2,7 +2,7 @@
   "name": "backend",
   "version": "1.0.0",
   "main": "server.js",
-  "type": "module", 
+  "type": "module",
   "description": "",
   "scripts": {
     "start": "node server.js",
@@ -20,7 +20,8 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.0",
-    "nodemailer": "^7.0.3"
+    "nodemailer": "^7.0.3",
+    "twilio": "^5.7.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

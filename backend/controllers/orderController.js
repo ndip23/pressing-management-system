@@ -20,75 +20,54 @@ const createOrder = asyncHandler(async (req, res) => {
     } = req.body;
 
     if (!items || items.length === 0) {
-        res.status(400);
-        throw new Error('No order items provided');
+        res.status(400); throw new Error('No order items provided');
     }
     if (!expectedPickupDate) {
-        res.status(400);
-        throw new Error('Expected pickup date is required');
+        res.status(400); throw new Error('Expected pickup date is required');
     }
     if (totalAmount === undefined || totalAmount < 0) {
-        res.status(400);
-        throw new Error('Valid total amount is required');
+        res.status(400); throw new Error('Valid total amount is required');
     }
 
     let customer;
     if (customerId) {
         customer = await Customer.findById(customerId);
         if (!customer) {
-            res.status(404);
-            throw new Error('Customer not found with the provided ID.');
+            res.status(404); throw new Error('Customer not found with the provided ID.');
         }
-        // Optionally update existing customer details if provided and different
-        if (customerName && customerName !== customer.name) customer.name = customerName;
+        // Update existing customer details if provided and different
+        let customerModified = false;
+        if (customerName && customerName !== customer.name) { customer.name = customerName; customerModified = true; }
         if (customerPhone && customerPhone !== customer.phone) {
-            // Add validation for phone format if changed and check for duplicates
             const existingByPhone = await Customer.findOne({ phone: customerPhone, _id: { $ne: customer._id } });
             if (existingByPhone) throw new Error('Another customer with this phone number already exists.');
-            customer.phone = customerPhone;
+            customer.phone = customerPhone; customerModified = true;
         }
         if (customerEmail !== undefined && customerEmail !== customer.email) {
-            if (customerEmail) { // Only check for duplicates if email is not empty
+            if (customerEmail) {
                 const existingByEmail = await Customer.findOne({ email: customerEmail, _id: { $ne: customer._id } });
                 if (existingByEmail) throw new Error('Another customer with this email address already exists.');
             }
-            customer.email = customerEmail;
+            customer.email = customerEmail; customerModified = true;
         }
-        if (customerAddress !== undefined && customerAddress !== customer.address) customer.address = customerAddress;
+        if (customerAddress !== undefined && customerAddress !== customer.address) { customer.address = customerAddress; customerModified = true; }
 
-        if (customer.isModified()) { // Save only if changes were made
-            await customer.save();
-        }
+        if (customerModified) await customer.save();
 
     } else if (customerName && customerPhone) {
         customer = await Customer.findOneAndUpdate(
             { phone: customerPhone },
-            {
-                $setOnInsert: {
-                    name: customerName,
-                    phone: customerPhone,
-                    email: customerEmail || undefined,
-                    address: customerAddress || undefined,
-                }
-            },
+            { $setOnInsert: { name: customerName, phone: customerPhone, email: customerEmail || undefined, address: customerAddress || undefined } },
             { new: true, upsert: true, runValidators: true }
         );
     } else {
-        res.status(400);
-        throw new Error('Customer ID or (Customer Name and Phone) are required.');
+        res.status(400); throw new Error('Customer ID or (Customer Name and Phone) are required.');
     }
 
     const receiptNumber = await generateReceiptNumber();
-
     const order = new Order({
-        receiptNumber,
-        customer: customer._id,
-        items,
-        totalAmount,
-        amountPaid: amountPaid || 0,
-        expectedPickupDate,
-        notes,
-        createdBy: req.user.id,
+        receiptNumber, customer: customer._id, items, totalAmount,
+        amountPaid: amountPaid || 0, expectedPickupDate, notes, createdBy: req.user.id,
     });
 
     const createdOrder = await order.save();
@@ -96,10 +75,11 @@ const createOrder = asyncHandler(async (req, res) => {
     res.status(201).json(populatedOrder);
 });
 
-// @desc    Get all orders (with filtering and pagination)
+// @desc    Get all orders
 // @route   GET /api/orders
 // @access  Private (Staff/Admin)
 const getOrders = asyncHandler(async (req, res) => {
+    // ... (getOrders logic as previously defined)
     const { paid, overdue, customerName, serviceType, status, receiptNumber, customerPhone, customerId } = req.query;
     const pageSize = parseInt(req.query.pageSize, 10) || 10;
     const page = parseInt(req.query.page, 10) || 1;
@@ -143,7 +123,6 @@ const getOrders = asyncHandler(async (req, res) => {
     res.json({ orders, page, pages: Math.ceil(count / pageSize), totalOrders: count });
 });
 
-
 // @desc    Get single order by ID
 // @route   GET /api/orders/:id
 // @access  Private (Staff/Admin)
@@ -152,8 +131,7 @@ const getOrderById = asyncHandler(async (req, res) => {
         .populate('customer', 'name phone email address')
         .populate('createdBy', 'username');
     if (!order) {
-        res.status(404);
-        throw new Error('Order not found');
+        res.status(404); throw new Error('Order not found');
     }
     res.json(order);
 });
@@ -162,44 +140,38 @@ const getOrderById = asyncHandler(async (req, res) => {
 // @route   PUT /api/orders/:id
 // @access  Private (Staff/Admin)
 const updateOrder = asyncHandler(async (req, res) => {
-    const order = await Order.findById(req.params.id).populate('customer'); // Populate customer
+    const order = await Order.findById(req.params.id);
     if (!order) {
-        res.status(404);
-        throw new Error('Order not found');
+        res.status(404); throw new Error('Order not found');
     }
 
     const { items, totalAmount, amountPaid, status, expectedPickupDate, actualPickupDate, notes, customerId, customerDetailsToUpdate } = req.body;
 
-    // Handle customer change or update
-    if (customerId && order.customer._id.toString() !== customerId) {
+    if (customerId && order.customer.toString() !== customerId) {
         const newCustomer = await Customer.findById(customerId);
         if (!newCustomer) throw new Error('New customer ID provided but customer not found.');
         order.customer = newCustomer._id;
-    } else if (customerDetailsToUpdate && order.customer) { // Update existing customer details
-        const currentCustomer = await Customer.findById(order.customer._id); // Re-fetch to ensure it's the latest
+    } else if (customerDetailsToUpdate && order.customer) {
+        const currentCustomer = await Customer.findById(order.customer);
         if(currentCustomer) {
-            if (customerDetailsToUpdate.name) currentCustomer.name = customerDetailsToUpdate.name;
+            let customerModified = false;
+            if (customerDetailsToUpdate.name && customerDetailsToUpdate.name !== currentCustomer.name) { currentCustomer.name = customerDetailsToUpdate.name; customerModified = true; }
             if (customerDetailsToUpdate.phone && customerDetailsToUpdate.phone !== currentCustomer.phone) {
                  const existingByPhone = await Customer.findOne({ phone: customerDetailsToUpdate.phone, _id: { $ne: currentCustomer._id } });
                  if (existingByPhone) throw new Error('Another customer with this updated phone number already exists.');
-                currentCustomer.phone = customerDetailsToUpdate.phone;
+                currentCustomer.phone = customerDetailsToUpdate.phone; customerModified = true;
             }
             if (customerDetailsToUpdate.email !== undefined && customerDetailsToUpdate.email !== currentCustomer.email) {
                 if (customerDetailsToUpdate.email) {
                     const existingByEmail = await Customer.findOne({ email: customerDetailsToUpdate.email, _id: { $ne: currentCustomer._id } });
                     if (existingByEmail) throw new Error('Another customer with this updated email address already exists.');
                 }
-                currentCustomer.email = customerDetailsToUpdate.email;
+                currentCustomer.email = customerDetailsToUpdate.email; customerModified = true;
             }
-            if (customerDetailsToUpdate.address !== undefined) currentCustomer.address = customerDetailsToUpdate.address;
-
-            if(currentCustomer.isModified()){
-                await currentCustomer.save();
-                // order.customer might need to be re-populated or ensure it's just the ID
-            }
+            if (customerDetailsToUpdate.address !== undefined && customerDetailsToUpdate.address !== currentCustomer.address) { currentCustomer.address = customerDetailsToUpdate.address; customerModified = true; }
+            if(customerModified) await currentCustomer.save();
         }
     }
-
 
     if (items !== undefined) order.items = items;
     if (totalAmount !== undefined) order.totalAmount = totalAmount;
@@ -211,31 +183,26 @@ const updateOrder = asyncHandler(async (req, res) => {
     if (status && status !== order.status) {
         order.status = status;
         if (status === 'Ready for Pickup' && !order.notified) {
-            // Re-populate customer in case it was changed and not populated above
-            const customerForNotification = await Customer.findById(order.customer);
-            if (customerForNotification && (customerForNotification.email || customerForNotification.phone)) {
-                const notificationResult = await sendNotification(
-                    customerForNotification,
-                    `Your PressFlow Order #${order.receiptNumber} is Ready!`,
-                    `Dear ${customerForNotification.name},\n\nYour order #${order.receiptNumber} is now ready for pickup.\n\nPlease collect it at your earliest convenience.\n\nThank you,\nPressFlow Team`,
-                    order
-                );
+            const customerForNotification = await Customer.findById(order.customer); // Re-fetch or ensure populated
+            if (customerForNotification) {
+                const notificationResult = await sendNotification(customerForNotification, 'readyForPickup', order);
                 if (notificationResult.sent) {
                     order.notified = true;
                     order.notificationMethod = notificationResult.method;
+                } else {
+                    console.warn(`[OrderController] Automated 'Ready for Pickup' notification FAILED for order ${order.receiptNumber}: ${notificationResult.error}`);
                 }
             } else {
-                console.warn(`Cannot send notification for order ${order.receiptNumber}: Customer details for notification not available or customer has no contact info.`);
+                console.warn(`[OrderController] Cannot send 'Ready for Pickup' for order ${order.receiptNumber}: Customer ${order.customer} not found.`);
             }
-        } else if (status !== 'Ready for Pickup' && order.notified) {
-            // Optional: Reset notification status if order is moved back from 'Ready'
-            // order.notified = false;
-            // order.notificationMethod = 'none';
+        } else if (status !== 'Ready for Pickup' && order.notified && order.status !== 'Completed' && order.status !== 'Cancelled') {
+             // If status changes FROM Ready for Pickup (and was notified) TO something else (not final states)
+             // you might want to reset notification status to allow re-notification if it goes back to Ready.
+             // This depends on business logic. For now, we keep notified=true once set for 'Ready'.
         }
     }
 
     const updatedOrder = await order.save();
-    // Repopulate to ensure all refs are fresh, especially if customer was updated
     const populatedOrder = await Order.findById(updatedOrder._id).populate('customer', 'name phone email address').populate('createdBy', 'username');
     res.json(populatedOrder);
 });
@@ -246,56 +213,36 @@ const updateOrder = asyncHandler(async (req, res) => {
 const deleteOrder = asyncHandler(async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) {
-        res.status(404);
-        throw new Error('Order not found');
+        res.status(404); throw new Error('Order not found');
     }
     await order.deleteOne();
     res.json({ message: 'Order removed' });
 });
-
 
 // @desc    Manually trigger a notification for an order
 // @route   POST /api/orders/:id/notify
 // @access  Private (Staff/Admin)
 const manuallyNotifyCustomer = asyncHandler(async (req, res) => {
     const order = await Order.findById(req.params.id).populate('customer');
-
     if (!order) {
-        res.status(404);
-        throw new Error('Order not found');
+        res.status(404); throw new Error('Order not found');
     }
     if (!order.customer) {
-        res.status(400);
-        throw new Error('Customer details not found for this order. Cannot send notification.');
-    }
-    if (!order.customer.email && !order.customer.phone) {
-        res.status(400);
-        throw new Error('Customer has no email or phone number on file. Cannot send notification.');
+        res.status(400).json({ message: 'Customer details not found for this order.' }); return;
     }
 
-    const subject = `Reminder: Your PressFlow Order #${order.receiptNumber} is Ready!`;
-    const messageBody = `Dear ${order.customer.name},\n\nThis is a reminder that your order #${order.receiptNumber} is ready for pickup.\n\nPlease collect it at your earliest convenience.\n\nThank you,\nPressFlow Team`;
-
-    const notificationResult = await sendNotification(
-        order.customer,
-        subject,
-        messageBody,
-        order
-    );
+    const notificationResult = await sendNotification(order.customer, 'manualReminder', order);
 
     if (notificationResult.sent) {
         order.notified = true;
-        order.notificationMethod = notificationResult.method; // Could be 'manual-' + method
+        order.notificationMethod = `manual-${notificationResult.method}`;
         await order.save();
-        // Send back the updated order
         const populatedOrder = await Order.findById(order._id).populate('customer', 'name phone email address').populate('createdBy', 'username');
         res.json({ message: `Notification sent successfully via ${notificationResult.method}.`, order: populatedOrder });
     } else {
-        res.status(500);
-        throw new Error('Failed to send notification. Please check customer contact details and server logs.');
+        res.status(500).json({ message: notificationResult.error || 'Failed to send manual notification.' });
     }
 });
-
 
 export {
     createOrder,
