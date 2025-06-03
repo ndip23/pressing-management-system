@@ -23,18 +23,20 @@ const OrderDetailsPage = () => {
     const navigate = useNavigate();
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [actionError, setActionError] = useState('');
-    const [actionSuccess, setActionSuccess] = useState('');
+    const [error, setError] = useState(''); // For initial page load errors
+    const [actionError, setActionError] = useState(''); // For errors from button actions
+    const [actionSuccess, setActionSuccess] = useState(''); // For success messages from button actions
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
     const [isSendingNotification, setIsSendingNotification] = useState(false);
 
-    const dateTimeFormat = 'MMM d, yyyy, h:mm a';
-    const currencySymbol = '$'; // Assuming $; replace with settings context if available
+    const dateTimeFormat = 'MMM d, yyyy, h:mm a'; // e.g., Jun 03, 2023, 5:00 PM
+    const currencySymbol = order?.defaultCurrencySymbol || '$'; // Use order's currency or default to $
 
     const loadOrder = useCallback(async (showLoadingSpinner = true) => {
         if (showLoadingSpinner) setLoading(true);
-        setError(''); setActionError(''); setActionSuccess('');
+        setError('');
+        setActionError(''); // Clear previous action messages on reload
+        setActionSuccess('');
         try {
             const { data } = await fetchOrderById(id);
             setOrder(data);
@@ -50,33 +52,44 @@ const OrderDetailsPage = () => {
         loadOrder();
     }, [loadOrder]);
 
+    // Effect to clear action messages after a delay
     useEffect(() => {
         let timer;
         if (actionSuccess || actionError) {
-            timer = setTimeout(() => { setActionSuccess(''); setActionError(''); }, 5000);
+            timer = setTimeout(() => {
+                setActionSuccess('');
+                setActionError('');
+            }, 5000); // Clear messages after 5 seconds
         }
         return () => clearTimeout(timer);
     }, [actionSuccess, actionError]);
+
 
     const handlePrintReceipt = () => window.print();
 
     const handleUpdateStatus = async (newStatus) => {
         if (!order || isUpdatingStatus) return;
-        setIsUpdatingStatus(true); setActionError(''); setActionSuccess('');
+        setIsUpdatingStatus(true);
+        setActionError(''); setActionSuccess(''); // Clear previous messages
         try {
             const payload = { status: newStatus };
             if (newStatus === 'Completed' && !order.actualPickupDate) {
                 payload.actualPickupDate = new Date().toISOString();
             }
             const { data: updatedOrder } = await updateExistingOrder(order._id, payload);
-            setOrder(updatedOrder);
+            setOrder(updatedOrder); // Update local state with the full response from backend
             let successMsg = `Order status updated to ${newStatus}.`;
-            if (newStatus === 'Ready for Pickup' && updatedOrder.notified && updatedOrder.notificationMethod && updatedOrder.notificationMethod !== 'none' && !updatedOrder.notificationMethod.startsWith('failed-')) {
-                successMsg += ` Notification sent via ${updatedOrder.notificationMethod.replace('manual-', '')}.`;
+            // Check if automated notification was sent by backend
+            if (newStatus === 'Ready for Pickup' && updatedOrder.notified && updatedOrder.notificationMethod && 
+                updatedOrder.notificationMethod !== 'none' && 
+                !updatedOrder.notificationMethod.startsWith('failed-') && 
+                !updatedOrder.notificationMethod.startsWith('no-contact')) {
+                successMsg += ` Customer notification sent via ${updatedOrder.notificationMethod.replace('manual-', '')}.`;
             }
             setActionSuccess(successMsg);
         } catch (err) {
-            setActionError(err.response?.data?.message || err.message || 'Error updating status.');
+            const errMsg = err.response?.data?.message || err.message || 'Error updating status.';
+            setActionError(errMsg);
             console.error("Failed to update status:", err.response || err);
         } finally {
             setIsUpdatingStatus(false);
@@ -85,7 +98,7 @@ const OrderDetailsPage = () => {
 
     const handleRecordPayment = () => {
         setActionError(''); setActionSuccess('');
-        alert("Record Payment UI/Modal to be implemented.");
+        alert("Record Payment UI/Modal to be implemented. This would involve updating 'amountPaid' and potentially calling updateExistingOrder.");
     };
 
     const handleSendNotification = async () => {
@@ -94,13 +107,16 @@ const OrderDetailsPage = () => {
             return;
         }
         if (isSendingNotification) return;
-        setIsSendingNotification(true); setActionError(''); setActionSuccess('');
+
+        setIsSendingNotification(true);
+        setActionError(''); setActionSuccess('');
         try {
-            const { data } = await sendManualNotification(order._id);
-            setOrder(data.order);
-            setActionSuccess(data.message);
+            const { data } = await sendManualNotification(order._id); // API call
+            setOrder(data.order); // Update local order state with response from backend
+            setActionSuccess(data.message); // Use backend's specific success message
         } catch (err) {
-            setActionError(err.response?.data?.message || err.message || "Failed to send notification.");
+            const errMsg = err.response?.data?.message || err.message || "Failed to send notification.";
+            setActionError(errMsg);
             console.error("Manual notification error:", err.response || err);
         } finally {
             setIsSendingNotification(false);
@@ -117,7 +133,7 @@ const OrderDetailsPage = () => {
             </Card>
         </div>
     );
-    if (!order) return null;
+    if (!order) return null; // Should not happen if loading and error states are handled
 
     const isOrderOverdue = order.expectedPickupDate && isPast(parseISO(order.expectedPickupDate)) && !['Completed', 'Cancelled'].includes(order.status);
     const canSendNotification = order.customer && (order.customer.email || order.customer.phone);
@@ -141,6 +157,7 @@ const OrderDetailsPage = () => {
                 </div>
             </div>
 
+            {/* Overdue Card */}
             {isOrderOverdue && (
                 <Card className="bg-red-100 dark:bg-red-900/40 border-2 border-red-400 dark:border-red-600 shadow-lg animate-pulse-slow">
                     <div className="flex items-center p-4">
@@ -153,6 +170,7 @@ const OrderDetailsPage = () => {
                 </Card>
             )}
 
+            {/* Action Success/Error Messages */}
             {actionSuccess && (
                 <div className="p-3 mb-4 bg-green-100 text-apple-green rounded-apple border border-green-300 dark:border-green-700 dark:text-green-300 dark:bg-green-900/30">
                     <div className="flex items-center"><CheckCircle2 size={20} className="mr-2 flex-shrink-0" /><span>{actionSuccess}</span></div>
@@ -174,10 +192,10 @@ const OrderDetailsPage = () => {
                         {order.actualPickupDate && <DetailItem label="Actual Pickup" value={format(parseISO(order.actualPickupDate), dateTimeFormat)} />}
                         
                         <DetailItem label="Subtotal" value={`${currencySymbol}${(order.subTotalAmount || 0).toFixed(2)}`} />
-                        {order.discountType !== 'none' && order.discountAmount > 0 && (
+                        {order.discountType !== 'none' && typeof order.discountAmount === 'number' && order.discountAmount > 0 && (
                             <DetailItem
-                                label={`Discount Applied (${order.discountType === 'percentage' ? `${order.discountValue}%` : 'Fixed Amount'})`}
-                                value={`-${currencySymbol}${(order.discountAmount || 0).toFixed(2)}`}
+                                label={`Discount (${order.discountType === 'percentage' ? `${order.discountValue || 0}%` : 'Fixed'})`}
+                                value={`-${currencySymbol}${(order.discountAmount).toFixed(2)}`}
                                 className="text-orange-600 dark:text-orange-400"
                             />
                         )}
@@ -189,7 +207,9 @@ const OrderDetailsPage = () => {
                                 <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-apple-green dark:bg-green-900/50 dark:text-green-400"><CheckCircle2 size={14} className="mr-1"/> Paid</span> :
                                 <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-100 text-apple-orange dark:bg-yellow-900/50 dark:text-yellow-400"><Clock3 size={14} className="mr-1"/> Unpaid</span>
                             }
-                            {order.amountPaid > 0 && order.totalAmount > 0 && order.totalAmount > order.amountPaid && <span className="ml-2 text-xs text-apple-gray-500 dark:text-apple-gray-400">({currencySymbol}{(order.totalAmount - order.amountPaid).toFixed(2)} due)</span>}
+                            {typeof order.amountPaid === 'number' && typeof order.totalAmount === 'number' && order.totalAmount > order.amountPaid && order.amountPaid >= 0 && (
+                                <span className="ml-2 text-xs text-apple-gray-500 dark:text-apple-gray-400">({currencySymbol}{(order.totalAmount - order.amountPaid).toFixed(2)} due)</span>
+                            )}
                         </DetailItem>
                         {order.notes && <DetailItem label="Order Notes" value={order.notes} />}
                         {order.createdBy && <DetailItem label="Processed By" value={order.createdBy?.username || 'Staff'} />}
@@ -205,7 +225,7 @@ const OrderDetailsPage = () => {
                     <Card title="Customer Information" contentClassName="p-4 sm:p-6 divide-y divide-apple-gray-100 dark:divide-apple-gray-800">
                         <DetailItem label="Name" value={order.customer?.name} />
                         <DetailItem label="Phone" value={order.customer?.phone} />
-                        <DetailItem label="Email" value={order.customer?.email} />
+                        <DetailItem label="Email" value={order.customer?.email || 'N/A'} /> {/* Explicit N/A for email */}
                         <DetailItem label="Address" value={order.customer?.address} />
                     </Card>
                 </div>
@@ -233,17 +253,17 @@ const OrderDetailsPage = () => {
                         <div className="space-y-3">
                             <h4 className="text-sm font-medium mb-1 text-apple-gray-600 dark:text-apple-gray-300">Update Status:</h4>
                             <div className="grid grid-cols-2 gap-2">
-                                {['Pending', 'Processing', 'Ready for Pickup', 'Completed', 'Cancelled'].map(status => (
+                                {['Pending', 'Processing', 'Ready for Pickup', 'Completed', 'Cancelled'].map(statusOption => (
                                     <Button
-                                        key={status}
-                                        variant={order.status === status ? "primary" : "secondary"}
+                                        key={statusOption}
+                                        variant={order.status === statusOption ? "primary" : "secondary"}
                                         size="sm"
-                                        onClick={() => handleUpdateStatus(status)}
-                                        disabled={isUpdatingStatus || order.status === status || (order.status === 'Completed' && status !== 'Completed') || (order.status === 'Cancelled' && status !== 'Cancelled')}
-                                        isLoading={isUpdatingStatus && order.status !== status}
+                                        onClick={() => handleUpdateStatus(statusOption)}
+                                        disabled={isUpdatingStatus || order.status === statusOption || (order.status === 'Completed' && statusOption !== 'Completed') || (order.status === 'Cancelled' && statusOption !== 'Cancelled')}
+                                        isLoading={isUpdatingStatus && order.status !== statusOption}
                                         className="w-full"
                                     >
-                                        {status}
+                                        {statusOption}
                                     </Button>
                                 ))}
                             </div>
