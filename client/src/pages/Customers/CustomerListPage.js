@@ -6,7 +6,7 @@ import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
 import Input from '../../components/UI/Input';
 import Spinner from '../../components/UI/Spinner';
-import { Users, PlusCircle, Search, Edit3, Trash2, Eye, AlertTriangle, CheckCircle2 } from 'lucide-react'; // Added CheckCircle2 for success
+import { Users, PlusCircle,  Search, Edit3, Trash2, Eye, AlertTriangle, CheckCircle2 } from 'lucide-react'; // Added CheckCircle2 for success
 
 const CustomerListPage = () => {
     const [customers, setCustomers] = useState([]);
