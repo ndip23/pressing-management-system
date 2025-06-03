@@ -2,35 +2,18 @@
 import asyncHandler from '../middleware/asyncHandler.js';
 import AdminNotification from '../models/AdminNotification.js';
 
-// @desc    Get current admin's notifications (unread first, then read, limit results)
+// @desc    Get current admin's notifications (unread first, then read, limited)
 // @route   GET /api/admin-notifications
 // @access  Private/Admin
 const getMyNotifications = asyncHandler(async (req, res) => {
-    const adminId = req.user.id; // From protect middleware
+    const limit = parseInt(req.query.limit, 10) || 20; // Max notifications to return
 
-    // Fetch unread notifications, newest first
-    const unreadNotifications = await AdminNotification.find({ userId: adminId, read: false })
-        .sort({ createdAt: -1 })
-        .limit(10) // Limit unread shown in dropdown
-        .lean();
-
-    // Fetch some read notifications if unread are few, newest first
-    const readLimit = Math.max(0, 15 - unreadNotifications.length); // Show up to 15 total initially
-    let readNotifications = [];
-    if (readLimit > 0) {
-        readNotifications = await AdminNotification.find({ userId: adminId, read: true })
-            .sort({ createdAt: -1 })
-            .limit(readLimit)
-            .lean();
-    }
-
-    const notifications = [...unreadNotifications, ...readNotifications];
-    // Sort combined list again just in case, though individual queries were sorted
-    notifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
+    const notifications = await AdminNotification.find({ userId: req.user.id })
+        .sort({ read: 1, createdAt: -1 }) // Sort by read status (unread first), then by newest
+        .limit(limit);
 
     const unreadCount = await AdminNotification.countDocuments({
-        userId: adminId,
+        userId: req.user.id,
         read: false,
     });
 
@@ -42,30 +25,34 @@ const getMyNotifications = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const markNotificationAsRead = asyncHandler(async (req, res) => {
     const notification = await AdminNotification.findOneAndUpdate(
-        { _id: req.params.id, userId: req.user.id }, 
+        { _id: req.params.id, userId: req.user.id }, // Ensure admin owns notification
         { $set: { read: true } },
-        { new: true } 
-    ).lean();
+        { new: true } // Return the updated document
+    );
 
     if (!notification) {
         res.status(404);
         throw new Error('Notification not found or not authorized to update.');
     }
-
+    // Recalculate unread count to send back
     const unreadCount = await AdminNotification.countDocuments({ userId: req.user.id, read: false });
-    res.json({ message: "Notification marked as read.", notification, unreadCount });
+    res.json({ message: 'Notification marked as read.', notification, unreadCount });
 });
 
 // @desc    Mark all notifications as read for current admin
 // @route   PUT /api/admin-notifications/read-all
 // @access  Private/Admin
 const markAllNotificationsAsRead = asyncHandler(async (req, res) => {
-    await AdminNotification.updateMany(
+    const result = await AdminNotification.updateMany(
         { userId: req.user.id, read: false },
         { $set: { read: true } }
     );
 
-    res.json({ message: 'All notifications marked as read.', unreadCount: 0 });
+    console.log(`[AdminNotifications] Marked ${result.modifiedCount} notifications as read for user ${req.user.id}`);
+
+    // Fetch updated list and count to return, ensuring consistency
+    const notifications = await AdminNotification.find({ userId: req.user.id }).sort({ read: 1, createdAt: -1 }).limit(20);
+    res.json({ message: 'All viewable notifications marked as read.', notifications, unreadCount: 0 });
 });
 
 export { getMyNotifications, markNotificationAsRead, markAllNotificationsAsRead };
