@@ -63,19 +63,18 @@ const createOrder = asyncHandler(async (req, res) => {
             await customer.save();
         }
 
-    } else if (customerName && customerPhone) {
-        customer = await Customer.findOneAndUpdate(
-            { phone: customerPhone },
-            {
-                $setOnInsert: {
-                    name: customerName,
-                    phone: customerPhone,
-                    email: customerEmail || undefined,
-                    address: customerAddress || undefined,
-                }
-            },
-            { new: true, upsert: true, runValidators: true }
-        );
+  } else if (customerName && customerPhone) {
+    console.log("Backend: Creating/Finding Customer. Details:", { customerName, customerPhone, customerEmail, customerAddress });
+    const updateData = { name: customerName, phone: customerPhone };
+    if (customerEmail !== undefined) updateData.email = customerEmail; else updateData.$unset = { email: 1 }; // Clear email if empty string sent
+    if (customerAddress !== undefined) updateData.address = customerAddress; else updateData.$unset = { ...updateData.$unset, address: 1 };
+
+    customer = await Customer.findOneAndUpdate(
+        { phone: customerPhone },
+        { $set: updateData },
+        { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+    );
+    console.log("Backend: Customer after findOneAndUpdate:", customer);
     } else {
         res.status(400);
         throw new Error('Customer ID or (Customer Name and Phone) are required.');
