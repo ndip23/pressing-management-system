@@ -2,41 +2,52 @@
 import nodemailer from 'nodemailer';
 import twilio from 'twilio';
 import Settings from '../models/Settings.js';
-// For robust phone number formatting (optional but highly recommended)
-// import { parsePhoneNumberFromString, isValidNumber, E164Number } from 'libphonenumber-js';
 
 // --- Nodemailer Transporter Setup ---
 let transporter;
-if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-    transporter = nodemailer.createTransport({
-        host: process.env.EMAIL_HOST,
-        port: parseInt(process.env.EMAIL_PORT || "587", 10),
-        secure: process.env.EMAIL_SECURE === 'true',
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
-    });
+if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS && process.env.EMAIL_PORT) {
+    try {
+        transporter = nodemailer.createTransport({
+            host: process.env.EMAIL_HOST,
+            port: parseInt(process.env.EMAIL_PORT, 10),
+            secure: process.env.EMAIL_SECURE === 'true',
+            auth: {
+                user: process.env.EMAIL_USER.trim(),
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+        console.log('[NotificationService] Email transport configured successfully.');
+    } catch (error) {
+        console.error('[NotificationService] Failed to configure Email transport:', error.message);
+        transporter = null;
+    }
 } else {
-    console.warn('[NotificationService] Email credentials not fully configured. Email notifications will be disabled.');
+    console.warn('[NotificationService] Email credentials (EMAIL_HOST, EMAIL_USER, EMAIL_PASS, EMAIL_PORT) not fully configured. Email notifications will be disabled for this session.');
+    transporter = null;
 }
-
 
 // --- Twilio Client Setup ---
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
-const twilioWhatsAppFromNumber = process.env.TWILIO_WHATSAPP_FROM_NUMBER;
+// Use TWILIO_WHATSAPP_FROM if you specifically want to send via a WhatsApp number,
+// otherwise use TWILIO_PHONE_NUMBER for general SMS/Voice capable number.
+const twilioSenderNumber = process.env.TWILIO_WHATSAPP_FROM || process.env.TWILIO_PHONE_NUMBER;
 
 let twilioClient = null;
-if (twilioAccountSid && twilioAuthToken && twilioWhatsAppFromNumber) {
+if (twilioAccountSid && twilioAuthToken && twilioSenderNumber) {
     try {
         twilioClient = twilio(twilioAccountSid, twilioAuthToken);
-        console.log('[NotificationService] Twilio client initialized successfully.');
+        console.log(`[NotificationService] Twilio client initialized successfully with sender: ${twilioSenderNumber}`);
     } catch (e) {
         console.error('[NotificationService] Failed to initialize Twilio client:', e.message);
+        twilioClient = null;
     }
 } else {
-    console.warn('[NotificationService] Twilio credentials or FROM number not fully configured in .env. WhatsApp notifications will be disabled.');
+    console.warn('[NotificationService] Twilio credentials (ACCOUNT_SID, AUTH_TOKEN, and TWILIO_WHATSAPP_FROM/TWILIO_PHONE_NUMBER) not fully configured. Twilio notifications will be disabled.');
+    if (!twilioAccountSid) console.warn('[NotificationService] Detail: TWILIO_ACCOUNT_SID is missing or empty.');
+    if (!twilioAuthToken) console.warn('[NotificationService] Detail: TWILIO_AUTH_TOKEN is missing or empty.');
+    if (!twilioSenderNumber) console.warn('[NotificationService] Detail: TWILIO_WHATSAPP_FROM or TWILIO_PHONE_NUMBER is missing or empty.');
+    twilioClient = null;
 }
 
 // --- Helper to Apply Placeholders ---
@@ -45,166 +56,154 @@ const applyPlaceholders = (text, placeholders) => {
     let result = text;
     for (const key in placeholders) {
         const value = (placeholders[key] === null || placeholders[key] === undefined) ? '' : String(placeholders[key]);
-        const regex = new RegExp(key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g');
+        const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const regex = new RegExp(escapedKey, 'g');
         result = result.replace(regex, value);
     }
     return result;
 };
 
-// --- Helper to Format Phone Number to E.164 (Basic - Use libphonenumber-js for production) ---
-const formatPhoneNumberE164 = (phoneNumber, defaultCountryCode = '1') => { // Default '1' for US/Canada
+// --- Helper to Format Phone Number to E.164 (Basic) ---
+const formatPhoneNumberE164 = (phoneNumber) => {
     if (!phoneNumber || typeof phoneNumber !== 'string') return null;
-    let cleaned = phoneNumber.replace(/\D/g, ''); // Remove all non-digits
-
-    // This is a very basic check and might need to be more sophisticated
-    // based on your input formats and libphonenumber-js if you use it.
-    if (cleaned.length > 10 && cleaned.startsWith(defaultCountryCode)) { // Already has country code like 1xxxxxxxxxx
-        // Potentially already E.164 or close enough for some regions
-    } else if (cleaned.length === 10) { // Assume it's a local number for the default country
-        cleaned = defaultCountryCode + cleaned;
-    } else {
-        // Number format is unexpected or too short/long
-        console.warn(`[NotificationService] Phone number '${phoneNumber}' could not be reliably formatted to E.164 with default country code '${defaultCountryCode}'.`);
-        return null; // Or return original if Twilio can handle some variations
-    }
-    return `+${cleaned}`;
+    let cleaned = phoneNumber.replace(/\D/g, '');
+    if (phoneNumber.startsWith('+')) return phoneNumber; // Assume already E.164 if starts with +
+    // Basic US/Canada assumption for 10-digit numbers. This needs to be more robust for international.
+    if (cleaned.length === 10) cleaned = `1${cleaned}`; 
+    if (cleaned.length > 0 && cleaned.length >= 11) return `+${cleaned}`; // Basic check for some length
+    console.warn(`[NotificationService] Could not reliably format phone number '${phoneNumber}' to E.164.`);
+    return null;
 };
-
 
 // --- Main Send Notification Function ---
 const sendNotification = async (customer, templateType, order, customPlaceholders = {}) => {
     if (!customer || !order) {
         console.error("[NotificationService] Called with missing customer or order object.");
-        return { sent: false, method: 'none', error: "Missing customer or order data for notification." };
+        return { sent: false, method: 'none', message: "Missing customer or order data." };
     }
 
     const settings = await Settings.getSettings();
-    const company = settings.companyInfo || {};
+    const company = settings.companyInfo || { name: 'Your Pressing Service' };
     const templates = settings.notificationTemplates || {};
-    const preferredChannel = settings.preferredNotificationChannel || 'whatsapp';
+    const currencySymbol = settings.defaultCurrencySymbol || '$';
 
-    if (preferredChannel === 'none') {
-        console.log(`[NotificationService] Notifications globally disabled in settings for order ${order.receiptNumber}.`);
-        return { sent: false, method: 'none', error: "Notifications globally disabled." };
-    }
+    console.log(`[NotificationService] Processing notification for order ${order.receiptNumber}, type: ${templateType}, Customer: ${customer.name}`);
 
     const commonPlaceholders = {
         '{{customerName}}': customer.name || 'Valued Customer',
         '{{receiptNumber}}': order.receiptNumber,
-        '{{companyName}}': company.name || 'PressFlow',
+        '{{companyName}}': company.name,
         '{{orderStatus}}': order.status,
         '{{expectedPickupDate}}': order.expectedPickupDate ? new Date(order.expectedPickupDate).toLocaleDateString() : 'N/A',
-        '{{totalAmount}}': `${settings.defaultCurrencySymbol || '$'}${(order.totalAmount || 0).toFixed(2)}`,
+        '{{totalAmount}}': `${currencySymbol}${(order.totalAmount || 0).toFixed(2)}`,
         ...customPlaceholders,
     };
 
-    let notificationSent = false;
-    let notificationMethod = 'none';
-    let finalErrorMessage = null;
+    let twilioMessageSent = false;
+    let emailSent = false;
+    let finalMethod = 'none';
+    let statusMessage = 'Notification not sent. No suitable contact or service configured.';
 
-    // --- Attempt WhatsApp ---
-    if (preferredChannel === 'whatsapp' || (preferredChannel === 'email' && !customer.email && customer.phone) ) { // Try WhatsApp if preferred or if email preferred but no email exists
-        if (twilioClient && customer.phone) {
-            let messageTemplateSid = null;
-            let contentVariables = {}; // For Twilio {{1}}, {{2}} style placeholders
+    // --- 1. Attempt Twilio (WhatsApp or SMS with Free-Form Text) ---
+    if (twilioClient && customer.phone) {
+        const e164ToNumber = formatPhoneNumberE164(customer.phone);
+        const fromNumber = twilioSenderNumber; // This is your configured Twilio sender
+        const isWhatsAppSender = fromNumber.toLowerCase().startsWith('whatsapp:');
 
+        if (e164ToNumber) {
+            let messageBodyTemplate;
+            // Select message body template based on type
             if (templateType === 'readyForPickup') {
-                messageTemplateSid = templates.whatsappOrderReadySid || process.env.TWILIO_WHATSAPP_TEMPLATE_ORDER_READY_SID;
-                contentVariables = { '1': customer.name, '2': order.receiptNumber, '3': company.name };
+                messageBodyTemplate = templates.readyForPickupBody || `Dear {{customerName}}, your PressFlow order #{{receiptNumber}} is ready for pickup! From {{companyName}}.`;
             } else if (templateType === 'manualReminder') {
-                messageTemplateSid = templates.whatsappManualReminderSid || process.env.TWILIO_WHATSAPP_TEMPLATE_MANUAL_REMINDER_SID;
-                contentVariables = { '1': customer.name, '2': order.receiptNumber, '3': company.name };
+                messageBodyTemplate = templates.manualReminderBody || `Dear {{customerName}}, a reminder about your PressFlow order #{{receiptNumber}}. It's ready for pickup. From {{companyName}}.`;
+            } else { // Generic fallback
+                messageBodyTemplate = `Update for order #{{receiptNumber}}: Status is {{orderStatus}}. From {{companyName}}.`;
             }
+            const finalTwilioBody = applyPlaceholders(messageBodyTemplate, commonPlaceholders);
 
-            if (messageTemplateSid) {
-                const e164PhoneNumber = formatPhoneNumberE164(customer.phone, process.env.DEFAULT_COUNTRY_CODE_FOR_PHONE_FORMAT);
-                if (e164PhoneNumber) {
-                    const toWhatsAppNumber = `whatsapp:${e164PhoneNumber}`;
-                    try {
-                        await twilioClient.messages.create({
-                            contentSid: messageTemplateSid,
-                            contentVariables: JSON.stringify(contentVariables),
-                            from: twilioWhatsAppFromNumber,
-                            to: toWhatsAppNumber,
-                        });
-                        console.log(`[NotificationService] WhatsApp ('${templateType}') sent to ${toWhatsAppNumber} for order ${order.receiptNumber} using template ${messageTemplateSid}.`);
-                        notificationSent = true;
-                        notificationMethod = 'whatsapp';
-                    } catch (error) {
-                        finalErrorMessage = `WhatsApp (template ${messageTemplateSid}) sending to ${customer.phone} failed: ${error.message}`;
-                        console.error(`[NotificationService] ${finalErrorMessage} for order ${order.receiptNumber}`);
-                    }
-                } else {
-                    finalErrorMessage = `Invalid or unformattable phone number for WhatsApp: ${customer.phone}`;
-                    console.warn(`[NotificationService] ${finalErrorMessage} for order ${order.receiptNumber}`);
+            // Construct the 'to' number correctly for WhatsApp or SMS
+            const toTargetNumber = `${isWhatsAppSender ? 'whatsapp:' : ''}${e164ToNumber}`;
+
+            try {
+                console.log(`[NotificationService] Attempting Twilio message (Type: ${isWhatsAppSender ? 'WhatsApp Free-Form' : 'SMS'}) to: ${toTargetNumber} from: ${fromNumber}`);
+                if (isWhatsAppSender) {
+                     console.warn("[NotificationService] Sending FREE-FORM WhatsApp message. For proactive production messages outside 24hr window, use approved templates with SIDs.");
                 }
-            } else {
-                const warningMsg = `WhatsApp template SID for '${templateType}' not configured.`;
-                console.warn(`[NotificationService] ${warningMsg}`);
-                if (!finalErrorMessage) finalErrorMessage = warningMsg;
+
+                const message = await twilioClient.messages.create({
+                    body: finalTwilioBody,
+                    from: fromNumber,
+                    to: toTargetNumber,
+                });
+                console.log(`[NotificationService] Twilio message ('${templateType}') sent to ${customer.phone}. SID: ${message.sid}`);
+                twilioMessageSent = true;
+                finalMethod = isWhatsAppSender ? 'whatsapp' : 'sms';
+                statusMessage = `${finalMethod.toUpperCase()} sent successfully to ${customer.phone}.`;
+            } catch (error) {
+                statusMessage = `Twilio message to ${customer.phone} failed: ${error.message}`;
+                console.error(`[NotificationService] ${statusMessage} (Order: ${order.receiptNumber}). Twilio Error Code: ${error.code}, More Info: ${error.moreInfo || error.message}`);
             }
-        } else if (!twilioClient) {
-             if (!finalErrorMessage) finalErrorMessage = "Twilio client not initialized for WhatsApp.";
-            console.warn(`[NotificationService] ${finalErrorMessage}`);
-        } else if (!customer.phone) {
-             if (!finalErrorMessage) finalErrorMessage = `No phone number for customer ${customer.name} to send WhatsApp.`;
-            console.warn(`[NotificationService] ${finalErrorMessage}`);
+        } else {
+            statusMessage = `Invalid/unformattable phone number '${customer.phone}' for Twilio.`;
+            console.warn(`[NotificationService] ${statusMessage} (Order: ${order.receiptNumber})`);
         }
+    } else if (customer.phone && !twilioClient) {
+        statusMessage = "Twilio client not initialized, but customer has phone. SMS/WhatsApp cannot be sent.";
+        console.warn(`[NotificationService] ${statusMessage} (Order: ${order.receiptNumber})`);
     }
 
-    // --- Attempt Email (if WhatsApp not sent or if email is preferred and available) ---
-    if (!notificationSent && (preferredChannel === 'email' || (preferredChannel === 'whatsapp' && customer.email))) { // Also try email if whatsapp preferred but failed
-        if (transporter && customer.email) {
-            let emailSubjectTemplate = templates.subject;
-            let emailBodyTemplate = 'Your order #{{receiptNumber}} status is: {{orderStatus}}.';
+    // --- 2. Attempt Email (if Twilio was not sent OR if you want to send both) ---
+    // To send both, remove `!twilioMessageSent` condition. For fallback, keep it.
+    if (!twilioMessageSent && transporter && customer.email) {
+        let emailSubjectTemplate = templates.subject || 'Order #{{receiptNumber}} Update from {{companyName}}';
+        let emailBodyTemplate = `Dear {{customerName}},\nYour order #{{receiptNumber}} status is: {{orderStatus}}.\n\nThank you,\n{{companyName}}`;
 
-            if (templateType === 'readyForPickup') {
-                emailSubjectTemplate = templates.readyForPickupEmailSubject || templates.subject;
-                emailBodyTemplate = templates.readyForPickupEmailBody;
-            } else if (templateType === 'manualReminder') {
-                emailSubjectTemplate = templates.manualReminderEmailSubject || templates.subject;
-                emailBodyTemplate = templates.manualReminderEmailBody;
-            }
-
-            if (!emailSubjectTemplate || !emailBodyTemplate) {
-                const emailTemplateError = `Email template for '${templateType}' not fully configured.`;
-                console.warn(`[NotificationService] ${emailTemplateError} for order ${order.receiptNumber}`);
-                if (!finalErrorMessage) finalErrorMessage = emailTemplateError;
-            } else {
-                const finalEmailSubject = applyPlaceholders(emailSubjectTemplate, commonPlaceholders);
-                const finalEmailBody = applyPlaceholders(emailBodyTemplate, commonPlaceholders);
-                try {
-                    await transporter.sendMail({
-                        from: process.env.EMAIL_FROM,
-                        to: customer.email,
-                        subject: finalEmailSubject,
-                        text: finalEmailBody,
-                    });
-                    console.log(`[NotificationService] Email ('${templateType}') sent to ${customer.email} for order ${order.receiptNumber}.`);
-                    notificationSent = true;
-                    notificationMethod = 'email';
-                    finalErrorMessage = null; // Clear previous error if email succeeded
-                } catch (error) {
-                    const emailErr = `Email sending to ${customer.email} failed: ${error.message}`;
-                    console.error(`[NotificationService] ${emailErr} for order ${order.receiptNumber}`);
-                    if (!finalErrorMessage) finalErrorMessage = emailErr;
-                }
-            }
-        } else if (!transporter) {
-            if (!finalErrorMessage) finalErrorMessage = "Email (Nodemailer) client not initialized.";
-            console.warn(`[NotificationService] ${finalErrorMessage}`);
-        } else if (preferredChannel === 'email' && !customer.email) {
-            if (!finalErrorMessage) finalErrorMessage = `No email address for customer ${customer.name} for preferred email notification.`;
-            console.warn(`[NotificationService] ${finalErrorMessage}`);
+        if (templateType === 'readyForPickup') {
+            // You can have specific email subjects in settings too, e.g., templates.readyForPickupEmailSubject
+            emailSubjectTemplate = templates.readyForPickupEmailSubject || templates.subject || 'Your Order #{{receiptNumber}} is Ready!';
+            emailBodyTemplate = templates.readyForPickupEmailBody || `Dear {{customerName}},\nYour order #{{receiptNumber}} from {{companyName}} is ready for pickup!`;
+        } else if (templateType === 'manualReminder') {
+            emailSubjectTemplate = templates.manualReminderEmailSubject || templates.subject || 'Reminder: Your Order #{{receiptNumber}}';
+            emailBodyTemplate = templates.manualReminderEmailBody || `Dear {{customerName}},\nThis is a reminder for your order #{{receiptNumber}}.\n\nThank you,\n{{companyName}}`;
         }
+
+        const finalEmailSubject = applyPlaceholders(emailSubjectTemplate, commonPlaceholders);
+        const finalEmailBody = applyPlaceholders(emailBodyTemplate, commonPlaceholders);
+
+        try {
+            console.log(`[NotificationService] Attempting Email for '${templateType}' to ${customer.email} for order ${order.receiptNumber}`);
+            const mailInfo = await transporter.sendMail({
+                from: process.env.EMAIL_FROM,
+                to: customer.email,
+                subject: finalEmailSubject,
+                text: finalEmailBody,
+            });
+            console.log(`[NotificationService] Email ('${templateType}') sent to ${customer.email} for order ${order.receiptNumber}. Message ID: ${mailInfo.messageId}`);
+            emailSent = true;
+            finalMethod = (finalMethod !== 'none' && finalMethod !== 'email') ? `${finalMethod}+email` : 'email'; // Append if Twilio also sent, or set to email
+            statusMessage = `Email sent successfully to ${customer.email}.`;
+        } catch (error) {
+            const emailErr = `Email sending to ${customer.email} failed: ${error.message}`;
+            console.error(`[NotificationService] ${emailErr} (Order: ${order.receiptNumber})`, error);
+            if (finalMethod === 'none') statusMessage = emailErr;
+        }
+    } else if (!twilioMessageSent && !transporter && customer.email) {
+        statusMessage = "Email (Nodemailer) client not initialized, but customer has email.";
+        console.warn(`[NotificationService] ${statusMessage} (Order: ${order.receiptNumber})`);
+    } else if (!twilioMessageSent && transporter && !customer.email && finalMethod === 'none') {
+         statusMessage = `No email for customer ${customer.name} to send email fallback.`;
+         console.warn(`[NotificationService] ${statusMessage} (Order: ${order.receiptNumber})`);
     }
 
-    if (!notificationSent && !finalErrorMessage) {
-        finalErrorMessage = `No suitable contact method found or configured for customer ${customer.name} (Order: ${order.receiptNumber}). Pref: ${preferredChannel}. Phone: ${customer.phone ? 'Yes' : 'No'}. Email: ${customer.email ? 'Yes' : 'No'}.`;
-        console.warn(`[NotificationService] ${finalErrorMessage}`);
+    const overallSentStatus = twilioMessageSent || emailSent;
+    if (!overallSentStatus) {
+        console.warn(`[NotificationService] Ultimately failed to send any notification for order ${order.receiptNumber}. Last status: ${statusMessage}`);
+    } else {
+        console.log(`[NotificationService] Notification process completed for order ${order.receiptNumber}. Method(s): ${finalMethod}.`);
     }
 
-    return { sent: notificationSent, method: notificationMethod, error: finalErrorMessage };
+    return { sent: overallSentStatus, method: finalMethod, message: statusMessage };
 };
 
 export { sendNotification };
