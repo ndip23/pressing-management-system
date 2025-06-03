@@ -38,11 +38,12 @@ app.get('/api', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/orders', orderRoutes);
-app.use('/api/settings', settingsRoutes); // <<--- 2. ENSURE THIS LINE IS PRESENT AND CORRECT. Base path is /api/settings
+app.use('/api/settings', settingsRoutes); 
+app.use('/api/admin-notifications', adminNotificationRoutes);
 
 // Error handling middleware (should be last)
-app.use(notFound); // For 404 errors if none of the above routes match
-app.use(errorHandler); // For other errors
+app.use(notFound); 
+app.use(errorHandler); 
 
 const PORT = process.env.PORT || 5001;
 
