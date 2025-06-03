@@ -9,7 +9,7 @@ const orderItemSchema = new mongoose.Schema({
     serviceType: {
         type: String,
         required: [true, 'Service type is required'],
-        enum: ['wash', 'dry clean', 'iron', 'wash & iron', 'other'], // Add 'other' if needed
+        enum: ['wash', 'dry clean', 'iron', 'wash & iron', 'special care', 'other'], // Added 'special care'
     },
     quantity: {
         type: Number,
@@ -20,12 +20,8 @@ const orderItemSchema = new mongoose.Schema({
         type: String,
         trim: true,
     },
-    isPaid: { // Individual item payment status (optional, if you track this granularly)
-        type: Boolean,
-        default: false,
-    },
-    // pricePerItem: { type: Number } // If you store calculated price per item
-}, { _id: false }); // No separate _id for subdocuments unless needed
+    // isPaid and pricePerItem were conceptual, not strictly needed if tracking payment at order level
+}, { _id: false });
 
 const orderSchema = new mongoose.Schema({
     receiptNumber: {
@@ -39,17 +35,39 @@ const orderSchema = new mongoose.Schema({
         required: [true, 'Customer is required for the order'],
     },
     items: [orderItemSchema],
-    totalAmount: { // Total calculated or manually entered amount for the order
+    subTotalAmount: { // The sum of item prices BEFORE discount
+        type: Number,
+        required: [true, 'Subtotal amount is required'],
+        min: [0, 'Subtotal amount cannot be negative'],
+        default: 0,
+    },
+    discountType: {
+        type: String,
+        enum: ['none', 'percentage', 'fixed'],
+        default: 'none',
+    },
+    discountValue: { // Percentage value (e.g., 10 for 10%) or fixed amount value
+        type: Number,
+        default: 0,
+        min: [0, 'Discount value cannot be negative if type is not "none"'],
+    },
+    discountAmount: { // The actual calculated monetary value of the discount
+        type: Number,
+        default: 0,
+        min: [0, 'Discount amount cannot be negative'],
+    },
+    totalAmount: { // The final amount AFTER discount (subTotalAmount - discountAmount)
         type: Number,
         required: [true, 'Total amount is required'],
         min: [0, 'Total amount cannot be negative'],
+        default: 0,
     },
-    amountPaid: { // Amount paid by the customer
+    amountPaid: {
         type: Number,
         default: 0,
         min: [0, 'Amount paid cannot be negative'],
     },
-    isFullyPaid: { // Automatically determined or manually set
+    isFullyPaid: {
         type: Boolean,
         default: false,
     },
@@ -69,42 +87,71 @@ const orderSchema = new mongoose.Schema({
     actualPickupDate: {
         type: Date,
     },
-    notes: { // General notes for the order
+    notes: {
         type: String,
         trim: true,
     },
-    createdBy: { // Staff member who created the order
+    createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true,
     },
-    notified: { // To track if a "Ready for Pickup" notification has been sent
+    notified: {
         type: Boolean,
         default: false,
     },
-    notificationMethod: { // To track which method was used (email/sms)
+    notificationMethod: {
         type: String,
-        enum: ['email', 'sms', 'none'],
+        enum: ['email', 'whatsapp', 'sms', 'manual-email', 'manual-whatsapp', 'manual-sms', 'failed-auto', 'no-contact-auto', 'none'],
         default: 'none'
     }
 }, { timestamps: true });
 
-// Middleware to update isFullyPaid before saving
+// Middleware to calculate discountAmount and totalAmount before saving
 orderSchema.pre('save', function (next) {
-    // Check if totalAmount exists and is a number, and amountPaid is a number
-    if (typeof this.totalAmount === 'number' && typeof this.amountPaid === 'number') {
-        this.isFullyPaid = this.amountPaid >= this.totalAmount;
-    } else if (this.totalAmount === 0) { // If total is 0, consider it paid
-        this.isFullyPaid = true;
-    } else {
-        // If either is not a number or totalAmount is not 0, and amountPaid is not sufficient, it's not fully paid
-        this.isFullyPaid = false;
+    // Recalculate only if relevant fields are modified or if it's a new document
+    if (this.isNew || this.isModified('subTotalAmount') || this.isModified('discountType') || this.isModified('discountValue')) {
+        if (this.discountType === 'percentage' && this.discountValue > 0 && this.subTotalAmount > 0) {
+            this.discountAmount = (this.subTotalAmount * this.discountValue) / 100;
+        } else if (this.discountType === 'fixed' && this.discountValue > 0) {
+            this.discountAmount = this.discountValue;
+        } else {
+            this.discountAmount = 0;
+            // If discount type is 'none', ensure value is also 0 for consistency
+            if (this.discountType === 'none') {
+                this.discountValue = 0;
+            }
+        }
+
+        // Ensure discount doesn't exceed subtotal
+        if (this.discountAmount > this.subTotalAmount) {
+            this.discountAmount = this.subTotalAmount;
+        }
+        // Round discount amount to 2 decimal places
+        this.discountAmount = parseFloat(this.discountAmount.toFixed(2));
+
+
+        this.totalAmount = this.subTotalAmount - this.discountAmount;
+        // Round total amount
+        this.totalAmount = parseFloat(this.totalAmount.toFixed(2));
+
+        // Ensure total amount is not negative
+        if (this.totalAmount < 0) {
+            this.totalAmount = 0;
+        }
     }
 
-    // Alternative: If you track isPaid per item and want to derive from that
-    // if (this.items && this.items.length > 0) {
-    //     this.isFullyPaid = this.items.every(item => item.isPaid);
-    // }
+    // Update isFullyPaid
+    if (typeof this.totalAmount === 'number' && typeof this.amountPaid === 'number') {
+        this.isFullyPaid = this.amountPaid >= this.totalAmount;
+    } else if (this.totalAmount === 0 && this.subTotalAmount > 0) { // If total became 0 due to full discount
+        this.isFullyPaid = true; // Consider it paid if fully discounted
+    } else if (this.totalAmount === 0 && this.subTotalAmount === 0) { // If order was $0 to begin with
+         this.isFullyPaid = true;
+    }
+    else {
+        this.isFullyPaid = false;
+    }
     next();
 });
 
