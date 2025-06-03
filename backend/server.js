@@ -10,6 +10,7 @@ import authRoutes from './routes/authRoutes.js';
 import customerRoutes from './routes/customerRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js'; // <<--- 1. MAKE SURE THIS IMPORT IS PRESENT AND CORRECT
+import adminNotificationRoutes from './routes/adminNotificationRoutes.js';
 
 dotenv.config();
 connectDB();
