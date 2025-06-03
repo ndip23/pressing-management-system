@@ -68,7 +68,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                             <div className="pt-3 pb-1 px-3">
                                 <span className="text-xs font-semibold text-apple-gray-500 dark:text-apple-gray-400 uppercase">Admin</span>
                             </div>
-                            <NavItem to="/admin/users" icon={Users}>Manage Users</NavItem>
+                            <NavItem to="/admin/customers" icon={Users}>Customers</NavItem>
                             <NavItem to="/admin/settings" icon={Settings}>Settings</NavItem>
                         </>
                     )}

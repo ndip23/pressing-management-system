@@ -1,4 +1,3 @@
-// client/src/pages/Orders/OrderDetailsPage.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { fetchOrderById, updateExistingOrder, sendManualNotification } from '../../services/api';
@@ -9,6 +8,7 @@ import OrderStatusBadge from '../../components/Dashboard/OrderStatusBadge';
 import { ArrowLeft, Edit3, Printer, DollarSign, MessageSquare, AlertTriangle, CheckCircle2, Clock3, RefreshCw } from 'lucide-react';
 import { format, parseISO, isPast } from 'date-fns';
 
+// DetailItem for on-screen display
 const DetailItem = ({ label, value, className = "", children }) => (
     <div className={`py-3 sm:grid sm:grid-cols-3 sm:gap-4 border-b border-apple-gray-100 dark:border-apple-gray-800 last:border-b-0 ${className}`}>
         <dt className="text-sm font-medium text-apple-gray-500 dark:text-apple-gray-400">{label}</dt>
@@ -23,9 +23,9 @@ const OrderDetailsPage = () => {
     const navigate = useNavigate();
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(''); // For initial page load errors
-    const [actionError, setActionError] = useState(''); // For errors from button actions
-    const [actionSuccess, setActionSuccess] = useState(''); // For success messages from button actions
+    const [error, setError] = useState('');
+    const [actionError, setActionError] = useState('');
+    const [actionSuccess, setActionSuccess] = useState('');
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
     const [isSendingNotification, setIsSendingNotification] = useState(false);
 
@@ -35,7 +35,7 @@ const OrderDetailsPage = () => {
     const loadOrder = useCallback(async (showLoadingSpinner = true) => {
         if (showLoadingSpinner) setLoading(true);
         setError('');
-        setActionError(''); // Clear previous action messages on reload
+        setActionError('');
         setActionSuccess('');
         try {
             const { data } = await fetchOrderById(id);
@@ -52,38 +52,32 @@ const OrderDetailsPage = () => {
         loadOrder();
     }, [loadOrder]);
 
-    // Effect to clear action messages after a delay
     useEffect(() => {
         let timer;
         if (actionSuccess || actionError) {
             timer = setTimeout(() => {
                 setActionSuccess('');
                 setActionError('');
-            }, 5000); // Clear messages after 5 seconds
+            }, 5000);
         }
         return () => clearTimeout(timer);
     }, [actionSuccess, actionError]);
-
 
     const handlePrintReceipt = () => window.print();
 
     const handleUpdateStatus = async (newStatus) => {
         if (!order || isUpdatingStatus) return;
         setIsUpdatingStatus(true);
-        setActionError(''); setActionSuccess(''); // Clear previous messages
+        setActionError(''); setActionSuccess('');
         try {
             const payload = { status: newStatus };
             if (newStatus === 'Completed' && !order.actualPickupDate) {
                 payload.actualPickupDate = new Date().toISOString();
             }
             const { data: updatedOrder } = await updateExistingOrder(order._id, payload);
-            setOrder(updatedOrder); // Update local state with the full response from backend
+            setOrder(updatedOrder);
             let successMsg = `Order status updated to ${newStatus}.`;
-            // Check if automated notification was sent by backend
-            if (newStatus === 'Ready for Pickup' && updatedOrder.notified && updatedOrder.notificationMethod && 
-                updatedOrder.notificationMethod !== 'none' && 
-                !updatedOrder.notificationMethod.startsWith('failed-') && 
-                !updatedOrder.notificationMethod.startsWith('no-contact')) {
+            if (newStatus === 'Ready for Pickup' && updatedOrder.notified) {
                 successMsg += ` Customer notification sent via ${updatedOrder.notificationMethod.replace('manual-', '')}.`;
             }
             setActionSuccess(successMsg);
@@ -96,11 +90,6 @@ const OrderDetailsPage = () => {
         }
     };
 
-    const handleRecordPayment = () => {
-        setActionError(''); setActionSuccess('');
-        alert("Record Payment UI/Modal to be implemented. This would involve updating 'amountPaid' and potentially calling updateExistingOrder.");
-    };
-
     const handleSendNotification = async () => {
         if (!order || !order.customer || (!order.customer.email && !order.customer.phone)) {
             setActionError("Customer contact information (email or phone) is missing.");
@@ -111,9 +100,9 @@ const OrderDetailsPage = () => {
         setIsSendingNotification(true);
         setActionError(''); setActionSuccess('');
         try {
-            const { data } = await sendManualNotification(order._id); // API call
-            setOrder(data.order); // Update local order state with response from backend
-            setActionSuccess(data.message); // Use backend's specific success message
+            const { data } = await sendManualNotification(order._id);
+            setOrder(data.order);
+            setActionSuccess(data.message);
         } catch (err) {
             const errMsg = err.response?.data?.message || err.message || "Failed to send notification.";
             setActionError(errMsg);
@@ -133,7 +122,8 @@ const OrderDetailsPage = () => {
             </Card>
         </div>
     );
-    if (!order) return null; // Should not happen if loading and error states are handled
+
+    if (!order) return null;
 
     const isOrderOverdue = order.expectedPickupDate && isPast(parseISO(order.expectedPickupDate)) && !['Completed', 'Cancelled'].includes(order.status);
     const canSendNotification = order.customer && (order.customer.email || order.customer.phone);
@@ -157,7 +147,6 @@ const OrderDetailsPage = () => {
                 </div>
             </div>
 
-            {/* Overdue Card */}
             {isOrderOverdue && (
                 <Card className="bg-red-100 dark:bg-red-900/40 border-2 border-red-400 dark:border-red-600 shadow-lg animate-pulse-slow">
                     <div className="flex items-center p-4">
@@ -170,7 +159,6 @@ const OrderDetailsPage = () => {
                 </Card>
             )}
 
-            {/* Action Success/Error Messages */}
             {actionSuccess && (
                 <div className="p-3 mb-4 bg-green-100 text-apple-green rounded-apple border border-green-300 dark:border-green-700 dark:text-green-300 dark:bg-green-900/30">
                     <div className="flex items-center"><CheckCircle2 size={20} className="mr-2 flex-shrink-0" /><span>{actionSuccess}</span></div>
@@ -215,17 +203,16 @@ const OrderDetailsPage = () => {
                         {order.createdBy && <DetailItem label="Processed By" value={order.createdBy?.username || 'Staff'} />}
                         <DetailItem label="Notification Sent">
                             {order.notified
-                                ? `Yes, via ${order.notificationMethod && order.notificationMethod !== 'none' && !order.notificationMethod.startsWith('failed-') && !order.notificationMethod.startsWith('no-') ? order.notificationMethod.replace('manual-', '') : 'auto (check logs)'}`
+                                ? `Yes, via ${order.notificationMethod && order.notificationMethod !== 'none' ? order.notificationMethod.replace('manual-', '') : 'auto (check logs)'}`
                                 : 'No'
                             }
-                            {(order.notificationMethod?.startsWith('failed-') || order.notificationMethod?.startsWith('no-')) && <span className="text-xs text-apple-red ml-1">({order.notificationMethod.replace('-auto','').replace('-manual','')})</span>}
                         </DetailItem>
                     </Card>
 
                     <Card title="Customer Information" contentClassName="p-4 sm:p-6 divide-y divide-apple-gray-100 dark:divide-apple-gray-800">
                         <DetailItem label="Name" value={order.customer?.name} />
                         <DetailItem label="Phone" value={order.customer?.phone} />
-                        <DetailItem label="Email" value={order.customer?.email || 'N/A'} /> {/* Explicit N/A for email */}
+                        <DetailItem label="Email" value={order.customer?.email || 'N/A'} />
                         <DetailItem label="Address" value={order.customer?.address} />
                     </Card>
                 </div>
@@ -268,7 +255,7 @@ const OrderDetailsPage = () => {
                                 ))}
                             </div>
                             <hr className="my-3 border-apple-gray-200 dark:border-apple-gray-700"/>
-                            <Button variant="secondary" className="w-full" iconLeft={<DollarSign size={16}/>} onClick={handleRecordPayment}>Record Payment</Button>
+                            <Button variant="secondary" className="w-full" iconLeft={<DollarSign size={16}/>} onClick={() => alert("Record Payment UI/Modal to be implemented.")}>Record Payment</Button>
                             <Button
                                 variant="secondary"
                                 className="w-full"

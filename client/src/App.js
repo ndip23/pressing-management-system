@@ -12,6 +12,9 @@ const OrderDetailsPage = lazy(() => import('./pages/Orders/OrderDetailsPage'));
 const EditOrderPage = lazy(() => import('./pages/Orders/EditOrderPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const SettingsPage = lazy(() => import('./pages/Admin/SettingsPage.js')); // <--- ADDED IMPORT
+const CustomerListPage = lazy(() => import('./pages/Customers/CustomerListPage'));
+const CustomerFormPage = lazy(() => import('./pages/Customers/CustomerFormPage'));
+const CustomerDetailsPage = lazy(() => import('./pages/Customers/CustomerDetailsPage'));
 
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated, loading } = useAuth();
@@ -45,6 +48,12 @@ function App() {
                         <Route path="orders/new" element={<CreateOrderPage />} />
                         <Route path="orders/:id" element={<OrderDetailsPage />} />
                         <Route path="orders/:id/edit" element={<EditOrderPage />} />
+                        {/* Customer Routes */}
+                        <Route path="customers" element={<CustomerListPage />} />
+                        <Route path="customers/new" element={<CustomerFormPage mode="create" />} />
+                        <Route path="customers/:id/edit" element={<CustomerFormPage mode="edit" />} />
+                        <Route path="customers/:id/details" element={<CustomerDetailsPage />} />
+                        {/* Admin Routes */}
                         <Route
                             path="admin/settings" // <--- ADDED ROUTE
                             element={
