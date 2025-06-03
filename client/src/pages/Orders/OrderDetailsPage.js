@@ -1,12 +1,27 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { fetchOrderById, updateExistingOrder, sendManualNotification } from '../../services/api';
+import { fetchOrderById, updateExistingOrder, sendManualNotification, createNewOrder, fetchCustomers } from '../../services/api';
 import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
 import OrderStatusBadge from '../../components/Dashboard/OrderStatusBadge';
-import { ArrowLeft, Edit3, Printer, DollarSign, MessageSquare, AlertTriangle, CheckCircle2, Clock3, RefreshCw } from 'lucide-react';
-import { format, parseISO, isPast } from 'date-fns';
+import { ArrowLeft, Edit3, Printer, DollarSign, MessageSquare, AlertTriangle, CheckCircle2, Clock3, RefreshCw, Plus, UserPlus, UserCheck, CheckSquare } from 'lucide-react';
+import { format, parseISO, isPast, isValid as isValidDate } from 'date-fns';
+import Modal from '../UI/Modal';
+import Input from '../UI/Input';
+import Select from '../UI/Select';
+import DatePicker from '../UI/DatePicker';
+import OrderItemRow from './OrderItemRow';
+
+// Mock data (to be replaced with dynamic data)
+const MOCK_ITEM_TYPES = ['Shirt', 'Trousers', 'Suit', 'Dress', 'Blouse', 'Jacket', 'Bedding', 'Scarf', 'Tie', 'Coat', 'Other'];
+const MOCK_SERVICE_TYPES = [
+    { value: 'wash', label: 'Wash' },
+    { value: 'dry clean', label: 'Dry Clean' },
+    { value: 'iron', label: 'Iron Only' },
+    { value: 'wash & iron', label: 'Wash & Iron' },
+    { value: 'special care', label: 'Special Care' },
+];
 
 const DetailItem = ({ label, value, className = "", children }) => (
     <div className={`py-3 sm:grid sm:grid-cols-3 sm:gap-4 border-b border-apple-gray-100 dark:border-apple-gray-800 last:border-b-0 ${className}`}>
@@ -27,12 +42,11 @@ const OrderDetailsPage = () => {
     const [actionSuccess, setActionSuccess] = useState('');
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
     const [isSendingNotification, setIsSendingNotification] = useState(false);
+    const dateTimeFormat = 'MMM d, yyyy, h:mm a'; // Format for date and time
 
     const loadOrder = useCallback(async (showLoadingSpinner = true) => {
         if (showLoadingSpinner) setLoading(true);
-        setError(''); 
-        setActionError(''); 
-        setActionSuccess('');
+        setError(''); setActionError(''); setActionSuccess('');
         try {
             const { data } = await fetchOrderById(id);
             setOrder(data);
@@ -51,10 +65,7 @@ const OrderDetailsPage = () => {
     useEffect(() => {
         let timer;
         if (actionSuccess || actionError) {
-            timer = setTimeout(() => {
-                setActionSuccess('');
-                setActionError('');
-            }, 5000);
+            timer = setTimeout(() => { setActionSuccess(''); setActionError(''); }, 5000);
         }
         return () => clearTimeout(timer);
     }, [actionSuccess, actionError]);
@@ -63,9 +74,7 @@ const OrderDetailsPage = () => {
 
     const handleUpdateStatus = async (newStatus) => {
         if (!order || isUpdatingStatus) return;
-        setIsUpdatingStatus(true);
-        setActionError('');
-        setActionSuccess('');
+        setIsUpdatingStatus(true); setActionError(''); setActionSuccess('');
         try {
             const payload = { status: newStatus };
             if (newStatus === 'Completed' && !order.actualPickupDate) {
@@ -148,20 +157,18 @@ const OrderDetailsPage = () => {
                 </div>
             </div>
 
-            {/* Overdue Card */}
             {isOrderOverdue && (
                 <Card className="bg-red-100 dark:bg-red-900/40 border-2 border-red-400 dark:border-red-600 shadow-lg animate-pulse-slow">
                     <div className="flex items-center p-4">
                         <AlertTriangle size={32} className="text-red-600 dark:text-red-400 mr-4 flex-shrink-0" />
                         <div>
                             <h3 className="text-lg font-semibold text-red-700 dark:text-red-300">This Order is Overdue!</h3>
-                            {order.expectedPickupDate && <p className="text-sm text-red-600 dark:text-red-500">Expected pickup was: {format(parseISO(order.expectedPickupDate), 'MMM d, yyyy, h:mm a')}</p>}
+                            {order.expectedPickupDate && <p className="text-sm text-red-600 dark:text-red-500">Expected pickup was: {format(parseISO(order.expectedPickupDate), dateTimeFormat)}</p>}
                         </div>
                     </div>
                 </Card>
             )}
 
-            {/* Action Success/Error Messages */}
             {actionSuccess && (
                 <div className="p-3 mb-4 bg-green-100 text-apple-green rounded-apple border border-green-300 dark:border-green-700 dark:text-green-300 dark:bg-green-900/30">
                     <div className="flex items-center"><CheckCircle2 size={20} className="mr-2 flex-shrink-0" /><span>{actionSuccess}</span></div>
@@ -180,16 +187,25 @@ const OrderDetailsPage = () => {
                         <DetailItem label="Drop-off Date" value={order.dropOffDate ? format(parseISO(order.dropOffDate), 'MMM d, yyyy, h:mm a') : 'N/A'} />
                         <DetailItem label="Expected Pickup" value={order.expectedPickupDate ? format(parseISO(order.expectedPickupDate), 'MMM d, yyyy, h:mm a') : 'N/A'} />
                         {order.actualPickupDate && <DetailItem label="Actual Pickup" value={format(parseISO(order.actualPickupDate), 'MMM d, yyyy, h:mm a')} />}
-                        <DetailItem label="Total Amount" value={`${order.defaultCurrencySymbol || '$'}${(order.totalAmount || 0).toFixed(2)}`} />
+                        <DetailItem label="Subtotal" value={`${order.defaultCurrencySymbol || '$'}${(order.subTotalAmount || 0).toFixed(2)}`} />
+                        {order.discountType !== 'none' && order.discountAmount > 0 && (
+                            <DetailItem
+                                label={`Discount (${order.discountType === 'percentage' ? `${order.discountValue}%` : 'Fixed Amount'})`}
+                                value={`-${order.defaultCurrencySymbol || '$'}${(order.discountAmount || 0).toFixed(2)}`}
+                                className="text-orange-600 dark:text-orange-400"
+                            />
+                        )}
+                        <DetailItem label="Final Total" value={`${order.defaultCurrencySymbol || '$'}${(order.totalAmount || 0).toFixed(2)}`} className="font-semibold text-lg" />
+                        <DetailItem label="Amount Paid" value={`${order.defaultCurrencySymbol || '$'}${(order.amountPaid || 0).toFixed(2)}`} />
                         <DetailItem label="Payment Status">
                             {order.isFullyPaid ?
                                 <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-apple-green dark:bg-green-900/50 dark:text-green-400"><CheckCircle2 size={14} className="mr-1"/> Paid</span> :
                                 <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-100 text-apple-orange dark:bg-yellow-900/50 dark:text-yellow-400"><Clock3 size={14} className="mr-1"/> Unpaid</span>
                             }
-                            {order.amountPaid > 0 && <span className="ml-2 text-xs text-apple-gray-500 dark:text-apple-gray-400">(${(order.amountPaid || 0).toFixed(2)} received)</span>}
+                            {order.amountPaid > 0 && <span className="ml-2 text-xs text-apple-gray-500 dark:text-apple-gray-400">(${(order.totalAmount - order.amountPaid).toFixed(2)} due)</span>}
                         </DetailItem>
                         {order.notes && <DetailItem label="Order Notes" value={order.notes} />}
-                        {order.createdBy && <DetailItem label="Created By" value={order.createdBy?.username || 'Staff'} />}
+                        {order.createdBy && <DetailItem label="Processed By" value={order.createdBy?.username || 'Staff'} />}
                         <DetailItem label="Notification Sent">
                             {order.notified
                                 ? `Yes, via ${order.notificationMethod && order.notificationMethod !== 'none' && !order.notificationMethod.startsWith('failed-') && !order.notificationMethod.startsWith('no-') ? order.notificationMethod.replace('manual-', '') : 'auto (check logs)'}`
@@ -209,19 +225,36 @@ const OrderDetailsPage = () => {
 
                 <div className="lg:col-span-1 space-y-6">
                     <Card title="Items in Order" contentClassName="p-4 sm:p-6">
-                        {/* Render order items here */}
+                        {order.items && order.items.length > 0 ? (
+                            <ul className="divide-y divide-apple-gray-200 dark:divide-apple-gray-700">
+                                {order.items.map((item, index) => (
+                                    <li key={item._id || index} className="py-3">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <p className="text-sm font-medium text-apple-gray-900 dark:text-apple-gray-100">{item.quantity}x {item.itemType}</p>
+                                                <p className="text-xs text-apple-gray-500 dark:text-apple-gray-400">Service: {item.serviceType}</p>
+                                            </div>
+                                        </div>
+                                        {item.specialInstructions && <p className="mt-1 text-xs italic text-apple-gray-600 dark:text-apple-gray-400">Instructions: {item.specialInstructions}</p>}
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : <p className="text-sm text-apple-gray-500 dark:text-apple-gray-400">No items found.</p>}
                     </Card>
 
                     <Card title="Order Actions" contentClassName="p-4 sm:p-6">
                         <div className="space-y-3">
                             <h4 className="text-sm font-medium mb-1 text-apple-gray-600 dark:text-apple-gray-300">Update Status:</h4>
-                            <div className="flex space-x-2">
-                                {['Pending', 'Ready for Pickup', 'Completed', 'Cancelled'].map(status => (
+                            <div className="grid grid-cols-2 gap-2"> {/* Changed to grid for better layout */}
+                                {['Pending', 'Processing', 'Ready for Pickup', 'Completed', 'Cancelled'].map(status => (
                                     <Button
                                         key={status}
-                                        variant="secondary"
+                                        variant={order.status === status ? "primary" : "secondary"} // Highlight active status
+                                        size="sm"
                                         onClick={() => handleUpdateStatus(status)}
                                         disabled={isUpdatingStatus || order.status === status}
+                                        isLoading={isUpdatingStatus && order.status !== status} // Show loading on button being clicked
+                                        className="w-full"
                                     >
                                         {status}
                                     </Button>
@@ -247,4 +280,4 @@ const OrderDetailsPage = () => {
     );
 };
 
-export default OrderDetailsPage;
+export default OrderDetailsPage; 
