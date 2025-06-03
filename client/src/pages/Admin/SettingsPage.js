@@ -1,11 +1,11 @@
-// client/src/pages/Admin/SettingsPage.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { fetchAppSettings, updateAppSettingsApi } from '../../services/api';
 import Card from '../../components/UI/Card';
 import Input from '../../components/UI/Input';
 import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
-import { Save, Settings as SettingsIcon, AlertTriangle, CheckCircle2 } from 'lucide-react'; // Added CheckCircle2
+import Select from '../../components/UI/Select'; // Added Select for preferred channel
+import { Save, Settings as SettingsIcon, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 const SettingsPage = () => {
     const [settings, setSettings] = useState({
@@ -14,9 +14,12 @@ const SettingsPage = () => {
             subject: '',
             readyForPickupBody: '',
             manualReminderSubject: '',
-            manualReminderBody: ''
+            manualReminderBody: '',
+            whatsappOrderReadySid: '',
+            whatsappManualReminderSid: ''
         },
         defaultCurrencySymbol: 'FCFA',
+        preferredNotificationChannel: 'whatsapp',
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -31,7 +34,8 @@ const SettingsPage = () => {
             setSettings(prev => ({
                 companyInfo: { ...(prev.companyInfo || {}), ...(data.companyInfo || {}) },
                 notificationTemplates: { ...(prev.notificationTemplates || {}), ...(data.notificationTemplates || {}) },
-                defaultCurrencySymbol: data.defaultCurrencySymbol || prev.defaultCurrencySymbol || '$',
+                defaultCurrencySymbol: data.defaultCurrencySymbol || prev.defaultCurrencySymbol || 'FCFA',
+                preferredNotificationChannel: data.preferredNotificationChannel || prev.preferredNotificationChannel || 'whatsapp',
             }));
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to load settings. Please try again.');
@@ -60,82 +64,58 @@ const SettingsPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("handleSubmit called");
-
         setSaving(true);
         setError('');
         setSuccessMessage('');
 
-        const payload = {
-            companyInfo: settings.companyInfo,
-            notificationTemplates: settings.notificationTemplates,
-            defaultCurrencySymbol: settings.defaultCurrencySymbol,
-        };
-        if (payload.singletonKey) delete payload.singletonKey;
-        if (payload._id) delete payload._id;
-        if (payload.__v) delete payload.__v;
-        if (payload.createdAt) delete payload.createdAt;
-        if (payload.updatedAt) delete payload.updatedAt;
-
-        console.log('Frontend: Submitting settings payload:', JSON.stringify(payload, null, 2));
+        const payload = { ...settings };
+        // Remove fields not intended for direct update
+        ['singletonKey', '_id', '__v', 'createdAt', 'updatedAt'].forEach(key => delete payload[key]);
 
         try {
             const response = await updateAppSettingsApi(payload);
-            console.log('Frontend: API response object received:', response);
 
             if (response && response.data) {
                 const updatedSettingsResponse = response.data;
-                console.log('Frontend: Extracted response.data:', JSON.stringify(updatedSettingsResponse, null, 2));
-
                 setSettings(prev => ({
                     companyInfo: { ...(prev.companyInfo || {}), ...(updatedSettingsResponse.companyInfo || {}) },
                     notificationTemplates: { ...(prev.notificationTemplates || {}), ...(updatedSettingsResponse.notificationTemplates || {}) },
-                    defaultCurrencySymbol: updatedSettingsResponse.defaultCurrencySymbol || prev.defaultCurrencySymbol || '$',
+                    defaultCurrencySymbol: updatedSettingsResponse.defaultCurrencySymbol || prev.defaultCurrencySymbol || 'FCFA',
+                    preferredNotificationChannel: updatedSettingsResponse.preferredNotificationChannel || prev.preferredNotificationChannel || 'whatsapp',
                 }));
                 setSuccessMessage('Settings saved successfully!');
-                console.log("Frontend: setSuccessMessage called with 'Settings saved successfully!'");
             } else {
-                console.error('Frontend: API call successful, but invalid response structure.', response);
                 setError('Received an unexpected response from the server when saving.');
             }
         } catch (err) {
             const errorMessage = err.response?.data?.message || err.message || 'Failed to save settings. Please try again.';
             setError(errorMessage);
-            console.error("Frontend: Save settings error caught:", err.response || err.message || err);
+            console.error("Save settings error caught:", err.response || err.message || err);
         } finally {
             setSaving(false);
-            // The useEffect for message clearing is more reliable than logging state here due to async nature
         }
     };
 
+    // Handle success and error message clearing
     useEffect(() => {
         let successTimerId;
         let errorTimerId;
 
         if (successMessage) {
-            console.log("useEffect [successMessage]: successMessage is now:", successMessage);
-            successTimerId = setTimeout(() => {
-                console.log("useEffect [successMessage]: Clearing successMessage");
-                setSuccessMessage('');
-            }, 4000); // Clear success after 4 seconds
+            successTimerId = setTimeout(() => setSuccessMessage(''), 4000);
         }
 
         if (error) {
-            console.log("useEffect [error]: error is now:", error);
-            // Only set a timer to clear error if there isn't a success message currently displayed
-            // This prevents an error from immediately clearing a success message if both were set close together
             if (!successMessage) {
-                errorTimerId = setTimeout(() => {
-                    console.log("useEffect [error]: Clearing error");
-                    setError('');
-                }, 7000); // Clear error after 7 seconds
+                errorTimerId = setTimeout(() => setError(''), 7000);
             }
         }
-        return () => { // Cleanup function
+
+        return () => {
             clearTimeout(successTimerId);
             clearTimeout(errorTimerId);
         };
-    }, [successMessage, error]); // Dependencies for this effect
+    }, [successMessage, error]);
 
     if (loading) {
         return (
@@ -145,9 +125,9 @@ const SettingsPage = () => {
         );
     }
 
-    if (error && (!settings || !settings.companyInfo)) { // If initial load failed badly
+    if (error && (!settings || !settings.companyInfo)) {
         return (
-             <div className="space-y-6">
+            <div className="space-y-6">
                 <div className="flex items-center space-x-3 mb-6">
                     <SettingsIcon size={28} className="text-apple-blue" />
                     <h1 className="text-2xl sm:text-3xl font-semibold text-apple-gray-800 dark:text-apple-gray-100">
@@ -172,16 +152,15 @@ const SettingsPage = () => {
                 </h1>
             </div>
 
-            {/* Message Display Area */}
             {successMessage && (
                 <div className="p-3 mb-4 bg-green-100 text-apple-green rounded-apple border border-green-300 dark:border-green-700 dark:text-green-300 dark:bg-green-900/30">
-                     <div className="flex items-center">
+                    <div className="flex items-center">
                         <CheckCircle2 size={20} className="mr-2 flex-shrink-0" />
                         <span>{successMessage}</span>
                     </div>
                 </div>
             )}
-            {error && !successMessage && ( // Show error only if there's no active success message
+            {error && !successMessage && (
                 <div className="p-3 mb-4 bg-red-100 text-apple-red rounded-apple border border-red-300 dark:border-red-700 dark:text-red-300 dark:bg-red-900/30">
                     <div className="flex items-center">
                         <AlertTriangle size={20} className="mr-2 flex-shrink-0" />
@@ -189,7 +168,6 @@ const SettingsPage = () => {
                     </div>
                 </div>
             )}
-
 
             <form onSubmit={handleSubmit}>
                 <Card title="Company Information" className="mb-8 shadow-apple-md">
@@ -233,7 +211,7 @@ const SettingsPage = () => {
                         <label htmlFor="manualReminderSubject" className="block text-sm font-medium text-apple-gray-700 dark:text-apple-gray-300 mb-1">
                             Manual Reminder Email Subject
                         </label>
-                         <Input
+                        <Input
                             id="manualReminderSubject"
                             value={settings.notificationTemplates?.manualReminderSubject || ''}
                             onChange={(e) => handleDeepChange(['notificationTemplates', 'manualReminderSubject'], e.target.value)}
@@ -251,9 +229,9 @@ const SettingsPage = () => {
                             value={settings.notificationTemplates?.manualReminderBody || ''}
                             onChange={(e) => handleDeepChange(['notificationTemplates', 'manualReminderBody'], e.target.value)}
                         />
-                         <p className="mt-1 text-xs text-apple-gray-500 dark:text-apple-gray-400">
+                        <p className="mt-1 text-xs text-apple-gray-500 dark:text-apple-gray-400">
                             Available placeholders like above.
-                         </p>
+                        </p>
                     </div>
                 </Card>
 
@@ -265,10 +243,19 @@ const SettingsPage = () => {
                         onChange={(e) => handleDeepChange(['defaultCurrencySymbol'], e.target.value)}
                         className="max-w-xs"
                     />
+                    <Select
+                        label="Preferred Notification Channel"
+                        value={settings.preferredNotificationChannel}
+                        onChange={(e) => handleDeepChange(['preferredNotificationChannel'], e.target.value)}
+                        options={[
+                            { value: 'whatsapp', label: 'WhatsApp' },
+                            { value: 'email', label: 'Email' },
+                        ]}
+                    />
                 </Card>
 
                 <div className="flex justify-end pt-4">
-                    <Button type="submit" variant="primary" isLoading={saving} iconLeft={<Save size={18}/>}>
+                    <Button type="submit" variant="primary" isLoading={saving} iconLeft={<Save size={18} />}>
                         Save All Settings
                     </Button>
                 </div>
