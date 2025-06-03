@@ -1,27 +1,13 @@
+// client/src/pages/Orders/OrderDetailsPage.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { fetchOrderById, updateExistingOrder, sendManualNotification, createNewOrder, fetchCustomers } from '../../services/api';
+import { fetchOrderById, updateExistingOrder, sendManualNotification } from '../../services/api';
 import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
 import OrderStatusBadge from '../../components/Dashboard/OrderStatusBadge';
-import { ArrowLeft, Edit3, Printer, DollarSign, MessageSquare, AlertTriangle, CheckCircle2, Clock3, RefreshCw, Plus, UserPlus, UserCheck, CheckSquare } from 'lucide-react';
-import { format, parseISO, isPast, isValid as isValidDate } from 'date-fns';
-import Modal from '../UI/Modal';
-import Input from '../UI/Input';
-import Select from '../UI/Select';
-import DatePicker from '../UI/DatePicker';
-import OrderItemRow from './OrderItemRow';
-
-// Mock data (to be replaced with dynamic data)
-const MOCK_ITEM_TYPES = ['Shirt', 'Trousers', 'Suit', 'Dress', 'Blouse', 'Jacket', 'Bedding', 'Scarf', 'Tie', 'Coat', 'Other'];
-const MOCK_SERVICE_TYPES = [
-    { value: 'wash', label: 'Wash' },
-    { value: 'dry clean', label: 'Dry Clean' },
-    { value: 'iron', label: 'Iron Only' },
-    { value: 'wash & iron', label: 'Wash & Iron' },
-    { value: 'special care', label: 'Special Care' },
-];
+import { ArrowLeft, Edit3, Printer, DollarSign, MessageSquare, AlertTriangle, CheckCircle2, Clock3, RefreshCw } from 'lucide-react';
+import { format, parseISO, isPast } from 'date-fns';
 
 const DetailItem = ({ label, value, className = "", children }) => (
     <div className={`py-3 sm:grid sm:grid-cols-3 sm:gap-4 border-b border-apple-gray-100 dark:border-apple-gray-800 last:border-b-0 ${className}`}>
@@ -42,7 +28,9 @@ const OrderDetailsPage = () => {
     const [actionSuccess, setActionSuccess] = useState('');
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
     const [isSendingNotification, setIsSendingNotification] = useState(false);
-    const dateTimeFormat = 'MMM d, yyyy, h:mm a'; // Format for date and time
+
+    const dateTimeFormat = 'MMM d, yyyy, h:mm a';
+    const currencySymbol = '$'; // Assuming $; replace with settings context if available
 
     const loadOrder = useCallback(async (showLoadingSpinner = true) => {
         if (showLoadingSpinner) setLoading(true);
@@ -96,8 +84,7 @@ const OrderDetailsPage = () => {
     };
 
     const handleRecordPayment = () => {
-        setActionError('');
-        setActionSuccess('');
+        setActionError(''); setActionSuccess('');
         alert("Record Payment UI/Modal to be implemented.");
     };
 
@@ -107,10 +94,7 @@ const OrderDetailsPage = () => {
             return;
         }
         if (isSendingNotification) return;
-
-        setIsSendingNotification(true);
-        setActionError('');
-        setActionSuccess('');
+        setIsSendingNotification(true); setActionError(''); setActionSuccess('');
         try {
             const { data } = await sendManualNotification(order._id);
             setOrder(data.order);
@@ -184,25 +168,28 @@ const OrderDetailsPage = () => {
                 <div className="lg:col-span-2 space-y-6">
                     <Card title="Order Summary" contentClassName="p-4 sm:p-6 divide-y divide-apple-gray-100 dark:divide-apple-gray-800">
                         <DetailItem label="Current Status"><OrderStatusBadge status={order.status} /></DetailItem>
-                        <DetailItem label="Drop-off Date" value={order.dropOffDate ? format(parseISO(order.dropOffDate), 'MMM d, yyyy, h:mm a') : 'N/A'} />
-                        <DetailItem label="Expected Pickup" value={order.expectedPickupDate ? format(parseISO(order.expectedPickupDate), 'MMM d, yyyy, h:mm a') : 'N/A'} />
-                        {order.actualPickupDate && <DetailItem label="Actual Pickup" value={format(parseISO(order.actualPickupDate), 'MMM d, yyyy, h:mm a')} />}
-                        <DetailItem label="Subtotal" value={`${order.defaultCurrencySymbol || '$'}${(order.subTotalAmount || 0).toFixed(2)}`} />
+                        <DetailItem label="Order Placed" value={order.createdAt ? format(parseISO(order.createdAt), dateTimeFormat) : 'N/A'} />
+                        <DetailItem label="Drop-off" value={order.dropOffDate ? format(parseISO(order.dropOffDate), dateTimeFormat) : 'N/A'} />
+                        <DetailItem label="Expected Pickup" value={order.expectedPickupDate ? format(parseISO(order.expectedPickupDate), dateTimeFormat) : 'N/A'} />
+                        {order.actualPickupDate && <DetailItem label="Actual Pickup" value={format(parseISO(order.actualPickupDate), dateTimeFormat)} />}
+                        
+                        <DetailItem label="Subtotal" value={`${currencySymbol}${(order.subTotalAmount || 0).toFixed(2)}`} />
                         {order.discountType !== 'none' && order.discountAmount > 0 && (
                             <DetailItem
-                                label={`Discount (${order.discountType === 'percentage' ? `${order.discountValue}%` : 'Fixed Amount'})`}
-                                value={`-${order.defaultCurrencySymbol || '$'}${(order.discountAmount || 0).toFixed(2)}`}
+                                label={`Discount Applied (${order.discountType === 'percentage' ? `${order.discountValue}%` : 'Fixed Amount'})`}
+                                value={`-${currencySymbol}${(order.discountAmount || 0).toFixed(2)}`}
                                 className="text-orange-600 dark:text-orange-400"
                             />
                         )}
-                        <DetailItem label="Final Total" value={`${order.defaultCurrencySymbol || '$'}${(order.totalAmount || 0).toFixed(2)}`} className="font-semibold text-lg" />
-                        <DetailItem label="Amount Paid" value={`${order.defaultCurrencySymbol || '$'}${(order.amountPaid || 0).toFixed(2)}`} />
+                        <DetailItem label="Final Total Amount" value={`${currencySymbol}${(order.totalAmount || 0).toFixed(2)}`} className="font-semibold text-lg" />
+                        
+                        <DetailItem label="Amount Paid" value={`${currencySymbol}${(order.amountPaid || 0).toFixed(2)}`} />
                         <DetailItem label="Payment Status">
                             {order.isFullyPaid ?
                                 <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-apple-green dark:bg-green-900/50 dark:text-green-400"><CheckCircle2 size={14} className="mr-1"/> Paid</span> :
                                 <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-100 text-apple-orange dark:bg-yellow-900/50 dark:text-yellow-400"><Clock3 size={14} className="mr-1"/> Unpaid</span>
                             }
-                            {order.amountPaid > 0 && <span className="ml-2 text-xs text-apple-gray-500 dark:text-apple-gray-400">(${(order.totalAmount - order.amountPaid).toFixed(2)} due)</span>}
+                            {order.amountPaid > 0 && order.totalAmount > 0 && order.totalAmount > order.amountPaid && <span className="ml-2 text-xs text-apple-gray-500 dark:text-apple-gray-400">({currencySymbol}{(order.totalAmount - order.amountPaid).toFixed(2)} due)</span>}
                         </DetailItem>
                         {order.notes && <DetailItem label="Order Notes" value={order.notes} />}
                         {order.createdBy && <DetailItem label="Processed By" value={order.createdBy?.username || 'Staff'} />}
@@ -211,7 +198,7 @@ const OrderDetailsPage = () => {
                                 ? `Yes, via ${order.notificationMethod && order.notificationMethod !== 'none' && !order.notificationMethod.startsWith('failed-') && !order.notificationMethod.startsWith('no-') ? order.notificationMethod.replace('manual-', '') : 'auto (check logs)'}`
                                 : 'No'
                             }
-                            {(order.notificationMethod?.startsWith('failed-') || order.notificationMethod?.startsWith('no-')) && <span className="text-xs text-apple-red ml-1">({order.notificationMethod})</span>}
+                            {(order.notificationMethod?.startsWith('failed-') || order.notificationMethod?.startsWith('no-')) && <span className="text-xs text-apple-red ml-1">({order.notificationMethod.replace('-auto','').replace('-manual','')})</span>}
                         </DetailItem>
                     </Card>
 
@@ -245,15 +232,15 @@ const OrderDetailsPage = () => {
                     <Card title="Order Actions" contentClassName="p-4 sm:p-6">
                         <div className="space-y-3">
                             <h4 className="text-sm font-medium mb-1 text-apple-gray-600 dark:text-apple-gray-300">Update Status:</h4>
-                            <div className="grid grid-cols-2 gap-2"> {/* Changed to grid for better layout */}
+                            <div className="grid grid-cols-2 gap-2">
                                 {['Pending', 'Processing', 'Ready for Pickup', 'Completed', 'Cancelled'].map(status => (
                                     <Button
                                         key={status}
-                                        variant={order.status === status ? "primary" : "secondary"} // Highlight active status
+                                        variant={order.status === status ? "primary" : "secondary"}
                                         size="sm"
                                         onClick={() => handleUpdateStatus(status)}
-                                        disabled={isUpdatingStatus || order.status === status}
-                                        isLoading={isUpdatingStatus && order.status !== status} // Show loading on button being clicked
+                                        disabled={isUpdatingStatus || order.status === status || (order.status === 'Completed' && status !== 'Completed') || (order.status === 'Cancelled' && status !== 'Cancelled')}
+                                        isLoading={isUpdatingStatus && order.status !== status}
                                         className="w-full"
                                     >
                                         {status}
@@ -280,4 +267,4 @@ const OrderDetailsPage = () => {
     );
 };
 
-export default OrderDetailsPage; 
+export default OrderDetailsPage;
