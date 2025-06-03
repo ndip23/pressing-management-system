@@ -3,13 +3,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdminNotifications } from '../../contexts/NotificationContext';
-import { Bell, UserCircle, PlusCircle, Sun, Moon, Menu, AlertTriangle, LogOut, Search as SearchIcon, Settings as SettingsIconLucide, XCircle } from 'lucide-react'; // Added necessary icons
+import { Bell, UserCircle, Sun, Moon, Menu, AlertTriangle, LogOut, Settings as SettingsIconLucide, XCircle, PlusCircle } from 'lucide-react'; // Added PlusCircle for example icon
 import Button from '../UI/Button';
-import { formatDistanceToNowStrict } from 'date-fns'; // Use Strict for cleaner output
+import { formatDistanceToNowStrict, isValid as isValidDate } from 'date-fns'; // Import isValid
 
 const Navbar = ({ toggleSidebar }) => {
     const { user, logout } = useAuth();
-    const { notifications, unreadCount, markAsRead, clearAllNotifications } = useAdminNotifications();
+    const { notifications, unreadCount, markAsRead, clearAllNotifications, loadingNotifications } = useAdminNotifications();
     const [darkMode, setDarkMode] = useState(() => JSON.parse(localStorage.getItem('darkMode')) || false);
     const [showNotifications, setShowNotifications] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
@@ -24,7 +24,6 @@ const Navbar = ({ toggleSidebar }) => {
 
     const toggleDarkMode = () => setDarkMode(!darkMode);
 
-    // Close dropdowns if clicked outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (notificationRef.current && !notificationRef.current.contains(event.target)) {
@@ -38,36 +37,36 @@ const Navbar = ({ toggleSidebar }) => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    const handleBellClick = () => {
+        setShowNotifications(prevShow => !prevShow);
+        setShowUserMenu(false);
+    };
 
     const getIconForNotification = (type) => {
         switch (type) {
             case 'overdue_warning': return <AlertTriangle size={16} className="text-orange-500 mr-2 flex-shrink-0" />;
             case 'overdue_alert': return <AlertTriangle size={16} className="text-red-600 mr-2 flex-shrink-0" />;
-            case 'new_order': return <PlusCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />; // Assuming PlusCircle for new order
+            case 'new_order': return <PlusCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />;
             default: return <Bell size={16} className="text-apple-gray-500 mr-2 flex-shrink-0" />;
         }
     };
 
-
     return (
         <header className="sticky top-0 z-40 bg-white/80 dark:bg-apple-gray-900/80 backdrop-blur-apple shadow-apple-sm">
             <div className="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
+                {/* Left side */}
                 <div className="flex items-center">
-                    <Button variant="ghost" size="sm" onClick={toggleSidebar} className="p-1.5 mr-2 lg:hidden" aria-label="Toggle Sidebar">
-                        <Menu size={22} />
-                    </Button>
+                    <Button variant="ghost" size="sm" onClick={toggleSidebar} className="p-1.5 mr-2 lg:hidden" aria-label="Toggle Sidebar"><Menu size={22} /></Button>
                     <Link to="/" className="text-xl font-semibold text-apple-blue dark:text-apple-blue-light hidden sm:block">PressFlow</Link>
                 </div>
 
+                {/* Right side icons */}
                 <div className="flex items-center space-x-2 sm:space-x-3">
-                    <Button variant="ghost" size="sm" onClick={toggleDarkMode} className="p-1.5" aria-label="Toggle Dark Mode">
-                        {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-                    </Button>
+                    <Button variant="ghost" size="sm" onClick={toggleDarkMode} className="p-1.5" aria-label="Toggle Dark Mode">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</Button>
 
-                    {/* Notifications Bell and Dropdown */}
-                    {user?.role === 'admin' && ( // Only show bell for admins
+                    {user?.role === 'admin' && (
                         <div className="relative" ref={notificationRef}>
-                            <Button variant="ghost" size="sm" onClick={() => setShowNotifications(!showNotifications)} className="p-1.5" aria-label="View Notifications">
+                            <Button variant="ghost" size="sm" onClick={handleBellClick} className="p-1.5" aria-label="View Notifications" aria-expanded={showNotifications}>
                                 <Bell size={20} />
                                 {unreadCount > 0 && (
                                     <span className="absolute top-0 right-0 block h-4 w-4 transform -translate-y-1/2 translate-x-1/2">
@@ -82,21 +81,21 @@ const Navbar = ({ toggleSidebar }) => {
                                 <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-apple-gray-800 rounded-apple-lg shadow-apple-xl border border-apple-gray-200 dark:border-apple-gray-700 origin-top-right z-50 max-h-[calc(100vh-100px)] flex flex-col">
                                     <div className="flex justify-between items-center p-3 border-b border-apple-gray-200 dark:border-apple-gray-700">
                                         <h3 className="font-semibold text-apple-gray-800 dark:text-apple-gray-100">Notifications</h3>
-                                        {notifications.length > 0 && (
-                                            <Button variant="link" size="sm" onClick={() => { clearAllNotifications(); setShowNotifications(false);}} className="text-xs">Mark all as read</Button>
-                                        )}
+                                        {notifications.length > 0 && (<Button variant="link" size="sm" onClick={() => { clearAllNotifications(); setShowNotifications(false);}} className="text-xs">Mark all as read</Button>)}
                                     </div>
                                     <div className="overflow-y-auto flex-grow custom-scrollbar">
-                                        {notifications.length === 0 ? (
-                                            <p className="text-sm text-apple-gray-500 dark:text-apple-gray-400 text-center py-8 px-3">No new notifications.</p>
-                                        ) : (
-                                            notifications.map(notif => (
+                                        {loadingNotifications && <div className="p-4 text-center text-sm text-apple-gray-500">Loading notifications...</div>}
+                                        {!loadingNotifications && notifications.length === 0 && (<p className="text-sm text-apple-gray-500 dark:text-apple-gray-400 text-center py-8 px-3">No new notifications.</p>)}
+                                        {!loadingNotifications && notifications.map(notif => {
+                                            const dateToFormat = new Date(notif.timestamp); // Convert to Date object
+                                            const isValidTimestamp = notif.timestamp && isValidDate(dateToFormat); // Check validity
+                                            return (
                                                 <Link
-                                                    to={notif.link || '#!'} // Use #! for non-navigable links
-                                                    key={notif.id}
+                                                    to={notif.link || '#!'}
+                                                    key={notif._id || notif.id} // Prefer _id from MongoDB
                                                     onClick={(e) => {
-                                                        if (!notif.link || notif.link === '#!') e.preventDefault(); // Prevent navigation for placeholder links
-                                                        if (!notif.read) markAsRead(notif.id);
+                                                        if (!notif.link || notif.link === '#!') e.preventDefault();
+                                                        if (!notif.read) markAsRead(notif._id || notif.id);
                                                         if (notif.link && notif.link !== '#!') setShowNotifications(false);
                                                     }}
                                                     className={`block hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700/50 border-b border-apple-gray-100 dark:border-apple-gray-700/50 last:border-b-0 ${!notif.read ? 'bg-sky-50 dark:bg-sky-900/30' : ''}`}
@@ -108,17 +107,17 @@ const Navbar = ({ toggleSidebar }) => {
                                                                 {notif.message}
                                                             </p>
                                                             <p className="text-xs text-apple-gray-500 dark:text-apple-gray-400 mt-0.5">
-                                                                {formatDistanceToNowStrict(new Date(notif.timestamp), { addSuffix: true })}
+                                                                {isValidTimestamp
+                                                                    ? formatDistanceToNowStrict(dateToFormat, { addSuffix: true })
+                                                                    : 'Invalid date'} {/* Fallback for invalid dates */}
                                                             </p>
                                                         </div>
+                                                        {!notif.read && <span className="ml-2 mt-1 h-2 w-2 bg-apple-blue rounded-full flex-shrink-0"></span>}
                                                     </div>
                                                 </Link>
-                                            ))
-                                        )}
+                                            );
+                                        })}
                                     </div>
-                                    {/* <div className="p-2 border-t border-apple-gray-200 dark:border-apple-gray-700 text-center">
-                                        <Link to="/all-notifications" onClick={() => setShowNotifications(false)} className="text-xs text-apple-blue hover:underline">View All Notifications</Link>
-                                    </div> */}
                                 </div>
                             )}
                         </div>
@@ -126,34 +125,18 @@ const Navbar = ({ toggleSidebar }) => {
 
                     {/* User Profile Dropdown */}
                     <div className="relative" ref={userMenuRef}>
-                         <Button variant="ghost" size="sm" onClick={() => setShowUserMenu(!showUserMenu)} className="p-1 flex items-center space-x-1.5" aria-label="Open User Menu">
+                        <Button variant="ghost" size="sm" onClick={() => {setShowUserMenu(prev => !prev); setShowNotifications(false);}} className="p-1 flex items-center space-x-1.5" aria-label="Open User Menu" aria-expanded={showUserMenu}>
                             <UserCircle size={24} className="text-apple-gray-500 dark:text-apple-gray-400" />
-                            <span className="hidden md:inline text-sm font-medium text-apple-gray-700 dark:text-apple-gray-300">
-                                {user?.username || 'User'}
-                            </span>
+                            <span className="hidden md:inline text-sm font-medium text-apple-gray-700 dark:text-apple-gray-300">{user?.username || 'User'}</span>
                         </Button>
                         {showUserMenu && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-apple-gray-800 rounded-apple-md shadow-apple-lg py-1 origin-top-right z-50 border border-apple-gray-200 dark:border-apple-gray-700">
-                                <div className="px-4 py-3">
-                                    <p className="text-sm text-apple-gray-800 dark:text-apple-gray-100">Signed in as</p>
-                                    <p className="text-sm font-medium text-apple-gray-900 dark:text-apple-gray-50 truncate">{user?.username}</p>
-                                </div>
+                             <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-apple-gray-800 rounded-apple-md shadow-apple-lg py-1 origin-top-right z-50 border border-apple-gray-200 dark:border-apple-gray-700">
+                                <div className="px-4 py-3"><p className="text-sm">Signed in as</p><p className="text-sm font-medium truncate">{user?.username}</p></div>
                                 <div className="border-t border-apple-gray-200 dark:border-apple-gray-700"></div>
-                                <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center px-4 py-2 text-sm text-apple-gray-700 dark:text-apple-gray-200 hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700/50">
-                                    <UserCircle size={16} className="mr-2"/> My Profile
-                                </Link>
-                                {user?.role === 'admin' && (
-                                <Link to="/admin/settings" onClick={() => setShowUserMenu(false)} className="flex items-center px-4 py-2 text-sm text-apple-gray-700 dark:text-apple-gray-200 hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700/50">
-                                    <SettingsIconLucide size={16} className="mr-2"/> Settings
-                                </Link>
-                                )}
+                                <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center w-full text-left px-4 py-2 text-sm hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700/50"><UserCircle size={16} className="mr-2"/> My Profile</Link>
+                                {user?.role === 'admin' && (<Link to="/admin/settings" onClick={() => setShowUserMenu(false)} className="flex items-center w-full text-left px-4 py-2 text-sm hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700/50"><SettingsIconLucide size={16} className="mr-2"/> Settings</Link>)}
                                 <div className="border-t border-apple-gray-200 dark:border-apple-gray-700"></div>
-                                <button
-                                    onClick={() => { logout(); setShowUserMenu(false); }}
-                                    className="w-full text-left flex items-center px-4 py-2 text-sm text-apple-red hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700/50"
-                                >
-                                    <LogOut size={16} className="mr-2"/> Logout
-                                </button>
+                                <button onClick={() => { logout(); setShowUserMenu(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-apple-red hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700/50"><LogOut size={16} className="mr-2"/> Logout</button>
                             </div>
                         )}
                     </div>
