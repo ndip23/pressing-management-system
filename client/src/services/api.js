@@ -73,5 +73,16 @@ export const fetchAppSettings = async () => {
 export const updateAppSettingsApi = async (settingsData) => {
     return api.put('/settings', settingsData);
 };
+export const fetchAdminNotificationsApi = async () => {
+    return api.get('/admin-notifications');
+};
+
+export const markAdminNotificationReadApi = async (notificationId) => {
+    return api.put(`/admin-notifications/${notificationId}/read`);
+};
+
+export const markAllAdminNotificationsReadApi = async () => {
+    return api.put('/admin-notifications/read-all');
+};
 
 export default api;
