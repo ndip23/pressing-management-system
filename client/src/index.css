@@ -24,7 +24,7 @@
 @media print {
   body {
     -webkit-print-color-adjust: exact !important; /* Chrome, Safari */
-    color-adjust: exact !important; /* Standard */
+    print-color-adjust: exact !important; /* Standard */
     font-family: 'Arial', sans-serif; /* A common, legible font for print */
     font-size: 9pt; /* Base font size for print */
     line-height: 1.3;
