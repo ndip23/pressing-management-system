@@ -7,7 +7,7 @@ import {
     Users,      // Using Users icon for "Customers" link
     Settings,   // For Admin settings
     Package,    // For Logo
-    // CreditCard, // This was for a placeholder "Payments" link, remove if not used
+    CreditCard, // This was for a placeholder "Payments" link, remove if not used
     X           // For closing sidebar on mobile
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext'; // To conditionally show Admin section
