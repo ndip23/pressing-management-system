@@ -12,15 +12,14 @@ const OrderItemRow = ({
     onChange,
     itemTypes = [],
     serviceTypes = [],
-    calculatedPrice 
+    calculatedPrice
 }) => {
     const handleFieldChange = (field, value) => {
-        // Ensure quantity is parsed as a number and defaults to 1 if invalid
         const processedValue = field === 'quantity' ? (parseInt(value, 10) || 1) : value;
         onChange(item.id, field, processedValue);
     };
 
-    const currencySymbol = 'FCFA'; // Or fetch from a global settings context
+    const currencySymbol = 'FCFA'; // Using your example currency
 
     return (
         <div className="p-4 border border-apple-gray-200 dark:border-apple-gray-700 rounded-apple-md shadow-apple-sm bg-apple-gray-50 dark:bg-apple-gray-800/30">
@@ -31,16 +30,15 @@ const OrderItemRow = ({
                     onClick={onRemove}
                     variant="ghost"
                     size="sm"
-                    className="text-apple-red hover:bg-red-100/50 dark:hover:bg-red-900/30 p-1 -mr-1 -mt-1" // Adjusted for tighter fit
+                    className="text-apple-red hover:bg-red-100/50 dark:hover:bg-red-900/30 p-1 -mr-1 -mt-1"
                     title="Remove item"
                     aria-label={`Remove item ${index + 1}`}
                 >
                     <X size={18} />
                 </Button>
             </div>
-            {/* Using a 12-column grid for layout flexibility */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-x-4 gap-y-2 items-end">
-                <div className="md:col-span-3"> {/* Was 3 */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-x-4 gap-y-2 items-end"> {/* items-end for vertical alignment */}
+                <div className="md:col-span-3">
                     <Select
                         label="Item Type*"
                         id={`itemType-${item.id}`}
@@ -52,7 +50,7 @@ const OrderItemRow = ({
                         className="mb-0"
                     />
                 </div>
-                <div className="md:col-span-3"> {/* Was 3 */}
+                <div className="md:col-span-3">
                     <Select
                         label="Service Type*"
                         id={`serviceType-${item.id}`}
@@ -64,7 +62,7 @@ const OrderItemRow = ({
                         className="mb-0"
                     />
                 </div>
-                <div className="md:col-span-1"> {/* Was 2 */}
+                <div className="md:col-span-1">
                     <Input
                         label="Qty*"
                         id={`quantity-${item.id}`}
@@ -76,7 +74,7 @@ const OrderItemRow = ({
                         className="mb-0"
                     />
                 </div>
-                <div className="md:col-span-3"> {/* Was 4, adjusted to make space for price */}
+                <div className="md:col-span-3">
                      <Input
                         label="Special Instructions"
                         id={`specialInstructions-${item.id}`}
@@ -86,13 +84,15 @@ const OrderItemRow = ({
                         className="mb-0"
                     />
                 </div>
-                <div className="md:col-span-2"> {/* NEW: Price display, takes 2 columns */}
-                    <label htmlFor={`itemPrice-${item.id}`} className="block text-sm font-medium text-apple-gray-700 dark:text-apple-gray-300 mb-1">
+                {/* METHOD 1: ADD A VISIBLE LABEL */}
+                <div className="md:col-span-2">
+                    <label htmlFor={`itemPriceDisplay-${item.id}`} className="block text-sm font-medium text-apple-gray-700 dark:text-apple-gray-300 mb-1">
                         Line Price
                     </label>
                     <div
-                        id={`itemPrice-${item.id}`}
-                        className="h-10 flex items-center justify-end px-3 py-2 border border-apple-gray-300 dark:border-apple-gray-700 rounded-apple shadow-sm bg-apple-gray-100 dark:bg-apple-gray-800 text-apple-gray-700 dark:text-apple-gray-300 sm:text-sm"
+                        id={`itemPriceDisplay-${item.id}`} // Added id for label association
+                        className="h-10 flex items-center justify-end px-3 py-2 border border-apple-gray-300 dark:border-apple-gray-700 rounded-apple shadow-sm bg-apple-gray-100 dark:bg-apple-gray-800 text-apple-gray-700 dark:text-apple-gray-100 sm:text-sm"
+                        aria-label="Calculated line price"
                     >
                         <span className="font-medium">
                             {currencySymbol}{(calculatedPrice || 0).toFixed(2)}
