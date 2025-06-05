@@ -1,7 +1,7 @@
 // server/routes/reportRoutes.js
 import express from 'express';
 import { getDailyPaymentsReport } from '../controllers/paymentReportController.js';
-import { protect, authorize } from '../middleware/asyncHandler.js'; // Corrected import path
+import { protect, authorize } from '../middleware/authMiddleware.js'; // Corrected import path
 
 const router = express.Router();
 
