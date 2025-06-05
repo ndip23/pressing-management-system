@@ -12,6 +12,7 @@ const OrderDetailsPage = lazy(() => import('./pages/Orders/OrderDetailsPage'));
 const EditOrderPage = lazy(() => import('./pages/Orders/EditOrderPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const SettingsPage = lazy(() => import('./pages/Admin/SettingsPage.js')); // <--- ADDED IMPORT
+
 const CustomerListPage = lazy(() => import('./pages/Customers/CustomerListPage'));
 const CustomerFormPage = lazy(() => import('./pages/Customers/CustomerFormPage'));
 const CustomerDetailsPage = lazy(() => import('./pages/Customers/CustomerDetailsPage'));

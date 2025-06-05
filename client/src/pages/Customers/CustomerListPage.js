@@ -6,7 +6,7 @@ import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
 import Input from '../../components/UI/Input';
 import Spinner from '../../components/UI/Spinner';
-import { Users, PlusCircle,  Search, Edit3, Trash2, Eye, AlertTriangle, CheckCircle2 } from 'lucide-react'; // Added CheckCircle2 for success
+import { Users, PlusCircle, Search, Edit3, Trash2, Eye, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 const CustomerListPage = () => {
     const [customers, setCustomers] = useState([]);
@@ -16,24 +16,62 @@ const CustomerListPage = () => {
     const [deleteError, setDeleteError] = useState('');
     const [deleteSuccess, setDeleteSuccess] = useState('');
 
+    // States for pagination (if your backend supports it and returns these)
+    // const [currentPage, setCurrentPage] = useState(1);
+    // const [totalPages, setTotalPages] = useState(1);
+    // const [totalCustomers, setTotalCustomers] = useState(0);
+
     const loadCustomers = useCallback(async () => {
-        setLoading(true); setError('');
-        setDeleteError(''); setDeleteSuccess(''); // Clear action messages on reload
+        setLoading(true);
+        setError('');
+        // Clear previous action messages when reloading the list
+        setDeleteError('');
+        setDeleteSuccess('');
         try {
-            const { data } = await fetchCustomers(searchTerm);
-            setCustomers(data || []);
+            // If using pagination, pass currentPage and pageSize in searchTerm or as separate params
+            // const filters = { search: searchTerm, page: currentPage, pageSize: 10 };
+            // const { data } = await fetchCustomers(filters);
+
+            const { data } = await fetchCustomers(searchTerm); // Assuming searchTerm is the only filter for now
+            console.log("CustomerListPage: API Response Data:", data); // Crucial for debugging
+
+            if (data && Array.isArray(data.customers)) {
+                // Handles response like { customers: [...], page: 1, totalPages: 5, totalCustomers: 50 }
+                setCustomers(data.customers);
+                // setCurrentPage(data.page || 1);
+                // setTotalPages(data.pages || 1);
+                // setTotalCustomers(data.totalCustomers || 0);
+            } else if (data && Array.isArray(data)) {
+                // Handles response if API directly returns an array: [...]
+                setCustomers(data);
+                // Reset pagination if not provided by this response type
+                // setCurrentPage(1);
+                // setTotalPages(1);
+                // setTotalCustomers(data.length);
+            } else {
+                // Handles unexpected or empty responses
+                console.warn("CustomerListPage: Unexpected data structure from fetchCustomers or no data. Setting customers to empty array.", data);
+                setCustomers([]);
+                // Reset pagination
+                // setCurrentPage(1);
+                // setTotalPages(1);
+                // setTotalCustomers(0);
+            }
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to fetch customers.');
+            const errMsg = err.response?.data?.message || err.message || 'Failed to fetch customers.';
+            console.error("CustomerListPage: Fetch Customers Error:", err.response || err);
+            setError(errMsg);
+            setCustomers([]); // Ensure customers is an array on API error
         } finally {
             setLoading(false);
         }
-    }, [searchTerm]);
+    }, [searchTerm /*, currentPage */]); // Add currentPage if using pagination state
 
     useEffect(() => {
         loadCustomers();
     }, [loadCustomers]);
 
-    useEffect(() => { // To clear delete messages after a while
+    useEffect(() => {
         let timer;
         if (deleteError || deleteSuccess) {
             timer = setTimeout(() => {
@@ -50,61 +88,96 @@ const CustomerListPage = () => {
             try {
                 await deleteCustomerApi(customerId);
                 setDeleteSuccess(`Customer "${customerName}" deleted successfully.`);
-                loadCustomers(); // Refresh
+                loadCustomers(); // Refresh the list after deletion
             } catch (err) {
-                setDeleteError(err.response?.data?.message || `Failed to delete "${customerName}".`);
+                setDeleteError(err.response?.data?.message || `Failed to delete customer "${customerName}".`);
+                console.error("Delete Customer Error:", err);
             }
         }
     };
+
+    // const handleSearchChange = (e) => {
+    //     setSearchTerm(e.target.value);
+    //     setCurrentPage(1); // Reset to first page on new search
+    // };
 
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex items-center space-x-3">
                     <Users size={28} className="text-apple-blue" />
-                    <h1 className="text-2xl sm:text-3xl font-semibold">Manage Customers</h1>
+                    <h1 className="text-2xl sm:text-3xl font-semibold text-apple-gray-800 dark:text-apple-gray-100">Manage Customers</h1>
                 </div>
-                <Link to="/customers/new"><Button variant="primary" iconLeft={<PlusCircle size={18} />}>Add New Customer</Button></Link>
+                <Link to="/customers/new">
+                    <Button variant="primary" iconLeft={<PlusCircle size={18} />}>
+                        Add New Customer
+                    </Button>
+                </Link>
             </div>
 
             <Card>
-                <div className="p-4 border-b dark:border-apple-gray-700">
-                    <Input id="customerSearch" placeholder="Search by name, phone, or email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} prefixIcon={<Search size={16} />} className="mb-0" />
+                <div className="p-4 border-b border-apple-gray-200 dark:border-apple-gray-700">
+                    <Input
+                        id="customerSearch"
+                        placeholder="Search by name, phone, or email..."
+                        value={searchTerm}
+                        // onChange={handleSearchChange} // Use this if you implement setCurrentPage(1)
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        prefixIcon={<Search size={16} />}
+                        className="mb-0"
+                    />
                 </div>
 
-                {deleteSuccess && <div className="p-3 m-4 text-sm bg-green-100 text-apple-green rounded-apple flex items-center"><CheckCircle2 size={18} className="mr-2"/>{deleteSuccess}</div>}
-                {deleteError && <div className="p-3 m-4 text-sm bg-red-100 text-apple-red rounded-apple flex items-center"><AlertTriangle size={18} className="mr-2"/>{deleteError}</div>}
+                {deleteSuccess && (
+                    <div className="p-3 m-4 text-sm bg-green-100 text-apple-green rounded-apple border border-green-300 dark:border-green-700 dark:text-green-300 dark:bg-green-900/30">
+                        <div className="flex items-center"><CheckCircle2 size={18} className="mr-2"/>{deleteSuccess}</div>
+                    </div>
+                )}
+                {deleteError && (
+                    <div className="p-3 m-4 text-sm bg-red-100 text-apple-red rounded-apple border border-red-300 dark:border-red-700 dark:text-red-300 dark:bg-red-900/30">
+                        <div className="flex items-center"><AlertTriangle size={18} className="mr-2"/>{deleteError}</div>
+                    </div>
+                )}
 
-                {loading ? ( <div className="flex justify-center items-center h-64"><Spinner size="lg" /></div>
-                ) : error ? ( <div className="p-4 text-center text-apple-red">{error}</div>
-                ) : customers.length === 0 ? ( <div className="p-6 text-center text-apple-gray-500 dark:text-apple-gray-400">No customers found.{searchTerm && " Try adjusting your search."}</div>
+                {loading ? (
+                    <div className="flex justify-center items-center h-64"><Spinner size="lg" /></div>
+                ) : error ? (
+                    <div className="p-4 text-center text-apple-red bg-red-50 dark:bg-red-900/30 rounded-apple">
+                        <AlertTriangle size={24} className="mx-auto mb-2" />
+                        {error}
+                        <Button onClick={loadCustomers} variant="secondary" className="mt-3 ml-2">Try Again</Button>
+                    </div>
+                ) : customers.length === 0 ? (
+                    <div className="p-6 text-center text-apple-gray-500 dark:text-apple-gray-400">
+                        {searchTerm ? `No customers found matching "${searchTerm}".` : "No customers have been added yet."}
+                        {!searchTerm && <p className="mt-2"><Link to="/customers/new" className="text-apple-blue hover:underline">Add the first customer!</Link></p>}
+                    </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-apple-gray-200 dark:divide-apple-gray-700">
                             <thead className="bg-apple-gray-50 dark:bg-apple-gray-800/50">
                                 <tr>
-                                    <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider">Name</th>
-                                    <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider">Phone</th>
-                                    <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider">Email</th>
-                                    <th className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider">Actions</th>
+                                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-apple-gray-500 dark:text-apple-gray-400 uppercase tracking-wider">Name</th>
+                                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-apple-gray-500 dark:text-apple-gray-400 uppercase tracking-wider">Phone</th>
+                                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-apple-gray-500 dark:text-apple-gray-400 uppercase tracking-wider">Email</th>
+                                    <th className="px-4 py-3.5 text-center text-xs font-semibold text-apple-gray-500 dark:text-apple-gray-400 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-apple-gray-200 dark:divide-apple-gray-700 bg-white dark:bg-apple-gray-900">
                                 {customers.map(customer => (
-                                    <tr key={customer._id} className="hover:bg-apple-gray-50/70 dark:hover:bg-apple-gray-800/70">
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">{customer.name}</td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm">{customer.phone}</td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm">{customer.email || <span className="italic text-apple-gray-400">N/A</span>}</td>
+                                    <tr key={customer._id} className="hover:bg-apple-gray-50/70 dark:hover:bg-apple-gray-800/70 transition-colors duration-150">
+                                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{customer.name}</td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-apple-gray-600 dark:text-apple-gray-300">{customer.phone}</td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-apple-gray-600 dark:text-apple-gray-300">{customer.email || <span className="italic text-apple-gray-400 dark:text-apple-gray-500">N/A</span>}</td>
                                         <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
                                             <div className="flex items-center justify-center space-x-2">
-                                                {/* CORRECTED LINK TO CUSTOMER DETAILS */}
-                                                <Link to={`/customers/${customer._id}/details`} className="p-1 rounded-full hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700" title="View Details">
+                                                <Link to={`/customers/${customer._id}/details`} className="p-1.5 rounded-full hover:bg-apple-gray-200 dark:hover:bg-apple-gray-700" title="View Details">
                                                     <Eye size={18} className="text-apple-gray-500 hover:text-apple-blue dark:text-apple-gray-400 dark:hover:text-apple-blue-light" />
                                                 </Link>
-                                                <Link to={`/customers/${customer._id}/edit`} className="p-1 rounded-full hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700" title="Edit Customer">
+                                                <Link to={`/customers/${customer._id}/edit`} className="p-1.5 rounded-full hover:bg-apple-gray-200 dark:hover:bg-apple-gray-700" title="Edit Customer">
                                                     <Edit3 size={18} className="text-apple-gray-500 hover:text-apple-orange dark:text-apple-gray-400 dark:hover:text-orange-400" />
                                                 </Link>
-                                                <Button variant="ghost" size="sm" onClick={() => handleDeleteCustomer(customer._id, customer.name)} className="p-1 text-apple-gray-500 hover:text-apple-red dark:text-apple-gray-400 dark:hover:text-red-400" title="Delete Customer">
+                                                <Button variant="ghost" size="sm" onClick={() => handleDeleteCustomer(customer._id, customer.name)} className="p-1.5 text-apple-gray-500 hover:text-apple-red dark:text-apple-gray-400 dark:hover:text-red-400" title="Delete Customer">
                                                     <Trash2 size={18} />
                                                 </Button>
                                             </div>
@@ -113,6 +186,7 @@ const CustomerListPage = () => {
                                 ))}
                             </tbody>
                         </table>
+                        {/* TODO: Add Pagination controls here if totalPages > 1 */}
                     </div>
                 )}
             </Card>
