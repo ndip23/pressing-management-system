@@ -148,11 +148,11 @@ const OrderDetailsPage = () => {
                             <DetailItem label="Drop-off" value={order.dropOffDate ? format(parseISO(order.dropOffDate), dateTimeFormat) : 'N/A'} />
                             <DetailItem label="Expected Pickup" value={order.expectedPickupDate ? format(parseISO(order.expectedPickupDate), dateTimeFormat) : 'N/A'} />
                             {order.actualPickupDate && <DetailItem label="Actual Pickup" value={format(parseISO(order.actualPickupDate), dateTimeFormat)} />}
-                            <DetailItem label="Subtotal" value={`${currencySymbol}${(order.subTotalAmount || 0).toFixed(2)}`} />
-                            {order.discountType !== 'none' && order.discountAmount > 0 && ( <DetailItem label={`Discount (${order.discountType === 'percentage' ? `${order.discountValue}%` : 'Fixed'})`} value={`-${currencySymbol}${(order.discountAmount || 0).toFixed(2)}`} className="text-orange-600 dark:text-orange-400" /> )}
-                            <DetailItem label="Final Total" value={`${currencySymbol}${(order.totalAmount || 0).toFixed(2)}`} className="font-semibold text-lg" />
-                            <DetailItem label="Advance Paid" value={`${currencySymbol}${(order.amountPaid || 0).toFixed(2)}`} />
-                            <DetailItem label="Balance Due" className={`font-semibold ${balanceDueOnDetails > 0 ? 'text-apple-red dark:text-red-400' : 'text-apple-green dark:text-green-400'}`}>{currencySymbol}{balanceDueOnDetails.toFixed(2)}</DetailItem>
+                            <DetailItem label="Subtotal" value={`${currencySymbol} ${(order. subTotalAmount || 0).toFixed(2)}`} />
+                            {order.discountType !== 'none' && order.discountAmount > 0 && ( <DetailItem label={`Discount (${order.discountType === 'percentage' ? `${order.discountValue}%` : 'Fixed'})`} value={`${currencySymbol}${ (order.discountAmount || 0).toFixed(2)}`} className="text-orange-600 dark:text-orange-400" /> )}
+                            <DetailItem label="Final Total" value={`${currencySymbol} ${(order.totalAmount || 0).toFixed(2)}`} className="font-semibold text-lg" />
+                            <DetailItem label="Advance Paid" value={`${currencySymbol} ${(order.amountPaid || 0).toFixed(2)}`} />
+                            <DetailItem label="Balance Due" className={`font-semibold  ${balanceDueOnDetails > 0 ? 'text-apple-red dark:text-red-400' : 'text-apple-green dark:text-green-400'}`}>{currencySymbol} {balanceDueOnDetails.toFixed(2)}</DetailItem>
                             <DetailItem label="Payment Status">
                                 {order.isFullyPaid ? <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-apple-green dark:bg-green-900/50 dark:text-green-400"><CheckCircle2 size={14} className="mr-1"/> Paid</span> : <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-100 text-apple-orange dark:bg-yellow-900/50 dark:text-yellow-400"><Clock3 size={14} className="mr-1"/> Unpaid</span> }
                             </DetailItem>
