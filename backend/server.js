@@ -11,7 +11,7 @@ import customerRoutes from './routes/customerRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 import adminNotificationRoutes from './routes/adminNotificationRoutes.js'; // IMPORTED
-
+import reportRoutes from './routes/reportRoutes.js'; 
 // Import scheduler
 import { startOrderChecks } from './schedulers/orderChecker.js'; // IMPORTED
 
@@ -50,6 +50,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/admin-notifications', adminNotificationRoutes); // MOUNTED
+app.use('/api/reports', reportRoutes);
 
 // Error handling middleware (should be last for API routes)
 app.use(notFound);
