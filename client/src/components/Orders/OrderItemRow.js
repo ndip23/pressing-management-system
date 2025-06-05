@@ -40,7 +40,7 @@ const OrderItemRow = ({
             <div className="grid grid-cols-1 md:grid-cols-12 gap-x-4 gap-y-2 items-end"> {/* items-end for vertical alignment */}
                 <div className="md:col-span-3">
                     <Select
-                        label="Item Type*"
+                        label="Item Type"
                         id={`itemType-${item.id}`}
                         value={item.itemType}
                         onChange={(e) => handleFieldChange('itemType', e.target.value)}
@@ -52,7 +52,7 @@ const OrderItemRow = ({
                 </div>
                 <div className="md:col-span-3">
                     <Select
-                        label="Service Type*"
+                        label="Service Type"
                         id={`serviceType-${item.id}`}
                         value={item.serviceType}
                         onChange={(e) => handleFieldChange('serviceType', e.target.value)}
@@ -64,7 +64,7 @@ const OrderItemRow = ({
                 </div>
                 <div className="md:col-span-1">
                     <Input
-                        label="Qty*"
+                        label="Qty"
                         id={`quantity-${item.id}`}
                         type="number"
                         value={item.quantity}

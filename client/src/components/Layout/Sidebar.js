@@ -80,7 +80,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
                     {/* MODIFIED: "Manage Users" is now "Customers" and points to /customers */}
                     <NavItem to="/customers" icon={Users}>Customers</NavItem>
-
+                    <NavItem to="/payments" icon={CreditCard}>Payments</NavItem>
                     {/* If you still wanted a placeholder for Payments, it would go here */}
                     {/* <NavItem to="/payments" icon={CreditCard} disabled={true}>Payments (Soon)</NavItem> */}
 
