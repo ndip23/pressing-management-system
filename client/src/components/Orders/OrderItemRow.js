@@ -95,7 +95,7 @@ const OrderItemRow = ({
                         aria-label="Calculated line price"
                     >
                         <span className="font-medium">
-                            {currencySymbol}{(calculatedPrice || 0).toFixed(2)}
+                            {currencySymbol} {(calculatedPrice || 0).toFixed(2)}
                         </span>
                     </div>
                 </div>

@@ -85,7 +85,7 @@ const sendNotification = async (customer, templateType, order, customPlaceholder
     const settings = await Settings.getSettings();
     const company = settings.companyInfo || { name: 'Your Pressing Service' };
     const templates = settings.notificationTemplates || {};
-    const currencySymbol = settings.defaultCurrencySymbol || '$';
+    const currencySymbol = settings.defaultCurrencySymbol || 'FCFA';
 
     console.log(`[NotificationService] Processing notification for order ${order.receiptNumber}, type: ${templateType}, Customer: ${customer.name}`);
 
