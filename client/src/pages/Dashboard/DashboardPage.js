@@ -8,7 +8,7 @@ import Spinner from '../../components/UI/Spinner';
 import OrderTable from '../../components/Dashboard/OrderTable';
 import FilterControls from '../../components/Dashboard/FilterControls';
 import { PlusCircle, AlertTriangle, CheckCircle2, Clock3, Shirt, TrendingUp } from 'lucide-react';
-import { format, isPast, parseISO } from 'date-fns'; // Ensure isPast and parseISO are imported
+import { format, isPast, parseISO } from 'date-fns';
 
 const DashboardPage = () => {
     const [orders, setOrders] = useState([]);
@@ -25,7 +25,9 @@ const DashboardPage = () => {
     const [loadingDailyPayments, setLoadingDailyPayments] = useState(true);
     const [dailyPaymentsError, setDailyPaymentsError] = useState('');
 
-    const currencySymbol = '$'; // TODO: Get from settings context
+    const currencySymbol = 'FCFA'; // TODO: Get from settings context
+    // REMOVED: const todayStr = format(new Date(), 'yyyy-MM-dd');
+    // REMOVED: const { data } = await fetchDailyPaymentsReport(todayStr); // This was the error
 
     const loadOrders = useCallback(async () => {
         setLoadingOrders(true);
@@ -55,27 +57,27 @@ const DashboardPage = () => {
         } finally {
             setLoadingOrders(false);
         }
-    }, [filters]); // filters is the dependency
+    }, [filters]);
 
     const loadDailyPayments = useCallback(async () => {
         setLoadingDailyPayments(true);
         setDailyPaymentsError('');
         try {
-            const todayStr = format(new Date(), 'yyyy-MM-dd');
-            const { data } = await fetchDailyPaymentsReport(todayStr);
+            const todayStr = format(new Date(), 'yyyy-MM-dd'); // Define todayStr INSIDE the async function
+            const { data } = await fetchDailyPaymentsReport(todayStr); // API call INSIDE async function
             setDailyTotalPayments(data.totalAmountFromOrdersWithActivity || 0);
         } catch (err) {
             setDailyPaymentsError('Could not load daily sales data.');
-            console.error("Fetch Daily Payments Error for Dashboard:", err.response || err);
+            console.error("Fetch Daily Payments Error for Dashboard:", err.response?.data?.message || err.message || err);
         } finally {
             setLoadingDailyPayments(false);
         }
-    }, []); // No dependencies, runs once on mount effectively via useEffect
+    }, []); // Empty dependency array means this function instance is stable
 
     useEffect(() => {
         loadOrders();
         loadDailyPayments();
-    }, [loadOrders, loadDailyPayments]); // These callbacks are stable or change when their own dependencies change
+    }, [loadOrders, loadDailyPayments]);
 
     const handleFilterChange = (newFilters) => {
         setFilters(prevFilters => ({ ...prevFilters, ...newFilters, page: 1 }));
@@ -127,7 +129,7 @@ const DashboardPage = () => {
                     title="Total Orders"
                     value={pagination.totalOrders}
                     icon={<Shirt size={24} className="text-apple-blue" />}
-                    isLoading={loadingOrders && !orders.length && pagination.totalOrders === 0} // Show loading if orders haven't loaded yet and total is 0
+                    isLoading={loadingOrders && !orders.length && pagination.totalOrders === 0}
                 />
                 <StatCard
                     title="Pending/Processing"
@@ -151,13 +153,12 @@ const DashboardPage = () => {
             </div>
             {dailyPaymentsError && <p className="text-xs text-center text-red-500 mt-1">{dailyPaymentsError}</p>}
 
-
             <Card title="Manage Orders" className="overflow-visible" contentClassName="p-0 sm:p-0">
                  <FilterControls
                     filters={filters}
                     onFilterChange={handleFilterChange}
                     onResetFilters={handleResetFilters}
-                    onApplyFilters={loadOrders}
+                    onApplyFilters={loadOrders} // This will trigger loadOrders which then triggers the useEffect containing loadDailyPayments if loadOrders changes
                 />
                 <div className="px-4 sm:px-6 pb-6">
                     {loadingOrders ? (
