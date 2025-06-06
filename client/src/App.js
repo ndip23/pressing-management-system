@@ -16,6 +16,7 @@ const SettingsPage = lazy(() => import('./pages/Admin/SettingsPage.js')); // <--
 const CustomerListPage = lazy(() => import('./pages/Customers/CustomerListPage'));
 const CustomerFormPage = lazy(() => import('./pages/Customers/CustomerFormPage'));
 const CustomerDetailsPage = lazy(() => import('./pages/Customers/CustomerDetailsPage'));
+const DailyPaymentsPage = lazy(() => import('./pages/Reports/DailyPaymentsPage'));
 
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated, loading } = useAuth();
@@ -49,6 +50,7 @@ function App() {
                         <Route path="orders/new" element={<CreateOrderPage />} />
                         <Route path="orders/:id" element={<OrderDetailsPage />} />
                         <Route path="orders/:id/edit" element={<EditOrderPage />} />
+                        <Route path="reports/daily-payments" element={<DailyPaymentsPage />} />
                         {/* Customer Routes */}
                         <Route path="customers" element={<CustomerListPage />} />
                         <Route path="customers/new" element={<CustomerFormPage mode="create" />} />

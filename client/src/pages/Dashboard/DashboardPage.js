@@ -121,7 +121,7 @@ const DashboardPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <StatCard
                     title="Today's Sales"
-                    value={`${currencySymbol}${dailyTotalPayments.toFixed(2)}`}
+                    value={`${currencySymbol} ${dailyTotalPayments.toFixed(2)}`}
                     icon={<TrendingUp size={24} className="text-green-500" />}
                     isLoading={loadingDailyPayments}
                 />
