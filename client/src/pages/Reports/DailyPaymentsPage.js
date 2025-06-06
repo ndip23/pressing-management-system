@@ -15,7 +15,7 @@ const DailyPaymentsPage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const currencySymbol = '$'; // TODO: Get from settings context
+    const currencySymbol = 'FCFA'; // TODO: Get from settings context
 
     const loadReport = useCallback(async (dateToFetch) => {
         if (!dateToFetch) return;
