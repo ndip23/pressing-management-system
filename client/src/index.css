@@ -45,6 +45,7 @@
   /* Make the printable area and its children visible */
   #printable-receipt-area, #printable-receipt-area * {
     visibility: visible;
+    color: #000 !important;
   }
 
   /* Position the printable area for printing */
@@ -55,6 +56,7 @@
     width: 100%; /* Or fixed width like 72mm, 80mm for thermal printers */
     margin: 0;
     padding: 0; /* Outer padding controlled by @page margin */
+    color: #000 !important;
   }
 
   /* Hide elements specifically marked with .print-hide */
