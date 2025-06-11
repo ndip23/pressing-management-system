@@ -262,14 +262,36 @@ const manuallyNotifyCustomer = asyncHandler(async (req, res) => {
         res.status(500).json({ message: errorMessage }); // Send error message in JSON
     }
 });
+const markOrderAsFullyPaid = asyncHandler(async (req, res) => {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+        res.status(404);
+        throw new Error('Order not found');
+    }
+
+    if (order.isFullyPaid) {
+        
+        console.log(`[OrderController] Order ${order.receiptNumber} is already marked as paid. Ensuring amounts match.`);
+    }
+
+    order.amountPaid = order.totalAmount;
+
+    const updatedOrder = await order.save();
+    const populatedOrder = await Order.findById(updatedOrder._id)
+        .populate('customer', 'name phone email address')
+        .populate('createdBy', 'username');
+
+    res.json(populatedOrder);
+});
 
 
-
-export { // <<<< EXPORT BLOCK
+export { 
     createOrder,
     getOrders,
     getOrderById,
     updateOrder,
-    deleteOrder, // Ensure deleteOrder is listed here
+    deleteOrder, 
     manuallyNotifyCustomer,
+    markOrderAsFullyPaid
 };

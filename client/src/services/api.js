@@ -84,13 +84,15 @@ export const markAdminNotificationReadApi = async (notificationId) => {
 export const markAllAdminNotificationsReadApi = async () => {
     return api.put('/admin-notifications/read-all');
 };
-export const fetchDailyPaymentsReport = async (date) => { // date should be 'YYYY-MM-DD'
+export const fetchDailyPaymentsReport = async (date) => { 
     if (!date) {
-        // Or throw an error, or handle default date if needed
         console.error("fetchDailyPaymentsReport: Date parameter is required.");
         return Promise.reject(new Error("Date parameter is required for daily payments report."));
     }
     return api.get(`/reports/daily-payments?date=${date}`);
+};
+export const markOrderPaidApi = async (orderId) => {
+    return api.put(`/orders/${orderId}/mark-paid`);
 };
 
 export default api;

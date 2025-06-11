@@ -7,6 +7,7 @@ import {
     updateOrder,
     deleteOrder,
     manuallyNotifyCustomer,
+    markOrderAsFullyPaid,
 } from '../controllers/orderController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 
@@ -22,5 +23,6 @@ router.route('/:id')
     .delete(protect, authorize('admin'), deleteOrder);
 
 router.post('/:id/notify', protect, manuallyNotifyCustomer);
+router.put('/:id/mark-paid', protect, markOrderAsFullyPaid);
 
 export default router;

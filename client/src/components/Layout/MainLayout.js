@@ -11,8 +11,8 @@ const MainLayout = () => {
             <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Navbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} sidebarOpen={sidebarOpen} />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6">
-                    <div className="max-w-7xl mx-auto"> {/* Optional: constrain content width */}
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-white dark:bg-black p-4 sm:p-6">
+                    <div className="max-w-7xl mx-auto"> 
                         <Outlet />
                     </div>
                 </main>
