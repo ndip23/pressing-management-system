@@ -5,12 +5,12 @@ import Input from '../UI/Input';
 import Select from '../UI/Select';
 import Button from '../UI/Button';
 import DatePicker from '../UI/DatePicker';
-import OrderItemRow from './OrderItemRow'; // Ensure this path is correct relative to this file
+import OrderItemRow from './OrderItemRow';
 import Modal from '../UI/Modal';
 import { createNewOrder, updateExistingOrder, fetchCustomers } from '../../services/api';
 import { Plus, Save, UserPlus, Search, UserCheck, Edit2, CheckSquare, XSquare, AlertTriangle } from 'lucide-react';
 import { format, parseISO, isValid as isValidDate, setHours, setMinutes, setSeconds } from 'date-fns';
-import Spinner from '../UI/Spinner'; // Assuming Spinner is used in Input or Button components
+import Spinner from '../UI/Spinner';
 
 const MOCK_ITEM_TYPES = ['Shirt', 'Trousers', 'Suit', 'Dress', 'Blouse', 'Jacket', 'Bedding', 'Scarf', 'Tie', 'Coat', 'Other'];
 const MOCK_SERVICE_TYPES = [
@@ -33,7 +33,7 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
 
     const threeDaysFromNow = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
     const defaultPickupDateOnly = format(threeDaysFromNow, 'yyyy-MM-dd');
-    const defaultPickupTime = format(setHours(setMinutes(new Date(), 0), 17), 'HH:mm'); // Default to 5:00 PM
+    const defaultPickupTime = format(setHours(setMinutes(new Date(), 0), 17), 'HH:mm');
 
     const [expectedPickupDateOnly, setExpectedPickupDateOnly] = useState(defaultPickupDateOnly);
     const [expectedPickupTime, setExpectedPickupTime] = useState(defaultPickupTime);
@@ -43,7 +43,7 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
     const [discountValueState, setDiscountValueState] = useState('0');
     const [calculatedDiscountAmount, setCalculatedDiscountAmount] = useState(0);
     const [finalTotalAmount, setFinalTotalAmount] = useState(0);
-    const [amountPaid, setAmountPaid] = useState('0'); // Represents "Advance Paid"
+    const [amountPaid, setAmountPaid] = useState('0');
     const [notes, setNotes] = useState('');
 
     const [isLoading, setIsLoading] = useState(false);
@@ -52,9 +52,10 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
     const [showConfirmationModal, setShowConfirmationModal] = useState(false);
     const [orderDataForReview, setOrderDataForReview] = useState(null);
 
-    const currencySymbol = 'FCFA'; // TODO: Get from settings context
+    const currencySymbol = 'FCFA';
 
     useEffect(() => {
+        console.log("[CreateOrderForm] useEffect for initialOrderData. isEditMode:", isEditMode, "InitialData:", initialOrderData);
         if (isEditMode && initialOrderData) {
             if (initialOrderData.customer) {
                 setCustomerInput({ name: initialOrderData.customer.name || '', phone: initialOrderData.customer.phone || '', email: initialOrderData.customer.email || '', address: initialOrderData.customer.address || '' });
@@ -63,6 +64,8 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
             } else if (initialOrderData.customerId) {
                 setSelectedCustomerId(initialOrderData.customerId); setCustomerSelectionMode('existing');
                 setCustomerInput({ name: initialOrderData.customerName || '', phone: initialOrderData.customerPhone || '', email: initialOrderData.customerEmail || '', address: initialOrderData.customerAddress || '' });
+            } else {
+                setCustomerSelectionMode('new');
             }
             setItems(initialOrderData.items?.map(item => ({ ...item, id: item._id || Date.now() + Math.random(), quantity: item.quantity || 1 })) || [{ id: Date.now(), itemType: '', serviceType: 'wash', quantity: 1, specialInstructions: '' }]);
             if (initialOrderData.expectedPickupDate && isValidDate(parseISO(initialOrderData.expectedPickupDate))) {
@@ -73,18 +76,22 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
             setSubTotal(initialOrderData.subTotalAmount || 0);
             setDiscountType(initialOrderData.discountType || 'none');
             setDiscountValueState(String(initialOrderData.discountValue || 0));
-            setAmountPaid(String(initialOrderData.amountPaid || 0)); // This is the advance paid
+            setAmountPaid(String(initialOrderData.amountPaid || 0));
             setNotes(initialOrderData.notes || '');
+            setError('');
         } else {
+            console.log("[CreateOrderForm] Resetting form for new order.");
             setCustomerInput({ name: '', phone: '', email: '', address: '' });
             setSelectedCustomerId(null); setCustomerSelectionMode('new');
             setItems([{ id: Date.now(), itemType: '', serviceType: 'wash', quantity: 1, specialInstructions: '' }]);
             setExpectedPickupDateOnly(defaultPickupDateOnly); setExpectedPickupTime(defaultPickupTime);
             setSubTotal(0); setDiscountType('none'); setDiscountValueState('0'); setAmountPaid('0'); setNotes('');
+            setError('');
         }
     }, [initialOrderData, isEditMode, defaultPickupDateOnly, defaultPickupTime]);
 
     const handleCustomerInputChange = (e) => setCustomerInput({ ...customerInput, [e.target.name]: e.target.value });
+
     const handleCustomerSearchChange = async (e) => {
         const query = e.target.value;
         setCustomerSearchQuery(query);
@@ -95,6 +102,7 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
             finally { setIsSearchingCustomers(false); }
         } else { setSearchedCustomers([]); }
     };
+
     const handleSelectCustomer = (customer) => {
         setCustomerInput({ name: customer.name, phone: customer.phone, email: customer.email || '', address: customer.address || '' });
         setSelectedCustomerId(customer._id);
@@ -148,6 +156,7 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
 
     const handleReviewOrder = (e) => {
         e.preventDefault(); setError('');
+        console.log("[CreateOrderForm] handleReviewOrder called.");
         if (customerSelectionMode === 'new' && (!customerInput.name || !customerInput.phone)) { setError('New customer: Name and Phone are required.'); return; }
         if (customerSelectionMode === 'existing' && !selectedCustomerId && !isEditMode) { setError('Please select an existing customer or create new.'); return; }
         if (items.some(item => !item.itemType || !item.serviceType || !item.quantity || parseInt(item.quantity, 10) < 1)) { setError('All items require type, service, and quantity (min 1).'); return; }
@@ -155,32 +164,32 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
 
         const [hours, minutes] = expectedPickupTime.split(':').map(Number);
         let combinedDateTime = parseISO(expectedPickupDateOnly);
+        if (!isValidDate(combinedDateTime)) { setError('Invalid pickup date format.'); return; }
         combinedDateTime = setHours(combinedDateTime, hours);
         combinedDateTime = setMinutes(combinedDateTime, minutes);
         combinedDateTime = setSeconds(combinedDateTime, 0);
 
-        setOrderDataForReview({
+        const dataToReview = {
             isEditMode, customer: { ...customerInput, id: selectedCustomerId }, customerSelectionMode,
             items: items.map(({ id, ...rest }) => ({...rest, quantity: parseInt(rest.quantity, 10) || 1})),
             expectedPickupDate: combinedDateTime.toISOString(),
             subTotalAmount: subTotal, discountType, discountValue: parseFloat(discountValueState) || 0,
-            calculatedDiscountAmount, finalTotalAmount,
-            amountPaid: parseFloat(amountPaid) || 0, // This is the "Advance Paid"
-            balanceDue: balanceDue, // For display in modal
-            notes,
-        });
+            calculatedDiscountAmount, finalTotalAmount, amountPaid: parseFloat(amountPaid) || 0, notes, balanceDue
+        };
+        console.log("[CreateOrderForm] Data for review:", dataToReview);
+        setOrderDataForReview(dataToReview);
         setShowConfirmationModal(true);
     };
 
     const handleConfirmAndCreateOrder = async () => {
-        if (!orderDataForReview) { setError("Error: No order data for submission."); setShowConfirmationModal(false); return; }
+        if (!orderDataForReview) { setError("Internal Error: No order data available for submission."); setShowConfirmationModal(false); return; }
+        console.log("[CreateOrderForm] handleConfirmAndCreateOrder called.");
         setIsLoading(true); setError(''); setShowConfirmationModal(false);
 
         const payload = {
             items: orderDataForReview.items, expectedPickupDate: orderDataForReview.expectedPickupDate,
             subTotalAmount: orderDataForReview.subTotalAmount, discountType: orderDataForReview.discountType,
-            discountValue: orderDataForReview.discountValue,
-            amountPaid: orderDataForReview.amountPaid, // This is the "Advance Paid"
+            discountValue: orderDataForReview.discountValue, amountPaid: orderDataForReview.amountPaid,
             notes: orderDataForReview.notes,
         };
         if (orderDataForReview.customerSelectionMode === 'existing' && orderDataForReview.customer.id) {
@@ -190,11 +199,16 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
             payload.customerName = orderDataForReview.customer.name; payload.customerPhone = orderDataForReview.customer.phone;
             payload.customerEmail = orderDataForReview.customer.email; payload.customerAddress = orderDataForReview.customer.address;
         }
+        console.log("[CreateOrderForm] Final payload to backend:", JSON.stringify(payload, null, 2));
         try {
             const response = isEditMode && initialOrderData?._id ? await updateExistingOrder(initialOrderData._id, payload) : await createNewOrder(payload);
+            console.log("[CreateOrderForm] API Success Response:", response);
             alert(`Order ${isEditMode ? 'updated' : 'created'}! Receipt: ${response.data.receiptNumber}`);
             navigate(isEditMode ? `/orders/${response.data._id}` : '/');
-        } catch (err) { setError(err.response?.data?.message || `Failed to ${isEditMode ? 'save' : 'create'} order.`); console.error(err.response || err);
+        } catch (err) {
+            const errMsg = err.response?.data?.message || `Failed to ${isEditMode ? 'save' : 'create'} order. Please check details and try again.`;
+            setError(errMsg);
+            console.error("[CreateOrderForm] Order Submission Error:", err.response || err.message || err);
         } finally { setIsLoading(false); }
     };
 
@@ -263,12 +277,13 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
                         <div className="sm:col-span-3"><Input label={`Final Total Amount (${currencySymbol})`} id="finalTotalAmount" type="text" value={finalTotalAmount.toFixed(2)} readOnly className="font-semibold bg-apple-gray-100 dark:bg-apple-gray-800 cursor-default" /></div>
                         <div className="sm:col-span-3"><Input label={`Advance Paid (${currencySymbol})`} id="amountPaid" name="amountPaid" type="number" value={amountPaid} onChange={(e) => setAmountPaid(e.target.value)} step="0.01" min="0" /></div>
                         <div className="sm:col-span-3"><Input label={`Balance Due (${currencySymbol})`} id="balanceDueDisplay" type="text" value={balanceDue.toFixed(2)} readOnly className={`font-semibold cursor-default ${balanceDue > 0 ? 'text-apple-red dark:text-red-400' : 'text-apple-green dark:text-green-400'} bg-apple-gray-100 dark:bg-apple-gray-800`} /></div>
-                        <div className="sm:col-span-3"><DatePicker label="Expected Pickup Date" id="expectedPickupDateOnly" value={expectedPickupDateOnly} onChange={(e) => setExpectedPickupDateOnly(e.target.value)} required min={format(new Date(), 'yyyy-MM-dd')} /></div>
-                        <div className="sm:col-span-3"><Input label="Expected Pickup Time" id="expectedPickupTime" type="time" value={expectedPickupTime} onChange={(e) => setExpectedPickupTime(e.target.value)} required /></div>
+                        <div className="sm:col-span-3"><DatePicker label="Expected Pickup Date*" id="expectedPickupDateOnly" value={expectedPickupDateOnly} onChange={(e) => setExpectedPickupDateOnly(e.target.value)} required min={format(new Date(), 'yyyy-MM-dd')} /></div>
+                        <div className="sm:col-span-3"><Input label="Expected Pickup Time*" id="expectedPickupTime" type="time" value={expectedPickupTime} onChange={(e) => setExpectedPickupTime(e.target.value)} required /></div>
                         <div className="sm:col-span-6"> <label htmlFor="notes" className="block text-sm font-medium text-apple-gray-700 dark:text-apple-gray-300 mb-1">Order Notes (Optional)</label> <textarea id="notes" name="notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} className="form-textarea block w-full sm:text-sm  border-apple-gray-300 focus:border-apple-blue focus:ring-apple-blue dark:bg-apple-gray-800 dark:border-apple-gray-700 dark:text-apple-gray-100 dark:focus:border-apple-blue rounded-apple shadow-apple-sm" /> </div>
                     </div>
                 </div>
 
+                {/* Action Buttons */}
                 <div className="pt-6 flex items-center justify-end gap-x-3">
                     <Button type="button" variant="secondary" onClick={() => navigate(isEditMode && initialOrderData?._id ? `/orders/${initialOrderData._id}` : '/')} disabled={isLoading}>Cancel</Button>
                     <Button type="submit" variant="primary" isLoading={isLoading} iconLeft={<CheckSquare size={18}/>}>
@@ -277,10 +292,12 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
                 </div>
             </form>
 
+            {/* Confirmation Modal */}
             {showConfirmationModal && orderDataForReview && (
                 <Modal isOpen={showConfirmationModal} onClose={() => { if (!isLoading) setShowConfirmationModal(false); }} title={isEditMode ? "Confirm Order Changes" : "Confirm New Order"} size="2xl">
                     <div className="space-y-4 text-sm max-h-[70vh] overflow-y-auto p-1 custom-scrollbar">
                         <h3 className="text-lg font-semibold text-apple-gray-800 dark:text-apple-gray-100">Please review all details:</h3>
+                        {/* Customer Details in Modal */}
                         <div className="p-3 border rounded-apple-md dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-800/30">
                             <h4 className="font-medium mb-1 text-apple-gray-700 dark:text-apple-gray-200">Customer:</h4>
                             <p><strong>Name:</strong> {orderDataForReview.customer.name || <span className="italic text-apple-red">Missing</span>}</p>
@@ -288,6 +305,7 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
                             {orderDataForReview.customer.email && <p><strong>Email:</strong> {orderDataForReview.customer.email}</p>}
                             {orderDataForReview.customer.address && <p><strong>Address:</strong> {orderDataForReview.customer.address}</p>}
                         </div>
+                        {/* Items List with Prices in Modal */}
                         <div className="p-3 border rounded-apple-md dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-800/30">
                             <h4 className="font-medium mb-2 text-apple-gray-700 dark:text-apple-gray-200">Items:</h4>
                             {orderDataForReview.items.length > 0 ? orderDataForReview.items.map((item, index) => {
@@ -303,6 +321,7 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
                                 );
                             }) : <p className="italic text-apple-gray-500">No items added.</p>}
                         </div>
+                        {/* Financial Summary in Modal */}
                         <div className="p-3 border rounded-apple-md dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-800/30">
                             <h4 className="font-medium mb-1 text-apple-gray-700 dark:text-apple-gray-200">Summary:</h4>
                             <p><strong>Subtotal:</strong> {currencySymbol}{orderDataForReview.subTotalAmount.toFixed(2)}</p>
@@ -319,6 +338,7 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
                         </div>
                         <p className="pt-2 text-center font-semibold text-apple-gray-700 dark:text-apple-gray-200">Is all information correct and ready to proceed?</p>
                     </div>
+                    {/* Modal Action Buttons */}
                     <div className="mt-6 pt-4 border-t dark:border-apple-gray-700 flex flex-wrap justify-end gap-3">
                         <Button variant="secondary" onClick={handleEditFromReview} iconLeft={<Edit2 size={16}/>} disabled={isLoading}>Edit Details</Button>
                         <Button variant="ghost" onClick={() => setShowConfirmationModal(false)} disabled={isLoading} className="text-apple-red" iconLeft={<XSquare size={16}/>}>Cancel</Button>
