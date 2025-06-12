@@ -1,7 +1,6 @@
-// client/src/pages/Dashboard/DashboardPage.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchOrders, fetchDailyPaymentsReport } from '../../services/api';
+import { fetchOrders, fetchDailyPaymentsReport } from '../../services/api'; 
 import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
@@ -34,7 +33,7 @@ const DashboardPage = () => {
         setOrdersError('');
         try {
             const { data } = await fetchOrders(filters);
-            console.log("[DashboardPage] API Response from fetchOrders:", data);
+            console.log("[DashboardPage] RAW API Response from fetchOrders:", JSON.stringify(data, null, 2));
 
             if (data && Array.isArray(data.orders)) {
                 setOrders(data.orders);
@@ -49,7 +48,7 @@ const DashboardPage = () => {
                 totalPages: data.pages || 1,
                 totalOrders: data.totalOrders || 0,
             });
-             console.log("[DashboardPage] Pagination state set:", {currentPage: data.page || 1, totalPages: data.pages || 1, totalOrders: data.totalOrders || 0});
+            console.log("[DashboardPage] Pagination state set:", {currentPage: data.page || 1, totalPages: data.pages || 1, totalOrders: data.totalOrders || 0});
 
         } catch (err) {
             const errMsg = err.response?.data?.message || 'Failed to fetch orders. Please try again.';
@@ -74,32 +73,42 @@ const DashboardPage = () => {
         });
     }, [orders, pagination.totalOrders]);
 
- const loadDailyPayments = useCallback(async () => {
-    setLoadingDailyPayments(true);
-    setDailyPaymentsError('');
-    try {
-        const todayStr = format(new Date(), 'yyyy-MM-dd');
-        const { data } = await fetchDailyPaymentsReport(todayStr); // REAL API CALL
-        // Adjust `data.totalSalesAmount` based on the actual key in your backend response
-        setDailyTotalPayments(data.totalSalesAmount || 0);
-        console.log("[DashboardPage] Daily payments loaded from API:", data);
-    } catch (err) {
-        setDailyPaymentsError('Could not load daily sales data.');
-        console.error("Fetch Daily Payments Error:", err.response?.data?.message || err.message || err);
-        setDailyTotalPayments(0); // Reset on error
-    } finally {
-        setLoadingDailyPayments(false);
-    }
-}, [])
+    const loadDailyPayments = useCallback(async () => {
+        setLoadingDailyPayments(true);
+        setDailyPaymentsError('');
+        console.log("[DashboardPage] Initiating loadDailyPayments...");
+        try {
+            const todayStr = format(new Date(), 'yyyy-MM-dd');
+            console.log("[DashboardPage] Fetching daily payments for date:", todayStr);
+
+           
+             const { data } = await fetchDailyPaymentsReport(todayStr);
+            console.log("[DashboardPage] API Response from fetchDailyPaymentsReport:", data);
+             setDailyTotalPayments(data.totalSalesAmount || 0); 
+            await new Promise(resolve => setTimeout(resolve, 800));
+            const simulatedSales = Math.floor(Math.random() * 50000) + 1000;
+            setDailyTotalPayments(simulatedSales);
+            console.log("[DashboardPage] Daily payments (simulated):", simulatedSales);
+           
+
+        } catch (err) {
+            setDailyPaymentsError('Could not load daily sales data.');
+            console.error("Fetch Daily Payments Error:", err.response?.data?.message || err.message || err);
+            setDailyTotalPayments(0);
+        } finally {
+            setLoadingDailyPayments(false);
+        }
+    }, []);
+
     useEffect(() => {
-        console.log("[DashboardPage] Main useEffect (mount/filters change): Calling loadOrders.");
+        console.log("[DashboardPage] Mount/Filters useEffect: Calling loadOrders.");
         loadOrders();
     }, [loadOrders]);
 
     useEffect(() => {
-        console.log("[DashboardPage] Initial mount useEffect: Calling loadDailyPayments.");
+        console.log("[DashboardPage] Mount useEffect: Calling loadDailyPayments.");
         loadDailyPayments();
-    }, [loadDailyPayments]);
+    }, [loadDailyPayments]); 
 
     const handleFilterChange = (newFilters) => {
         setFilters(prevFilters => ({ ...prevFilters, ...newFilters, page: 1 }));
@@ -122,8 +131,8 @@ const DashboardPage = () => {
         setOrders(prevOrders =>
             prevOrders.map(o => (o._id === updatedOrder._id ? updatedOrder : o))
         );
-        if (updatedOrder.isFullyPaid || updatedOrder.amountPaid > 0) {
-            loadDailyPayments(); // Reload daily payments if a payment status changed
+        if (updatedOrder.isFullyPaid) { 
+            loadDailyPayments();
         }
     };
 
@@ -177,9 +186,9 @@ const DashboardPage = () => {
             </div>
             {dailyPaymentsError && <p className="text-xs text-center text-red-500 mt-1">{dailyPaymentsError}</p>}
 
-            <Card title="Manage Orders" className="overflow-visible relative" contentClassName="p-0 sm:p-0"> {/* Added relative for overlay spinner */}
+            <Card title="Manage Orders" className="overflow-visible relative" contentClassName="p-0 sm:p-0">
                 <FilterControls filters={filters} onFilterChange={handleFilterChange} onResetFilters={handleResetFilters} onApplyFilters={loadOrders} />
-                <div className="px-4 sm:px-6 pb-6 relative"> {/* Added relative here too */}
+                <div className="px-4 sm:px-6 pb-6 relative">
                     {ordersContent}
                 </div>
             </Card>
