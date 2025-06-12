@@ -133,11 +133,11 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
         const serviceType = item?.serviceType; // Added optional chaining
         const itemType = item?.itemType;     // Added optional chaining
 
-        if (serviceType === 'dry clean') pricePerUnit = 8;
-        else if (serviceType === 'wash & iron') pricePerUnit = 5;
-        else if (serviceType === 'iron') pricePerUnit = 3;
-        else if (serviceType === 'wash') pricePerUnit = 4;
-        else if (serviceType === 'special care') pricePerUnit = 10;
+        if (serviceType === 'dry clean') pricePerUnit = 3000;
+        else if (serviceType === 'wash & iron') pricePerUnit = 2000;
+        else if (serviceType === 'iron') pricePerUnit = 500;
+        else if (serviceType === 'wash') pricePerUnit = 1000;
+        else if (serviceType === 'special care') pricePerUnit = 5000;
         else pricePerUnit = 2;
 
         if (itemType === 'Suit') pricePerUnit *= 2;

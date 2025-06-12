@@ -74,29 +74,23 @@ const DashboardPage = () => {
         });
     }, [orders, pagination.totalOrders]);
 
-    const loadDailyPayments = useCallback(async () => {
-        setLoadingDailyPayments(true);
-        setDailyPaymentsError('');
-        try {
-            const todayStr = format(new Date(), 'yyyy-MM-dd');
-            // UNCOMMENT AND USE WHEN YOUR BACKEND API IS READY:
-            // const { data } = await fetchDailyPaymentsReport(todayStr);
-            // setDailyTotalPayments(data.totalPaidToday || 0);
-            // console.log("[DashboardPage] Daily payments loaded:", data);
-
-            // SIMULATED DATA FOR NOW:
-            await new Promise(resolve => setTimeout(resolve, 800));
-            setDailyTotalPayments(Math.floor(Math.random() * 50000) + 1000);
-            console.log("[DashboardPage] Daily payments (simulated).");
-
-        } catch (err) {
-            setDailyPaymentsError('Could not load daily sales data.');
-            console.error("Fetch Daily Payments Error:", err.response?.data?.message || err.message || err);
-        } finally {
-            setLoadingDailyPayments(false);
-        }
-    }, []);
-
+ const loadDailyPayments = useCallback(async () => {
+    setLoadingDailyPayments(true);
+    setDailyPaymentsError('');
+    try {
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const { data } = await fetchDailyPaymentsReport(todayStr); // REAL API CALL
+        // Adjust `data.totalSalesAmount` based on the actual key in your backend response
+        setDailyTotalPayments(data.totalSalesAmount || 0);
+        console.log("[DashboardPage] Daily payments loaded from API:", data);
+    } catch (err) {
+        setDailyPaymentsError('Could not load daily sales data.');
+        console.error("Fetch Daily Payments Error:", err.response?.data?.message || err.message || err);
+        setDailyTotalPayments(0); // Reset on error
+    } finally {
+        setLoadingDailyPayments(false);
+    }
+}, [])
     useEffect(() => {
         console.log("[DashboardPage] Main useEffect (mount/filters change): Calling loadOrders.");
         loadOrders();

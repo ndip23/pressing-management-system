@@ -19,22 +19,14 @@ const Button = ({
         transition-all duration-150 ease-apple disabled:opacity-50 disabled:cursor-not-allowed
         rounded-apple
     `;
-
     const variantStyles = {
-        primary: `bg-apple-blue text-white hover:bg-apple-blue-dark focus-visible:ring-apple-blue
-                  dark:bg-apple-blue-dark dark:hover:bg-apple-blue`,
-        secondary: `bg-apple-gray-200 text-apple-gray-800 hover:bg-apple-gray-300
-                    dark:bg-apple-gray-700 dark:text-apple-gray-100 dark:hover:bg-apple-gray-600
-                    focus-visible:ring-apple-gray-500 border border-transparent`,
-        danger: `bg-apple-red text-white hover:bg-red-600 focus-visible:ring-apple-red
-                 dark:hover:bg-red-500`,
-        ghost: `bg-transparent text-apple-blue hover:bg-apple-blue/10
-                dark:text-apple-blue-light dark:hover:bg-apple-blue-light/10
-                focus-visible:ring-apple-blue`,
-        link: `bg-transparent text-apple-blue hover:underline p-0 h-auto
-               dark:text-apple-blue-light focus-visible:ring-apple-blue`,
+        primary: "bg-apple-blue text-white hover:bg-apple-blue-dark focus-visible:ring-apple-blue dark:bg-apple-blue-dark dark:hover:bg-apple-blue",
+        secondary: "bg-apple-gray-200 text-apple-gray-800 hover:bg-apple-gray-300 dark:bg-apple-gray-700 dark:text-apple-gray-100 dark:hover:bg-apple-gray-600 focus-visible:ring-apple-gray-500 border border-transparent",
+        danger: "bg-apple-red text-white hover:bg-red-600 focus-visible:ring-apple-red dark:hover:bg-red-500",
+        ghost: "bg-transparent text-apple-blue hover:bg-apple-blue/10 dark:text-apple-blue-light dark:hover:bg-apple-blue-light/10 focus-visible:ring-apple-blue",
+        link: "bg-transparent text-apple-blue hover:underline p-0 h-auto dark:text-apple-blue-light focus-visible:ring-apple-blue",
+        success: "bg-apple-green text-white hover:bg-green-600 focus-visible:ring-apple-green dark:hover:bg-green-500" // <<<< NEW VARIANT
     };
-
     const sizeStyles = {
         sm: "px-3 py-1.5 text-xs leading-5",
         md: "px-4 py-2 text-sm leading-5",
