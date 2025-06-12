@@ -73,32 +73,23 @@ const DashboardPage = () => {
         });
     }, [orders, pagination.totalOrders]);
 
-    const loadDailyPayments = useCallback(async () => {
-        setLoadingDailyPayments(true);
-        setDailyPaymentsError('');
-        console.log("[DashboardPage] Initiating loadDailyPayments...");
-        try {
-            const todayStr = format(new Date(), 'yyyy-MM-dd');
-            console.log("[DashboardPage] Fetching daily payments for date:", todayStr);
-
-           
-             const { data } = await fetchDailyPaymentsReport(todayStr);
-            console.log("[DashboardPage] API Response from fetchDailyPaymentsReport:", data);
-             setDailyTotalPayments(data.totalSalesAmount || 0); 
-            await new Promise(resolve => setTimeout(resolve, 800));
-            const simulatedSales = Math.floor(Math.random() * 50000) + 1000;
-            setDailyTotalPayments(simulatedSales);
-            console.log("[DashboardPage] Daily payments (simulated):", simulatedSales);
-           
-
-        } catch (err) {
-            setDailyPaymentsError('Could not load daily sales data.');
-            console.error("Fetch Daily Payments Error:", err.response?.data?.message || err.message || err);
-            setDailyTotalPayments(0);
-        } finally {
-            setLoadingDailyPayments(false);
-        }
-    }, []);
+const loadDailyPayments = useCallback(async () => {
+    setLoadingDailyPayments(true);
+    setDailyPaymentsError('');
+    try {
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const { data } = await fetchDailyPaymentsReport(todayStr); // Make sure this line is active
+        // Adjust 'data.totalSalesAmount' to match the actual key returned by your backend
+        setDailyTotalPayments(data.totalSalesAmount || 0); 
+        console.log("[DashboardPage] Daily payments loaded from API:", data);
+    } catch (err) {
+        setDailyPaymentsError('Could not load daily sales data.');
+        console.error("Fetch Daily Payments Error:", err.response?.data?.message || err.message || err);
+        setDailyTotalPayments(0); // Reset to 0 on error
+    } finally {
+        setLoadingDailyPayments(false);
+    }
+}, []);
 
     useEffect(() => {
         console.log("[DashboardPage] Mount/Filters useEffect: Calling loadOrders.");
