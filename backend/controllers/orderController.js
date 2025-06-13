@@ -1,13 +1,11 @@
 // server/controllers/orderController.js
+import mongoose from 'mongoose'; 
 import Order from '../models/Order.js';
 import Customer from '../models/Customer.js';
 import asyncHandler from '../middleware/asyncHandler.js';
 import { generateReceiptNumber } from '../utils/generateReceiptNumber.js';
 import { sendNotification } from '../services/notificationService.js';
 
-// @desc    Create a new order
-// @route   POST /api/orders
-// @access  Private (Staff/Admin)
 const createOrder = asyncHandler(async (req, res) => {
     const {
         customerId,
@@ -21,40 +19,56 @@ const createOrder = asyncHandler(async (req, res) => {
         amountPaid,
     } = req.body;
 
+    // Core Validations
     if (!items || items.length === 0) { res.status(400); throw new Error('No order items provided'); }
     if (!expectedPickupDate) { res.status(400); throw new Error('Expected pickup date is required'); }
     if (subTotalAmount === undefined || parseFloat(subTotalAmount) < 0) { res.status(400); throw new Error('Valid subtotal amount is required'); }
 
-    let customerDoc;
+    let customerDoc; // This will hold the Mongoose document for the customer
     const providedEmail = customerEmail ? customerEmail.trim().toLowerCase() : undefined;
+    const providedPhone = customerPhone ? customerPhone.trim() : null;
+    const providedName = customerName ? customerName.trim() : null;
+    const providedAddress = customerAddress ? customerAddress.trim() : undefined;
+
 
     if (customerId) {
+        if (!mongoose.Types.ObjectId.isValid(customerId)) {
+            res.status(400); throw new Error('Invalid Customer ID format');
+        }
         customerDoc = await Customer.findById(customerId);
         if (!customerDoc) { res.status(404); throw new Error('Customer not found with the provided ID.'); }
+
         let customerWasModified = false;
-        if (customerName && customerName.trim() !== customerDoc.name) { customerDoc.name = customerName.trim(); customerWasModified = true; }
-        if (customerPhone && customerPhone.trim() !== customerDoc.phone) {
-            const existingByPhone = await Customer.findOne({ phone: customerPhone.trim(), _id: { $ne: customerDoc._id } });
+        // Update existing customer if details are different
+        if (providedName && providedName !== customerDoc.name) { customerDoc.name = providedName; customerWasModified = true; }
+        if (providedPhone && providedPhone !== customerDoc.phone) {
+            const existingByPhone = await Customer.findOne({ phone: providedPhone, _id: { $ne: customerDoc._id } });
             if (existingByPhone) { res.status(400); throw new Error('This phone number is already in use by another customer.'); }
-            customerDoc.phone = customerPhone.trim(); customerWasModified = true;
+            customerDoc.phone = providedPhone; customerWasModified = true;
         }
-        const currentCustomerEmail = (customerDoc.email || '').toLowerCase();
+        const currentCustomerEmail = (customerDoc.email || '').toLowerCase(); // Handle null/undefined email
         if (providedEmail !== undefined && providedEmail !== currentCustomerEmail) {
-            if (providedEmail) {
+            if (providedEmail) { // Only check for duplicates if new email is not empty
                 const existingByEmail = await Customer.findOne({ email: providedEmail, _id: { $ne: customerDoc._id } });
                 if (existingByEmail) { res.status(400); throw new Error('This email address is already in use by another customer.'); }
             }
             customerDoc.email = providedEmail; customerWasModified = true;
         }
-        if (customerAddress !== undefined && customerAddress.trim() !== (customerDoc.address || '')) { customerDoc.address = customerAddress.trim(); customerWasModified = true; }
-        if (customerWasModified) await customerDoc.save();
-    } else if (customerName && customerPhone) {
-        const phoneToSearch = customerPhone.trim();
-        let existingCustomerByPhone = await Customer.findOne({ phone: phoneToSearch });
-        if (existingCustomerByPhone) {
-            customerDoc = existingCustomerByPhone;
+        if (providedAddress !== undefined && providedAddress !== (customerDoc.address || '')) {
+            customerDoc.address = providedAddress === '' ? undefined : providedAddress; // Allow clearing address
+            customerWasModified = true;
+        }
+        if (customerWasModified) {
+            console.log("[OrderController - createOrder] Updating existing customer:", customerDoc);
+            await customerDoc.save();
+        }
+    } else if (providedName && providedPhone) {
+       
+        customerDoc = await Customer.findOne({ phone: providedPhone });
+        if (customerDoc) { 
+            console.log("[OrderController - createOrder] Found existing customer by phone, updating:", customerDoc);
             let customerWasModified = false;
-            if (customerName && customerName.trim() !== customerDoc.name) { customerDoc.name = customerName.trim(); customerWasModified = true; }
+            if (providedName && providedName !== customerDoc.name) { customerDoc.name = providedName; customerWasModified = true; }
             const currentCustomerEmail = (customerDoc.email || '').toLowerCase();
             if (providedEmail !== undefined && providedEmail !== currentCustomerEmail) {
                 if (providedEmail) {
@@ -63,16 +77,20 @@ const createOrder = asyncHandler(async (req, res) => {
                 }
                 customerDoc.email = providedEmail; customerWasModified = true;
             }
-            if (customerAddress !== undefined && customerAddress.trim() !== (customerDoc.address || '')) { customerDoc.address = customerAddress.trim(); customerWasModified = true; }
+            if (providedAddress !== undefined && providedAddress !== (customerDoc.address || '')) {
+                customerDoc.address = providedAddress === '' ? undefined : providedAddress;
+                customerWasModified = true;
+            }
             if (customerWasModified) await customerDoc.save();
-        } else {
-            if (providedEmail) {
+        } else { 
+            if (providedEmail) { 
                 const existingByEmail = await Customer.findOne({ email: providedEmail });
                 if (existingByEmail) { res.status(400); throw new Error('This email address is already in use. Please use a different email or find the customer associated with this email.'); }
             }
+            console.log("[OrderController - createOrder] Creating new customer with details:", { name: providedName, phone: providedPhone, email: providedEmail, address: providedAddress });
             customerDoc = await Customer.create({
-                name: customerName.trim(), phone: phoneToSearch, email: providedEmail,
-                address: customerAddress ? customerAddress.trim() : undefined,
+                name: providedName, phone: providedPhone, email: providedEmail,
+                address: providedAddress,
             });
         }
     } else {
@@ -94,15 +112,12 @@ const createOrder = asyncHandler(async (req, res) => {
     res.status(201).json(populatedOrder);
 });
 
-// @desc    Get all orders (with filtering and pagination)
-// @route   GET /api/orders
-// @access  Private (Staff/Admin)
+
 const getOrders = asyncHandler(async (req, res) => {
-    const { paid, overdue, customerName, serviceType, status, receiptNumber, customerPhone, customerId } = req.query;
+    const { paid, overdue, serviceType, status, receiptNumber, customerName, customerPhone, customerId } = req.query;
     const pageSize = parseInt(req.query.pageSize, 10) || 10;
     const page = parseInt(req.query.page, 10) || 1;
     let query = {};
-    let customerQuery = {};
 
     if (paid === 'true') query.isFullyPaid = true;
     if (paid === 'false') query.isFullyPaid = { $ne: true };
@@ -112,19 +127,23 @@ const getOrders = asyncHandler(async (req, res) => {
     }
     if (status) query.status = status;
     if (receiptNumber) query.receiptNumber = { $regex: receiptNumber, $options: 'i' };
-    if (customerId) customerQuery._id = customerId;
-    if (customerName) customerQuery.name = { $regex: customerName, $options: 'i' };
-    if (customerPhone) customerQuery.phone = { $regex: customerPhone, $options: 'i' };
+    if (serviceType) query['items.serviceType'] = { $regex: serviceType, $options: 'i' };
 
-    if (Object.keys(customerQuery).length > 0) {
-        const customers = await Customer.find(customerQuery).select('_id');
-        if (customers.length > 0) {
-            query.customer = { $in: customers.map(c => c._id) };
-        } else {
-            return res.json({ orders: [], page, pages: 0, totalOrders: 0 });
+    if (customerId) {
+        if (!mongoose.Types.ObjectId.isValid(customerId)) {
+            return res.json({ orders: [], page: 1, pages: 0, totalOrders: 0 }); 
+        }
+        query.customer = customerId;
+    } else if (customerName || customerPhone) {
+        let customerSearchQuery = { $or: [] };
+        if (customerName) customerSearchQuery.$or.push({ name: { $regex: customerName, $options: 'i' } });
+        if (customerPhone) customerSearchQuery.$or.push({ phone: { $regex: customerPhone, $options: 'i' } });
+        if (customerSearchQuery.$or.length > 0) {
+            const customers = await Customer.find(customerSearchQuery).select('_id').lean();
+            if (customers.length > 0) query.customer = { $in: customers.map(c => c._id) };
+            else return res.json({ orders: [], page: 1, pages: 0, totalOrders: 0 });
         }
     }
-    if (serviceType) query['items.serviceType'] = { $regex: serviceType, $options: 'i' };
 
     const count = await Order.countDocuments(query);
     const orders = await Order.find(query)
@@ -136,10 +155,11 @@ const getOrders = asyncHandler(async (req, res) => {
     res.json({ orders, page, pages: Math.ceil(count / pageSize), totalOrders: count });
 });
 
-// @desc    Get single order by ID
-// @route   GET /api/orders/:id
-// @access  Private (Staff/Admin)
+
 const getOrderById = asyncHandler(async (req, res) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        res.status(400); throw new Error('Invalid Order ID format');
+    }
     const order = await Order.findById(req.params.id)
         .populate('customer', 'name phone email address')
         .populate('createdBy', 'username');
@@ -147,12 +167,19 @@ const getOrderById = asyncHandler(async (req, res) => {
     res.json(order);
 });
 
-// @desc    Update an order
-// @route   PUT /api/orders/:id
-// @access  Private (Staff/Admin)
+
 const updateOrder = asyncHandler(async (req, res) => {
-    const order = await Order.findById(req.params.id).populate('customer');
+    const orderId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+        res.status(400); throw new Error('Invalid Order ID format');
+    }
+
+    const order = await Order.findById(orderId); 
     if (!order) { res.status(404); throw new Error('Order not found'); }
+
+    // Populate customer separately to work with it
+    let customerDocForOrder = await Customer.findById(order.customer);
+
 
     const {
         items, subTotalAmount, discountType, discountValue,
@@ -160,44 +187,52 @@ const updateOrder = asyncHandler(async (req, res) => {
         customerId, customerDetailsToUpdate
     } = req.body;
 
-    let customerDocForOrder = order.customer;
-    if (customerId && customerDocForOrder?._id.toString() !== customerId) {
-        const newCustomerToAssociate = await Customer.findById(customerId);
-        if (!newCustomerToAssociate) { res.status(404); throw new Error('Specified new customer ID not found.'); }
-        customerDocForOrder = newCustomerToAssociate;
-        order.customer = customerDocForOrder._id;
-    }
-
-    if (customerDetailsToUpdate && customerDocForOrder) {
-        let customerModified = false;
-        const providedEmailUpdate = customerDetailsToUpdate.email ? customerDetailsToUpdate.email.trim().toLowerCase() : undefined;
-        if (customerDetailsToUpdate.name && customerDetailsToUpdate.name.trim() !== customerDocForOrder.name) {
-            customerDocForOrder.name = customerDetailsToUpdate.name.trim(); customerModified = true;
+    if (customerId && customerId !== order.customer.toString()) { 
+        if (!mongoose.Types.ObjectId.isValid(customerId)) {
+            res.status(400); throw new Error('Invalid new Customer ID format for re-association.');
         }
+        const newCustomerToAssociate = await Customer.findById(customerId);
+        if (!newCustomerToAssociate) { res.status(404); throw new Error('Specified new customer for re-association not found.'); }
+        order.customer = newCustomerToAssociate._id;
+        customerDocForOrder = newCustomerToAssociate; 
+    } else if (customerDetailsToUpdate && customerDocForOrder) { 
+        let customerWasModified = false;
+        const providedEmailUpdate = customerDetailsToUpdate.email ? customerDetailsToUpdate.email.trim().toLowerCase() : undefined;
+
+        if (customerDetailsToUpdate.name && customerDetailsToUpdate.name.trim() !== customerDocForOrder.name) { customerDocForOrder.name = customerDetailsToUpdate.name.trim(); customerWasModified = true; }
         if (customerDetailsToUpdate.phone && customerDetailsToUpdate.phone.trim() !== customerDocForOrder.phone) {
             const existingByPhone = await Customer.findOne({ phone: customerDetailsToUpdate.phone.trim(), _id: { $ne: customerDocForOrder._id } });
             if (existingByPhone) { res.status(400); throw new Error('Updated phone number is already in use by another customer.'); }
-            customerDocForOrder.phone = customerDetailsToUpdate.phone.trim(); customerModified = true;
+            customerDocForOrder.phone = customerDetailsToUpdate.phone.trim(); customerWasModified = true;
         }
-        const currentCustomerEmail = (customerDocForOrder.email || '').toLowerCase();
-        if (providedEmailUpdate !== undefined && providedEmailUpdate !== currentCustomerEmail) {
+        const currentCustomerEmailOnDoc = (customerDocForOrder.email || '').toLowerCase();
+        if (providedEmailUpdate !== undefined && providedEmailUpdate !== currentCustomerEmailOnDoc) {
             if (providedEmailUpdate) {
                 const existingByEmail = await Customer.findOne({ email: providedEmailUpdate, _id: { $ne: customerDocForOrder._id } });
                 if (existingByEmail) { res.status(400); throw new Error('Updated email address is already in use by another customer.'); }
             }
-            customerDocForOrder.email = providedEmailUpdate; customerModified = true;
+            customerDocForOrder.email = providedEmailUpdate; customerWasModified = true;
         }
         if (customerDetailsToUpdate.address !== undefined && customerDetailsToUpdate.address.trim() !== (customerDocForOrder.address || '')) {
-            customerDocForOrder.address = customerDetailsToUpdate.address.trim(); customerModified = true;
+            customerDocForOrder.address = customerDetailsToUpdate.address.trim() === '' ? undefined : customerDetailsToUpdate.address.trim();
+            customerWasModified = true;
         }
-        if (customerModified) await customerDocForOrder.save();
+        if (customerWasModified) {
+            console.log("[OrderController - updateOrder] Updating associated customer's details:", customerDocForOrder);
+            await customerDocForOrder.save();
+        }
     }
+  
 
     if (items !== undefined) order.items = items;
     if (subTotalAmount !== undefined) order.subTotalAmount = parseFloat(subTotalAmount);
     if (discountType !== undefined) order.discountType = discountType;
     if (discountValue !== undefined) order.discountValue = parseFloat(discountValue) || 0;
-    if (amountPaid !== undefined) order.amountPaid = parseFloat(amountPaid);
+    if (amountPaid !== undefined) {
+        const newAmountPaid = parseFloat(amountPaid);
+        if (isNaN(newAmountPaid) || newAmountPaid < 0) { res.status(400); throw new Error("Invalid payment amount provided."); }
+        order.amountPaid = newAmountPaid;
+    }
     if (expectedPickupDate !== undefined) order.expectedPickupDate = expectedPickupDate;
     if (actualPickupDate !== undefined) order.actualPickupDate = actualPickupDate;
     if (notes !== undefined) order.notes = notes;
@@ -205,12 +240,12 @@ const updateOrder = asyncHandler(async (req, res) => {
     if (status && status !== order.status) {
         order.status = status;
         if (status === 'Ready for Pickup' && !order.notified) {
-            const customerForNotification = await Customer.findById(order.customer);
-            if (customerForNotification && (customerForNotification.email || customerForNotification.phone)) {
-                const notificationResult = await sendNotification(customerForNotification, 'readyForPickup', order);
+            const customerToNotify = await Customer.findById(order.customer); 
+            if (customerToNotify && (customerToNotify.email || customerToNotify.phone)) {
+                const notificationResult = await sendNotification(customerToNotify, 'readyForPickup', order);
                 if (notificationResult.sent) { order.notified = true; order.notificationMethod = notificationResult.method; }
                 else { order.notificationMethod = 'failed-auto'; console.warn(`[OrderController] Auto 'Ready for Pickup' notification FAILED for ${order.receiptNumber}: ${notificationResult.message}`); }
-            } else { order.notificationMethod = 'no-contact-auto'; console.warn(`[OrderController] No contact for auto-notification: Order ${order.receiptNumber}, Customer ${customerForNotification?.name || 'ID ' + order.customer}.`); }
+            } else { order.notificationMethod = 'no-contact-auto'; console.warn(`[OrderController] No contact/customer found for auto-notification: Order ${order.receiptNumber}`); }
         }
     }
 
@@ -219,79 +254,66 @@ const updateOrder = asyncHandler(async (req, res) => {
     res.json(populatedOrder);
 });
 
-// @desc    Delete an order
-// @route   DELETE /api/orders/:id
-// @access  Private/Admin
-const deleteOrder = asyncHandler(async (req, res) => { // <<<< DEFINITION OF deleteOrder
-    const order = await Order.findById(req.params.id);
-    if (!order) {
-        res.status(404);
-        throw new Error('Order not found');
+
+const deleteOrder = asyncHandler(async (req, res) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        res.status(400); throw new Error('Invalid Order ID format');
     }
-    // Add any business logic before deletion if necessary
-    // For example, prevent deletion of orders that are not 'Completed' or 'Cancelled'
-    // if (!['Completed', 'Cancelled'].includes(order.status)) {
-    //    res.status(400);
-    //    throw new Error('Order cannot be deleted unless it is Completed or Cancelled.');
-    // }
-    await order.deleteOne(); // Mongoose v6+
+    const order = await Order.findById(req.params.id);
+    if (!order) { res.status(404); throw new Error('Order not found'); }
+    await order.deleteOne();
     res.json({ message: 'Order removed successfully' });
 });
 
-// @desc    Manually trigger a notification for an order
-// @route   POST /api/orders/:id/notify
-// @access  Private (Staff/Admin)
+
 const manuallyNotifyCustomer = asyncHandler(async (req, res) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        res.status(400); throw new Error('Invalid Order ID format');
+    }
     const order = await Order.findById(req.params.id).populate('customer');
     if (!order) { res.status(404); throw new Error('Order not found'); }
     if (!order.customer) { res.status(400); throw new Error('Customer details not found for this order.'); }
     if (!order.customer.email && !order.customer.phone) { res.status(400); throw new Error('Customer has no email or phone number on file.');}
 
-    console.log(`[OrderController] Attempting manual notification for order ${order.receiptNumber} to customer ${order.customer.name}.`);
     const notificationResult = await sendNotification( order.customer, 'manualReminder', order );
-
     if (notificationResult.sent) {
-        order.notified = true;
-        order.notificationMethod = `manual-${notificationResult.method}`;
+        order.notified = true; order.notificationMethod = `manual-${notificationResult.method}`;
         await order.save();
         const populatedOrder = await Order.findById(order._id).populate('customer', 'name phone email address').populate('createdBy', 'username');
         res.json({ message: `Notification successfully sent via ${notificationResult.method}.`, order: populatedOrder });
     } else {
         const errorMessage = notificationResult.message || 'Failed to send manual notification. Check server logs.';
         console.error(`[OrderController] Manual notification FAILED for order ${order.receiptNumber}: ${errorMessage}`);
-        res.status(500).json({ message: errorMessage }); // Send error message in JSON
+        res.status(500).json({ message: errorMessage });
     }
 });
+
+
 const markOrderAsFullyPaid = asyncHandler(async (req, res) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        res.status(400); throw new Error('Invalid Order ID format');
+    }
     const order = await Order.findById(req.params.id);
+    if (!order) { res.status(404); throw new Error('Order not found'); }
 
-    if (!order) {
-        res.status(404);
-        throw new Error('Order not found');
+    if (order.isFullyPaid && order.amountPaid >= order.totalAmount) {
+        console.log(`[OrderController] Order ${order.receiptNumber} is already marked as paid and amountPaid covers totalAmount.`);
+    } else {
+        order.amountPaid = order.totalAmount; // This will trigger pre-save to set isFullyPaid = true
+        console.log(`[OrderController] Marking order ${order.receiptNumber} as fully paid. Setting amountPaid to totalAmount: ${order.totalAmount}`);
     }
-
-    if (order.isFullyPaid) {
-        
-        console.log(`[OrderController] Order ${order.receiptNumber} is already marked as paid. Ensuring amounts match.`);
-    }
-
-    order.amountPaid = order.totalAmount;
 
     const updatedOrder = await order.save();
-    const populatedOrder = await Order.findById(updatedOrder._id)
-        .populate('customer', 'name phone email address')
-        .populate('createdBy', 'username');
-
+    const populatedOrder = await Order.findById(updatedOrder._id).populate('customer', 'name phone email address').populate('createdBy', 'username');
     res.json(populatedOrder);
 });
 
-
-export { 
+export {
     createOrder,
     getOrders,
     getOrderById,
     updateOrder,
-    deleteOrder, 
+    deleteOrder,
     manuallyNotifyCustomer,
     markOrderAsFullyPaid
 };
