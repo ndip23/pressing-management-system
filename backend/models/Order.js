@@ -1,5 +1,4 @@
-// server/models/Order.js
-// server/models/Order.js
+
 import mongoose from 'mongoose';
 
 const orderItemSchema = new mongoose.Schema({
@@ -50,24 +49,15 @@ orderSchema.pre('save', function (next) {
         if (this.totalAmount < 0) this.totalAmount = 0;
     }
 
-    // --- NEW VALIDATION: Ensure amountPaid does not exceed totalAmount ---
+    
     if (typeof this.amountPaid === 'number' && typeof this.totalAmount === 'number') {
         if (this.amountPaid > this.totalAmount) {
-            // Option 1: Automatically cap amountPaid to totalAmount (less informative to user unless frontend also does this)
-            // this.amountPaid = this.totalAmount;
-            // console.warn(`Order ${this.receiptNumber}: amountPaid (${this.amountPaid}) exceeded totalAmount (${this.totalAmount}). Capping amountPaid.`);
-
-            // Option 2: Throw a validation error (more explicit, forces frontend/API caller to handle it)
+            
             const err = new Error(`Amount paid (${this.amountPaid}) cannot exceed the total amount due (${this.totalAmount}).`);
-            // To make it behave like a Mongoose validation error, you can attach it to a path:
-            // this.invalidate('amountPaid', 'Amount paid cannot exceed the total amount due.', this.amountPaid);
+            
             return next(err); // Stop save and pass error
         }
     }
-    // --- END OF NEW VALIDATION ---
-
-
-    // Update lastPaymentDate logic
     if (this.isModified('amountPaid')) {
         if (this.amountPaid > 0) {
             this.lastPaymentDate = new Date();

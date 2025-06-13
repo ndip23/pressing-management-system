@@ -10,16 +10,16 @@ import authRoutes from './routes/authRoutes.js';
 import customerRoutes from './routes/customerRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
-import adminNotificationRoutes from './routes/adminNotificationRoutes.js'; // IMPORTED
+import adminNotificationRoutes from './routes/adminNotificationRoutes.js'; 
 import reportRoutes from './routes/reportRoutes.js'; 
 // Import scheduler
-import { startOrderChecks } from './schedulers/orderChecker.js'; // IMPORTED
+import { startOrderChecks } from './schedulers/orderChecker.js'; 
 
 dotenv.config();
 
 const app = express();
 
-// Connect to Database and then start scheduler
+
 connectDB().then(() => {
     // Start scheduler only if not disabled and not in a test environment
     // that might not want schedulers running.
@@ -28,7 +28,7 @@ connectDB().then(() => {
     }
 }).catch(err => {
     console.error("CRITICAL: Failed to connect to DB. Application will not start properly.", err);
-    process.exit(1); // Exit if DB connection fails at startup
+    process.exit(1); 
 });
 
 const corsOptions = {
