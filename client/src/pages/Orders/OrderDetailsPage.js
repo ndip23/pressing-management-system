@@ -193,9 +193,9 @@ const OrderDetailsPage = () => {
                         <div><h1 className="text-2xl sm:text-3xl font-semibold text-apple-gray-800 dark:text-apple-gray-100">Order Details</h1><p className="text-sm text-apple-gray-500 dark:text-apple-gray-400">Receipt # {order.receiptNumber}</p></div>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <Button variant="secondary" onClick={() => loadOrder(false)} iconLeft={<RefreshCw size={16}/>} isLoading={loading && !!order} disabled={loading && !!order}>Refresh</Button>
+                       {/* <Button variant="secondary" onClick={() => loadOrder(false)} iconLeft={<RefreshCw size={16}/>} isLoading={loading && !!order} disabled={loading && !!order}>Refresh</Button>*/}
                         <Button variant="secondary" onClick={handlePrintReceipt} iconLeft={<Printer size={16}/>}>Print Receipt</Button>
-                        <Link to={`/orders/${order._id}/edit`}><Button variant="primary" iconLeft={<Edit3 size={16}/>}>Edit Order</Button></Link>
+                       {/* <Link to={`/orders/${order._id}/edit`}><Button variant="primary" iconLeft={<Edit3 size={16}/>}>Edit Order</Button></Link>*/}
                     </div>
                 </div>
                 {isOrderOverdue && (<Card className="bg-red-100 dark:bg-red-900/40 border-2 border-red-400 dark:border-red-600 shadow-lg animate-pulse-slow"><div className="flex items-center p-4"><AlertTriangle size={32} className="text-red-600 dark:text-red-400 mr-4 flex-shrink-0" /><div><h3 className="text-lg font-semibold text-red-700 dark:text-red-300">Order Overdue!</h3>{order.expectedPickupDate && <p className="text-sm text-red-600 dark:text-red-500">Expected: {format(parseISO(order.expectedPickupDate), dateTimeFormat)}</p>}</div></div></Card>)}
@@ -276,10 +276,6 @@ const OrderDetailsPage = () => {
                 {order.notes && ( <div className="mt-3 pt-2 border-t border-dashed border-gray-400"><h4 className="font-semibold text-xs mb-0.5">Order Notes:</h4><p className="text-[10px] whitespace-pre-wrap">{order.notes}</p></div> )}
                 <div className="mt-6 text-center text-[10px] text-gray-500"><p>Thank you for your business!</p><p>{companyInfo.name}</p></div>
             </div>
-            {/* --- END OF PRINTABLE RECEIPT AREA --- */}
-
-
-            {/* --- ON-SCREEN DETAILS & ACTIONS (HIDDEN ON PRINT) --- */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print-hide">
                 <div className="lg:col-span-2 space-y-6">
                     <Card title="Order Details (Screen View)" contentClassName="p-0">

@@ -79,7 +79,7 @@ const OrderTable = ({ orders }) => {
                                         </span>
                                     ) : isPartiallyPaid ? (
                                         <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-800/40 dark:text-yellow-300">
-                                            <DollarSign size={14} className="mr-1.5 -ml-0.5"/> Partially Paid
+                                         Partially Paid
                                         </span>
                                     ) : (
                                         <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-red-100 text-apple-red dark:bg-red-800/40 dark:text-red-300">
@@ -104,9 +104,9 @@ const OrderTable = ({ orders }) => {
                                         <Link to={`/orders/${order._id}`} className="text-apple-gray-500 hover:text-apple-blue dark:text-apple-gray-400 dark:hover:text-apple-blue-light p-1 rounded-full hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700 transition-colors" title="View Details">
                                             <Eye size={18} />
                                         </Link>
-                                        <Link to={`/orders/${order._id}/edit`} className="text-apple-gray-500 hover:text-apple-orange dark:text-apple-gray-400 dark:hover:text-orange-400 p-1 rounded-full hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700 transition-colors" title="Edit Order">
+                                      {/*<Link to={`/orders/${order._id}/edit`} className="text-apple-gray-500 hover:text-apple-orange dark:text-apple-gray-400 dark:hover:text-orange-400 p-1 rounded-full hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700 transition-colors" title="Edit Order">
                                             <Edit3 size={18} />
-                                        </Link>
+                                        </Link>*/}
                                     </div>
                                 </td>
                             </tr>
