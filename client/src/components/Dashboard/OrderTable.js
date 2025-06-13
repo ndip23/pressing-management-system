@@ -98,7 +98,7 @@ const OrderTable = ({ orders }) => {
                                                 className="text-apple-blue hover:text-sky-600 dark:text-sky-400 dark:hover:text-sky-300 p-1 rounded-full hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700 transition-colors"
                                                 title="Record Payment"
                                             >
-                                                <DollarSign size={18} />
+                                                Pay
                                             </Link>
                                         )}
                                         <Link to={`/orders/${order._id}`} className="text-apple-gray-500 hover:text-apple-blue dark:text-apple-gray-400 dark:hover:text-apple-blue-light p-1 rounded-full hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700 transition-colors" title="View Details">

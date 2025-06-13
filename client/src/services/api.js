@@ -1,7 +1,7 @@
-// client/src/services/api.js
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api'; 
+console.log(`[api.js] API_URL determined as: ${API_URL}`);
 
 const api = axios.create({
     baseURL: API_URL,
@@ -10,53 +10,68 @@ const api = axios.create({
     },
 });
 
+// Request interceptor (for token)
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
+        // Log outgoing requests for debugging (optional, can be verbose)
+        // console.log(`[api.js] Sending ${config.method.toUpperCase()} request to ${config.url}`, config.params || config.data || '');
         return config;
     },
-    (error) => Promise.reject(error)
-);
-
-api.interceptors.response.use(
-    (response) => response,
     (error) => {
-        if (error.response && error.response.status === 401) {
-            console.warn('API request Unauthorized (401):', error.response.data.message);
-            // AuthContext logout should ideally handle localStorage.removeItem('token')
-            // and redirect.
-            // if (window.location.pathname !== '/login') {
-            //    window.location.href = '/login';
-            // }
-        }
+        console.error("[api.js] Request Error Interceptor:", error);
         return Promise.reject(error);
     }
 );
 
+
+api.interceptors.response.use(
+    (response) => response, 
+    (error) => {
+        console.error("[api.js] Response Error Interceptor - Error object:", error);
+        if (error.response) {
+           
+            console.error("[api.js] Response Error - Data:", error.response.data);
+            console.error("[api.js] Response Error - Status:", error.response.status);
+            console.error("[api.js] Response Error - Headers:", error.response.headers);
+            if (error.response.status === 401) {
+                console.warn('[api.js] API request Unauthorized (401):', error.response.data?.message || 'Token may be invalid or expired.');
+                 if (window.location.pathname !== '/login') {
+                   localStorage.removeItem('token'); 
+                    window.location.href = '/login'; 
+                }
+            }
+        } else if (error.request) {
+            
+            console.error("[api.js] Network Error or No Response:", error.request);
+        } else {
+           
+            console.error('[api.js] Axios Request Setup Error:', error.message);
+        }
+        return Promise.reject(error); 
+    }
+);
+
 export const loginUser = (credentials) => api.post('/auth/login', credentials);
-export const registerUser = (userData) => api.post('/auth/register', userData);
+export const registerUser = (userData) => api.post('/auth/register', userData); 
 export const logoutUserApi = () => api.post('/auth/logout');
 export const getMe = () => api.get('/auth/me');
+export const updateMyProfile = (profileData) => api.put('/auth/me', profileData);
+export const changeMyPassword = (passwordData) => api.put('/auth/me/change-password', passwordData);
 
-export const fetchOrders = (filters = {}) => {
-    const queryParams = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-        if (value || typeof value === 'boolean' || typeof value === 'number') { // Keep false booleans and 0 numbers
-             if (value !== '' && value !== null && value !== undefined) { // Explicitly check for non-empty values
-                queryParams.append(key, value);
-            }
-        }
-    });
-    return api.get(`/orders?${queryParams.toString()}`);
+export const fetchOrders = async (filters = {}) => {
+    console.log("[api.js] fetchOrders called with filters:", filters);
+    return api.get('/orders', { params: filters });
 };
 export const fetchOrderById = (orderId) => api.get(`/orders/${orderId}`);
 export const createNewOrder = (orderData) => api.post('/orders', orderData);
 export const updateExistingOrder = (orderId, orderData) => api.put(`/orders/${orderId}`, orderData);
 export const deleteOrderApi = (orderId) => api.delete(`/orders/${orderId}`);
-export const sendManualNotification = (orderId) => api.post(`/orders/${orderId}/notify`); // Ensure this is correct
+export const sendManualNotification = (orderId) => api.post(`/orders/${orderId}/notify`);
+export const markOrderPaidApi = async (orderId) => api.put(`/orders/${orderId}/mark-paid`);
 
 export const fetchCustomers = (searchQuery = '') => {
     const params = searchQuery ? { search: searchQuery } : {};
@@ -66,33 +81,26 @@ export const fetchCustomerById = (customerId) => api.get(`/customers/${customerI
 export const createNewCustomer = (customerData) => api.post('/customers', customerData);
 export const updateExistingCustomer = (customerId, customerData) => api.put(`/customers/${customerId}`, customerData);
 export const deleteCustomerApi = (customerId) => api.delete(`/customers/${customerId}`);
-export const fetchAppSettings = async () => {
-    return api.get('/settings');
-};
 
-export const updateAppSettingsApi = async (settingsData) => {
-    return api.put('/settings', settingsData);
-};
-export const fetchAdminNotificationsApi = async () => {
-    return api.get('/admin-notifications');
-};
+export const fetchAppSettings = async () => api.get('/settings');
+export const updateAppSettingsApi = async (settingsData) => api.put('/settings', settingsData);
 
-export const markAdminNotificationReadApi = async (notificationId) => {
-    return api.put(`/admin-notifications/${notificationId}/read`);
-};
+export const fetchAdminNotificationsApi = async () => api.get('/admin-notifications');
+export const markAdminNotificationReadApi = async (notificationId) => api.put(`/admin-notifications/${notificationId}/read`);
+export const markAllAdminNotificationsReadApi = async () => api.put('/admin-notifications/read-all');
 
-export const markAllAdminNotificationsReadApi = async () => {
-    return api.put('/admin-notifications/read-all');
-};
-export const fetchDailyPaymentsReport = async (date) => { 
-    if (!date) {
-        console.error("fetchDailyPaymentsReport: Date parameter is required.");
-        return Promise.reject(new Error("Date parameter is required for daily payments report."));
+export const fetchDailyPaymentsReport = async (queryParams) => {
+   
+    console.log("[api.js] fetchDailyPaymentsReport - Input queryParams:", queryParams);
+
+    if (!queryParams || typeof queryParams.date !== 'string' || queryParams.date.trim() === '') {
+        const errorMsg = "[api.js] fetchDailyPaymentsReport: 'date' parameter (YYYY-MM-DD string) is required in queryParams.";
+        console.error(errorMsg);
+        return Promise.reject(new Error(errorMsg)); 
     }
-    return api.get(`/reports/daily-payments?date=${date}`);
+   
+    return api.get('/reports/daily-sales', { params: queryParams });
 };
-export const markOrderPaidApi = async (orderId) => {
-    return api.put(`/orders/${orderId}/mark-paid`);
-};
+
 
 export default api;
