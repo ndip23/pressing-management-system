@@ -66,7 +66,7 @@ const LoginPage = () => {
             <Card className="w-full max-w-sm shadow-apple-lg">
                 <div className="p-6 sm:p-8">
                     <h2 className="text-2xl font-semibold text-center text-apple-gray-900 dark:text-apple-gray-100 mb-6">
-                        Staff Login
+                        Login
                     </h2>
                     <LoginForm
                         onSubmit={handleLoginSubmit}

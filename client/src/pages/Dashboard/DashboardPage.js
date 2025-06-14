@@ -207,7 +207,7 @@ const DashboardPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <StatCard title="Today's Sales" value={`${currencySymbol} ${(typeof dailyTotalPayments === 'number' ? dailyTotalPayments.toFixed(2) : '0.00')}`} icon={<TrendingUp size={24} className="text-green-500" />} isLoading={loadingDailyPayments} />
                 <StatCard title="Total Orders" value={String(pagination.totalOrders)} icon={<Shirt size={24} className="text-apple-blue" />} isLoading={loadingOrders && pagination.totalOrders === 0 && !ordersError } />
-                <StatCard title="Pending" value={String(stats.pending)} icon={<Clock3 size={24} className="text-apple-orange" />} isLoading={loadingOrders && orders.length === 0 && !ordersError} />
+                <StatCard title="Pending/Processing" value={String(stats.pending)} icon={<Clock3 size={24} className="text-apple-orange" />} isLoading={loadingOrders && orders.length === 0 && !ordersError} />
                 <StatCard title="Ready for Pickup" value={String(stats.ready)} icon={<CheckCircle2 size={24} className="text-apple-green" />} isLoading={loadingOrders && orders.length === 0 && !ordersError} />
                 <StatCard title="Overdue Orders" value={String(stats.overdue)} icon={<AlertTriangle size={24} className="text-apple-red" />} colorClass={stats.overdue > 0 ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700' : ''} isLoading={loadingOrders && orders.length === 0 && !ordersError} />
             </div>

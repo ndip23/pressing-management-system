@@ -140,11 +140,6 @@ const Navbar = ({ toggleSidebar }) => {
                             </div>
                         )}
                     </div>
-                    <Link to="/profile" 
-                        onClick={() => setShowUserMenu(false)} 
-                         className="flex items-center w-full text-left px-4 py-2 text-sm hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700/50">
-                         <UserCircle size={16} className="mr-2"/> My Profile
-                    </Link>
                 </div>
             </div>
         </header>

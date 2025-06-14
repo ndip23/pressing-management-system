@@ -4,7 +4,7 @@ import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 
 const MainLayout = () => {
-    const [sidebarOpen, setSidebarOpen] = useState(true); // Or false for mobile-first hidden
+    const [sidebarOpen, setSidebarOpen] = useState(true); 
 
     return (
         <div className="flex h-screen bg-apple-gray-100 dark:bg-apple-gray-950 text-apple-gray-800 dark:text-apple-gray-200">
