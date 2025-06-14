@@ -89,17 +89,13 @@ export const fetchAdminNotificationsApi = async () => api.get('/admin-notificati
 export const markAdminNotificationReadApi = async (notificationId) => api.put(`/admin-notifications/${notificationId}/read`);
 export const markAllAdminNotificationsReadApi = async () => api.put('/admin-notifications/read-all');
 
-export const fetchDailyPaymentsReport = async (queryParams) => {
-   
-    console.log("[api.js] fetchDailyPaymentsReport - Input queryParams:", queryParams);
-
-    if (!queryParams || typeof queryParams.date !== 'string' || queryParams.date.trim() === '') {
-        const errorMsg = "[api.js] fetchDailyPaymentsReport: 'date' parameter (YYYY-MM-DD string) is required in queryParams.";
-        console.error(errorMsg);
-        return Promise.reject(new Error(errorMsg)); 
+export const fetchDailyPaymentsReport = async (date) => { // date should be 'YYYY-MM-DD'
+    if (!date) {
+        // Or throw an error, or handle default date if needed
+        console.error("fetchDailyPaymentsReport: Date parameter is required.");
+        return Promise.reject(new Error("Date parameter is required for daily payments report."));
     }
-   
-    return api.get('/reports/daily-sales', { params: queryParams });
+    return api.get(`/reports/daily-payments?date=${date}`);
 };
 
 

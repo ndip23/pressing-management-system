@@ -93,31 +93,26 @@ const DashboardPage = () => {
             overdue: orders.filter(o => o.expectedPickupDate && isPast(parseISO(o.expectedPickupDate)) && !['Completed', 'Cancelled'].includes(o.status)).length,
         });
     }, [orders, pagination.totalOrders]); // Recalculate when orders or totalOrders change
-
-    const loadDailyPayments = useCallback(async () => {
+ const loadDailyPayments = useCallback(async () => {
         setLoadingDailyPayments(true);
         setDailyPaymentsError('');
         try {
-            const todayStr = format(new Date(), 'yyyy-MM-dd');
-            const { data } = await fetchDailyPaymentsReport({ date: todayStr });
-            console.log("[DashboardPage] RAW API Response from fetchDailyPaymentsReport:", JSON.stringify(data, null, 2));
+            const todayStr = format(new Date(), 'yyyy-MM-dd'); // Define todayStr INSIDE the async function
+            const { data } = await fetchDailyPaymentsReport(todayStr); // API call INSIDE async function
             setDailyTotalPayments(data.totalAmountFromOrdersWithActivity || 0);
         } catch (err) {
-            setDailyPaymentsError('Could not load today\'s sales data.');
-            setDailyTotalPayments(0);
-            console.error("Fetch Daily Payments Error (Dashboard):", err.response?.data?.message || err.message || err);
+            setDailyPaymentsError('Could not load daily sales data.');
+            console.error("Fetch Daily Payments Error for Dashboard:", err.response?.data?.message || err.message || err);
         } finally {
             setLoadingDailyPayments(false);
         }
-    }, []); 
+    }, []); // Empty dependency array means this function instance is stable
 
     useEffect(() => {
         loadOrders();
-    }, [loadOrders]); // This effect runs when loadOrders (due to filters changing) runs
+        loadDailyPayments();
+    }, [loadOrders, loadDailyPayments]);
 
-    useEffect(() => {
-        loadDailyPayments(); // Load once on mount
-    }, [loadDailyPayments]); // loadDailyPayments is stable
 
     const handleFilterChange = (newFilters) => setFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
     const handleResetFilters = () => setFilters({ paid: '', overdue: '', customerName: '', status: '', receiptNumber: '', customerPhone: '', page: 1, pageSize: 10 });
