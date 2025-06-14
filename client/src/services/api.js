@@ -10,7 +10,6 @@ const api = axios.create({
     },
 });
 
-// Request interceptor (for token)
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
@@ -96,6 +95,13 @@ export const fetchDailyPaymentsReport = async (date) => { // date should be 'YYY
         return Promise.reject(new Error("Date parameter is required for daily payments report."));
     }
     return api.get(`/reports/daily-payments?date=${date}`);
+};
+export const uploadMyProfilePicture = async (formData) => {
+    return api.put('/auth/me/profile-picture', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data', 
+        },
+    });
 };
 
 
