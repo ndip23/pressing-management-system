@@ -14,7 +14,7 @@ const DailyPaymentsPage = () => {
     const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-
+    const [loadingReport, setLoadingReport] = useState(false);
     const currencySymbol = 'FCFA'; 
 
     const loadReport = useCallback(async (dateToFetch) => {

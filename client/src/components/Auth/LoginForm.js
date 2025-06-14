@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Input from '../UI/Input';
 import Button from '../UI/Button';
-import { LogIn, Eye, EyeOff } from 'lucide-react'; s
+import { LogIn, Eye, EyeOff } from 'lucide-react'; 
 
 const LoginForm = ({ onSubmit, isLoading, error }) => {
     const [username, setUsername] = useState('');
