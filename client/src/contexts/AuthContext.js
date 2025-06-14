@@ -5,7 +5,7 @@ import React, {
     useEffect,
     useContext,
     useCallback
-} from 'react'; // <--- ****** THIS IS THE CRUCIAL MISSING IMPORT ******
+} from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { loginUser as apiLoginUser, getMe as apiGetMe, logoutUserApi } from '../services/api';
 import Spinner from '../components/UI/Spinner';
@@ -14,92 +14,113 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem('token'));
-    const [loading, setLoading] = useState(true); // For initial auth check
+    const [token, setToken] = useState(localStorage.getItem('token')); 
+    const [loading, setLoading] = useState(true); 
+
+   
+    const logout = useCallback(async () => {
+        console.log("[AuthContext] Logging out...");
+        try {
+           
+            if (localStorage.getItem('token')) { 
+                await logoutUserApi();
+            }
+        } catch (error) {
+            console.error("[AuthContext] Logout API call failed:", error.response?.data?.message || error.message);
+        } finally {
+            localStorage.removeItem('token');
+            setUser(null);
+            setToken(null); // Clear token state
+            console.log("[AuthContext] Client-side logout completed.");
+        }
+    }, []); 
 
     const fetchAndSetUser = useCallback(async (jwtToken) => {
         if (jwtToken) {
             try {
                 const decoded = jwtDecode(jwtToken);
                 if (decoded.exp * 1000 < Date.now()) {
-                    console.log("Token expired on load");
-                    await logout(); // Token expired
+                    console.log("[AuthContext] Token expired on load, logging out.");
+                    await logout(); // Use the memoized logout
                     return;
                 }
+               
                 localStorage.setItem('token', jwtToken);
                 setToken(jwtToken);
 
                 try {
-                    const { data: userData } = await apiGetMe();
+                    const { data: userData } = await apiGetMe(); // apiGetMe will use the token via interceptor
                     setUser(userData);
+                    console.log("[AuthContext] User fetched and set:", userData);
                 } catch (meError) {
-                    console.error("Failed to fetch /me:", meError.response?.data?.message || meError.message);
-                    await logout();
+                    console.error("[AuthContext] Failed to fetch /me, logging out:", meError.response?.data?.message || meError.message);
+                    await logout(); 
                 }
-
             } catch (error) {
-                console.error("Invalid token on load:", error);
-                await logout();
+                console.error("[AuthContext] Invalid token on load, logging out:", error);
+                await logout(); 
             }
         } else {
-            await logout();
-        }
-    }, []); // Removed logout from dependencies for now to re-evaluate if needed
 
-    const logout = useCallback(async () => { // Make logout async if it calls an API
-        try {
-            if (token) {
-                await logoutUserApi();
+            if (user || token) { 
+                 console.log("[AuthContext] No token found, ensuring logout state if previously logged in.");
+                 await logout();
+            } else {
+                setUser(null);
+                setToken(null);
             }
-        } catch (error) {
-            console.error("Logout API call failed:", error.response?.data?.message || error.message);
-        } finally {
-            localStorage.removeItem('token');
-            setUser(null);
-            setToken(null);
-            // if (window.location.pathname !== '/login') { // Optional: force redirect
-            //     window.location.href = '/login';
-            // }
         }
-    }, [token]); // Added token as a dependency for the logout API call condition
-
-    // Re-add fetchAndSetUser and logout to the dependency array of useEffect
-    // after ensuring they are stable (which they should be with useCallback).
+    }, [logout, user, token]); 
     useEffect(() => {
         const checkUser = async () => {
+            console.log("[AuthContext] Initial checkUser effect running.");
             setLoading(true);
             const storedToken = localStorage.getItem('token');
-            // Pass logout to fetchAndSetUser if it's needed internally and causing dependency issues
-            await fetchAndSetUser(storedToken /*, logout */);
+            await fetchAndSetUser(storedToken);
             setLoading(false);
+            console.log("[AuthContext] Initial checkUser effect finished.");
         };
         checkUser();
-    }, [fetchAndSetUser /*, logout */]); // Re-add logout here if fetchAndSetUser calls it and it's not stable.
+    }, [fetchAndSetUser]);
 
     const login = async (username, password) => {
         try {
             const { data } = await apiLoginUser({ username, password });
-            // Pass logout to fetchAndSetUser if needed
-            await fetchAndSetUser(data.token /*, logout */);
-            return true;
+            await fetchAndSetUser(data.token); 
+            return true; 
         } catch (error) {
-            console.error('Login failed context:', error.response?.data?.message || error.message);
-            await logout();
+            console.error('[AuthContext] Login failed:', error.response?.data?.message || error.message);
+            
+            await logout(); 
             throw error.response?.data || new Error(error.response?.data?.message || 'Login failed');
         }
     };
 
+    const updateUserInContext = (updatedUserData) => {
+        console.log("[AuthContext] Updating user in context with:", updatedUserData);
+        setUser(prevUser => {
+            if (!prevUser) {
+                console.warn("[AuthContext] updateUserInContext called but prevUser is null. Setting user directly.");
+                return { ...updatedUserData }; 
+            }
+            const newUserState = { ...prevUser, ...updatedUserData };
+            console.log("[AuthContext] New user state after update:", newUserState);
+            return newUserState;
+        });
+
+    };
 
     const value = {
         user,
         token,
-        isAuthenticated: !!user && !!token,
-        loading,
+        isAuthenticated: !!user && !!token, 
+        loading, 
         login,
         logout,
+        updateUserInContext, 
     };
 
-    if (loading) {
+    if (loading) { 
         return <div className="flex h-screen items-center justify-center"><Spinner size="lg"/></div>;
     }
 
