@@ -5,7 +5,7 @@ import React, {
     useEffect,
     useContext,
     useCallback
-} from 'react';
+} from 'react'; // <--- ****** THIS IS THE CRUCIAL MISSING IMPORT ******
 import { jwtDecode } from 'jwt-decode';
 import { loginUser as apiLoginUser, getMe as apiGetMe, logoutUserApi } from '../services/api';
 import Spinner from '../components/UI/Spinner';
@@ -14,145 +14,92 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(() => localStorage.getItem('token')); // Initialize from localStorage once
-    const [loading, setLoading] = useState(true); // For initial auth check AND login process
+    const [token, setToken] = useState(localStorage.getItem('token'));
+    const [loading, setLoading] = useState(true); // For initial auth check
 
-    // `logout` function
-    // This function primarily interacts with localStorage and resets local state.
-    // The API call is secondary. Its stability is key.
-    const logout = useCallback(async (options = { redirect: true }) => {
-        console.log("[AuthContext] Attempting to logout...");
-        const currentTokenForApiCall = localStorage.getItem('token'); // Use fresh value for API call decision
-        try {
-            if (currentTokenForApiCall) {
-                await logoutUserApi();
-            }
-        } catch (error) {
-            console.error("[AuthContext] Logout API call failed:", error.response?.data?.message || error.message);
-        } finally {
-            localStorage.removeItem('token');
-            setUser(null);
-            setToken(null); // Clear token state
-            console.log("[AuthContext] Client-side logout completed.");
-            // Navigation is best handled by components consuming the context (e.g., ProtectedRoute)
-            // based on isAuthenticated state, rather than a hard redirect here.
-        }
-    }, []); // `logout` itself should ideally have no dependencies on component state
-            // if it's purely about clearing and making a non-state-dependent API call.
-
-    // `fetchAndSetUser` function
-    // This function's job is to validate a token and fetch user details.
-    // It depends on the `logout` function if a token is invalid/expired.
     const fetchAndSetUser = useCallback(async (jwtToken) => {
-        console.log("[AuthContext] fetchAndSetUser called. Token provided:", !!jwtToken);
         if (jwtToken) {
             try {
                 const decoded = jwtDecode(jwtToken);
                 if (decoded.exp * 1000 < Date.now()) {
-                    console.log("[AuthContext] Token expired during fetchAndSetUser, calling logout.");
-                    await logout(); return;
+                    console.log("Token expired on load");
+                    await logout(); // Token expired
+                    return;
                 }
-                // Token is structurally valid and not expired.
-                // Set token in localStorage (might be redundant but ensures it's there before /me)
                 localStorage.setItem('token', jwtToken);
-                setToken(jwtToken); // Update state
+                setToken(jwtToken);
 
                 try {
-                    console.log("[AuthContext] Attempting to fetch /me.");
-                    const { data: userData } = await apiGetMe(); // Uses token from interceptor
+                    const { data: userData } = await apiGetMe();
                     setUser(userData);
-                    console.log("[AuthContext] User fetched and set:", userData);
                 } catch (meError) {
-                    console.error("[AuthContext] Failed to fetch /me, calling logout:", meError.response?.data?.message || meError.message);
+                    console.error("Failed to fetch /me:", meError.response?.data?.message || meError.message);
                     await logout();
                 }
-            } catch (error) { // Error decoding token or other unexpected error
-                console.error("[AuthContext] Invalid token processing or other error, calling logout:", error);
-                await logout();
-            }
-        } else { // No jwtToken provided
-            console.log("[AuthContext] No token provided to fetchAndSetUser. Ensuring logged out state.");
-            // If there's a user or token in state, it means we were previously logged in.
-            // This path could be hit by initial load with no token, or after explicit logout.
-            // We only need to clear state if it's not already cleared.
-            if (user !== null || token !== null) { // Check current state before calling logout
-                await logout();
-            } else {
-                // If user and token are already null, no need to call logout again.
-                // This helps prevent loops if fetchAndSetUser is called multiple times with no token.
-                setUser(null); // Ensure state is null
-                setToken(null);
-            }
-        }
-    }, [logout, user, token]); // `logout` is stable. `user` and `token` (state variables) are included
-                               // because their current values are checked within the logic of this function
-                               // (e.g., `if (user !== null || token !== null)`).
 
-    // Effect for initial authentication check on component mount
+            } catch (error) {
+                console.error("Invalid token on load:", error);
+                await logout();
+            }
+        } else {
+            await logout();
+        }
+    }, []); // Removed logout from dependencies for now to re-evaluate if needed
+
+    const logout = useCallback(async () => { // Make logout async if it calls an API
+        try {
+            if (token) {
+                await logoutUserApi();
+            }
+        } catch (error) {
+            console.error("Logout API call failed:", error.response?.data?.message || error.message);
+        } finally {
+            localStorage.removeItem('token');
+            setUser(null);
+            setToken(null);
+            // if (window.location.pathname !== '/login') { // Optional: force redirect
+            //     window.location.href = '/login';
+            // }
+        }
+    }, [token]); // Added token as a dependency for the logout API call condition
+
+    // Re-add fetchAndSetUser and logout to the dependency array of useEffect
+    // after ensuring they are stable (which they should be with useCallback).
     useEffect(() => {
-        console.log("[AuthContext] Initial authentication check effect running.");
-        setLoading(true);
-        const storedToken = localStorage.getItem('token');
-        fetchAndSetUser(storedToken).finally(() => {
+        const checkUser = async () => {
+            setLoading(true);
+            const storedToken = localStorage.getItem('token');
+            // Pass logout to fetchAndSetUser if it's needed internally and causing dependency issues
+            await fetchAndSetUser(storedToken /*, logout */);
             setLoading(false);
-            console.log("[AuthContext] Initial authentication check completed. Loading set to false.");
-        });
-        // This effect should only run once on mount if fetchAndSetUser is stable.
-        // The dependencies of fetchAndSetUser ([logout, user, token]) are key.
-        // `logout` is stable (empty dependency array).
-        // `user` and `token` changes *could* re-trigger `fetchAndSetUser`'s memoization,
-        // which would re-trigger this effect. This chain is what we need to break if it's looping.
-    }, [fetchAndSetUser]); // Correct: This effect depends on the `fetchAndSetUser` function.
+        };
+        checkUser();
+    }, [fetchAndSetUser /*, logout */]); // Re-add logout here if fetchAndSetUser calls it and it's not stable.
 
     const login = async (username, password) => {
-        setLoading(true); // Set loading for the login process
-        console.log("[AuthContext] Login attempt started.");
         try {
             const { data } = await apiLoginUser({ username, password });
-            // `localStorage.setItem` should happen before `fetchAndSetUser` if `fetchAndSetUser` reads from it immediately,
-            // but `fetchAndSetUser` takes the token as an argument, so it's fine.
-            // Axios interceptor will pick up token from localStorage for subsequent calls *within* fetchAndSetUser.
-            localStorage.setItem('token', data.token); // Set token in localStorage first
-            await fetchAndSetUser(data.token); // This will validate, set state, and fetch /me
-            console.log("[AuthContext] Login successful, user/token state should be set.");
-            setLoading(false);
+            // Pass logout to fetchAndSetUser if needed
+            await fetchAndSetUser(data.token /*, logout */);
             return true;
         } catch (error) {
-            console.error('[AuthContext] Login API call failed or subsequent /me failed:', error.response?.data?.message || error.message);
-            await logout(); // Ensure full cleanup
-            setLoading(false);
+            console.error('Login failed context:', error.response?.data?.message || error.message);
+            await logout();
             throw error.response?.data || new Error(error.response?.data?.message || 'Login failed');
         }
     };
 
-    const updateUserInContext = (updatedUserData) => {
-        console.log("[AuthContext] Updating user in context with:", updatedUserData);
-        setUser(prevUser => {
-            if (!prevUser) {
-                console.warn("[AuthContext] updateUserInContext called but prevUser is null.");
-                return { ...updatedUserData };
-            }
-            const newUserState = { ...prevUser, ...updatedUserData };
-            console.log("[AuthContext] New user state after update:", newUserState);
-            return newUserState;
-        });
-    };
 
     const value = {
         user,
         token,
-        isAuthenticated: !!user && !!token, // True if both user object and token are truthy
-        loading, // Global loading state (primarily for initial auth and login process)
+        isAuthenticated: !!user && !!token,
+        loading,
         login,
         logout,
-        updateUserInContext,
     };
 
-    // This global loading spinner is for the VERY initial app load.
-    // Once `loading` is false after the first check, the app routes will render.
-    // `ProtectedRoute` will then handle its own loading/redirect logic.
-    if (loading && !token && !user) { // Only show full page spinner if truly in initial unauthenticated loading state
-        console.log("[AuthContext] Displaying initial loading spinner for the app.");
+    if (loading) {
         return <div className="flex h-screen items-center justify-center"><Spinner size="lg"/></div>;
     }
 
@@ -166,7 +113,7 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider. Make sure AuthProvider wraps your App.');
+        throw new Error('useAuth must be used within an AuthProvider');
     }
     return context;
 };
