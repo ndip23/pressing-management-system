@@ -8,12 +8,21 @@ import {
     getMe,
     getUsers,
     updateUserRole,
-    updateUserProfilePicture
+    updateUserProfilePicture,
+    updateUserProfile, 
+    changeUserPassword
 } from '../controllers/authController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 const upload = multer({ storage: cloudinaryStorage });
+
+router.route('/me')
+    .get(protect, getMe) 
+    .put(protect, updateUserProfile);
+
+router.put('/me/change-password', protect, changeUserPassword);
+
 
 router.post('/register', protect, authorize('admin'), registerUser); 
 
