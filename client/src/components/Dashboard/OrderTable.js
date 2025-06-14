@@ -88,7 +88,7 @@ const OrderTable = ({ orders }) => {
                                     )}
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-medium text-apple-gray-700 dark:text-apple-gray-300">
-                                    {currencySymbol}{(order.totalAmount || 0).toFixed(2)}
+                                    {currencySymbol} {(order.totalAmount || 0).toFixed(2)}
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
                                     <div className="flex items-center justify-center space-x-2">

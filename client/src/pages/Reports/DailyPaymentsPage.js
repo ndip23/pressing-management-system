@@ -15,7 +15,7 @@ const DailyPaymentsPage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const currencySymbol = 'FCFA'; // TODO: Get from settings context
+    const currencySymbol = 'FCFA'; 
 
     const loadReport = useCallback(async (dateToFetch) => {
         if (!dateToFetch) return;
@@ -41,9 +41,29 @@ const DailyPaymentsPage = () => {
                 <div className="flex items-center space-x-3"> <CreditCard size={28} className="text-apple-blue" /> <h1 className="text-2xl sm:text-3xl font-semibold">Daily Payments Report</h1> </div>
             </div>
             <Card>
-                <div className="p-4 flex flex-col sm:flex-row gap-4 items-end border-b dark:border-apple-gray-700">
-                    <div className="flex-grow"> <DatePicker label="Select Date" id="reportDate" value={selectedDate} onChange={handleDateChange} /> </div>
-                    <Button onClick={handleFetchReport} isLoading={loading} disabled={loading} iconLeft={<CalendarDays size={16}/>}>Fetch Report</Button>
+                 <div className="p-4 border-b dark:border-apple-gray-700">
+                    <div className="flex flex-col sm:flex-row items-end gap-4"> {/* Use flex, items-end to align bottom of elements */}
+                        <div className="flex-grow"> {/* DatePicker takes available space */}
+                            <DatePicker
+                                label="Select Date"
+                                id="reportDate"
+                                value={selectedDate}
+                                onChange={(e) => setSelectedDate(e.target.value)}
+                                required
+                                // className="mb-0 sm:mb-0" // Remove bottom margin if Input component adds it
+                            />
+                        </div>
+                        <div className="flex-shrink-0"> {/* Button takes its own space */}
+                            <Button
+                                onClick={handleFetchReport}
+                                isLoading={loadingReport}
+                                iconLeft={<CalendarDays size={16} />}
+                                className="w-full sm:w-auto" // Full width on small, auto on larger
+                            >
+                                Fetch Report
+                            </Button>
+                        </div>
+                    </div>
                 </div>
                 {loading && <div className="p-6 text-center"><Spinner size="lg" /></div>}
                 {error && <div className="p-4 m-4 text-sm bg-red-100 text-apple-red rounded-apple flex items-center"><AlertTriangle size={18} className="mr-2"/>{error}</div>}
@@ -52,11 +72,11 @@ const DailyPaymentsPage = () => {
                         <h3 className="text-xl font-semibold text-center"> Payments with Activity on: {format(parseISO(reportData.date), 'MMMM d, yyyy')} </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
                             <div className="p-4 bg-apple-gray-100 dark:bg-apple-gray-800 rounded-apple-md">
-                                <p className="text-sm text-apple-gray-500 dark:text-apple-gray-400">Total from Orders with Activity</p> {/* Clarified Label */}
-                                <p className="text-2xl font-bold">{currencySymbol}{reportData.totalAmountFromOrdersWithActivity?.toFixed(2) || '0.00'}</p>
+                                <p className="text-sm text-apple-gray-500 dark:text-apple-gray-400">Total from Orders with Activity</p> 
+                                <p className="text-2xl font-bold">{currencySymbol} {reportData.totalAmountFromOrdersWithActivity?.toFixed(2) || '0.00'}</p>
                             </div>
                             <div className="p-4 bg-apple-gray-100 dark:bg-apple-gray-800 rounded-apple-md">
-                                <p className="text-sm text-apple-gray-500 dark:text-apple-gray-400"># Orders with Payment Activity</p> {/* Clarified Label */}
+                                <p className="text-sm text-apple-gray-500 dark:text-apple-gray-400"># Orders with Payment Activity</p> 
                                 <p className="text-2xl font-bold">{reportData.numberOfOrdersWithActivity || 0}</p>
                             </div>
                         </div>
@@ -80,8 +100,8 @@ const DailyPaymentsPage = () => {
                                                     <td className="px-3 py-2 whitespace-nowrap">{format(parseISO(transaction.paymentActivityDate), 'h:mm a')}</td>
                                                     <td className="px-3 py-2 whitespace-nowrap"> <Link to={`/orders/${transaction.orderId}`} className="text-apple-blue hover:underline">{transaction.receiptNumber}</Link> </td>
                                                     <td className="px-3 py-2 whitespace-nowrap">{transaction.customerName}</td>
-                                                    <td className="px-3 py-2 text-right whitespace-nowrap">{currencySymbol}{transaction.amountCollectedOnOrder.toFixed(2)}</td>
-                                                    <td className="px-3 py-2 text-right whitespace-nowrap">{currencySymbol}{transaction.orderTotal.toFixed(2)}</td>
+                                                    <td className="px-3 py-2 text-right whitespace-nowrap">{currencySymbol} {transaction.amountCollectedOnOrder.toFixed(2)}</td>
+                                                    <td className="px-3 py-2 text-right whitespace-nowrap">{currencySymbol} {transaction.orderTotal.toFixed(2)}</td>
                                                 </tr>
                                             ))}
                                         </tbody>

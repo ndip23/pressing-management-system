@@ -34,7 +34,7 @@ const Input = ({
         <div className={`mb-4 ${className}`}>
             {label && (
                 <label htmlFor={id} className="block text-sm font-medium text-apple-gray-700 dark:text-apple-gray-300 mb-1">
-                    {label} {required && <span className="text-apple-red">*</span>}
+                    {label} {/*{required && <span className="text-apple-red">*</span>}*/}
                 </label>
             )}
             <div className="relative rounded-apple shadow-apple-sm">
@@ -63,7 +63,7 @@ const Input = ({
                 />
                 {suffixIcon && (
                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                        {React.cloneElement(suffixIcon, { className: "h-5 w-5 text-apple-gray-500 dark:text-apple-gray-400"})}
+                        {React.isValidElement(suffixIcon) ? React.cloneElement(suffixIcon, { className: `h-5 w-5 text-apple-gray-500 dark:text-apple-gray-400 ${suffixIcon.props.onClick ? 'cursor-pointer' : ''}` }) : suffixIcon}
                     </div>
                 )}
             </div>

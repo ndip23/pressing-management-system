@@ -1,12 +1,12 @@
-// client/src/components/Auth/LoginForm.js
 import React, { useState } from 'react';
 import Input from '../UI/Input';
 import Button from '../UI/Button';
-import { LogIn } from 'lucide-react';
+import { LogIn, Eye, EyeOff } from 'lucide-react'; s
 
 const LoginForm = ({ onSubmit, isLoading, error }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false); 
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -14,6 +14,18 @@ const LoginForm = ({ onSubmit, isLoading, error }) => {
             onSubmit({ username, password });
         }
     };
+
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    };
+
+    const passwordIcon = (
+        showPassword ? (
+            <EyeOff size={18} onClick={togglePasswordVisibility} className="cursor-pointer text-apple-gray-400 hover:text-apple-gray-600 dark:hover:text-apple-gray-200" />
+        ) : (
+            <Eye size={18} onClick={togglePasswordVisibility} className="cursor-pointer text-apple-gray-400 hover:text-apple-gray-600 dark:hover:text-apple-gray-200" />
+        )
+    );
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -25,11 +37,11 @@ const LoginForm = ({ onSubmit, isLoading, error }) => {
             <Input
                 label="Username"
                 id="username"
-                name="username" // Important for form handling if you use a form library
+                name="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                required
+                required 
                 placeholder="e.g., admin or staff"
                 autoComplete="username"
                 disabled={isLoading}
@@ -37,14 +49,15 @@ const LoginForm = ({ onSubmit, isLoading, error }) => {
             <Input
                 label="Password"
                 id="password"
-                name="password" // Important for form handling
-                type="password"
+                name="password"
+                type={showPassword ? "text" : "password"} 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
+                required 
                 placeholder="••••••••"
                 autoComplete="current-password"
                 disabled={isLoading}
+                suffixIcon={passwordIcon} 
             />
             <Button
                 type="submit"

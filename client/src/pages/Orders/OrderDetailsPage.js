@@ -138,8 +138,8 @@ const OrderDetailsPage = () => {
         setIsSendingNotification(true); setActionError(''); setActionSuccess('');
         try {
             const { data } = await sendManualNotification(order._id);
-            setOrder(data.order); // Update local order state with response from backend
-            setActionSuccess(data.message); // Use specific message from backend
+            setOrder(data.order); 
+            setActionSuccess(data.message); 
         } catch (err) {
             setActionError(err.response?.data?.message || err.message || "Failed to send notification.");
             console.error("Manual notification error:", err.response || err);
@@ -177,7 +177,7 @@ const OrderDetailsPage = () => {
             </Card>
         </div>
     );
-    if (!order) return null; // Should be caught by error state if loading failed
+    if (!order) return null; 
 
     const isOrderOverdue = order.expectedPickupDate && isPast(parseISO(order.expectedPickupDate)) && !['Completed', 'Cancelled'].includes(order.status);
     const canSendNotification = order.customer && (order.customer.email || order.customer.phone);

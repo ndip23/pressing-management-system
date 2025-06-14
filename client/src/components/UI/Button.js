@@ -4,8 +4,8 @@ const Button = ({
     children,
     onClick,
     type = 'button',
-    variant = 'primary', // primary, secondary, danger, ghost, link
-    size = 'md', // sm, md, lg
+    variant = 'primary', 
+    size = 'md', 
     className = '',
     disabled = false,
     isLoading = false,

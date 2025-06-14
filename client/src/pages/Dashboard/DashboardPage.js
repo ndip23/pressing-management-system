@@ -1,18 +1,17 @@
 // client/src/pages/Dashboard/DashboardPage.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchOrders, fetchDailyPaymentsReport, updateExistingOrder } from '../../services/api'; // Added updateExistingOrder if OrderTable needs to update
+import { fetchOrders, fetchDailyPaymentsReport, updateExistingOrder } from '../../services/api'; 
 import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
 import OrderTable from '../../components/Dashboard/OrderTable';
 import FilterControls from '../../components/Dashboard/FilterControls';
-import Modal from '../../components/UI/Modal'; // For payment modal
-import Input from '../../components/UI/Input';   // For payment input
+import Modal from '../../components/UI/Modal'; 
+import Input from '../../components/UI/Input';   
 import { PlusCircle, AlertTriangle, CheckCircle2, Clock3, Shirt, TrendingUp, Filter as FilterIcon, RotateCcw, Search as SearchIcon, DollarSign } from 'lucide-react'; // Added more icons
 import { format, isPast, parseISO } from 'date-fns';
 
-// StatCard Component (can be moved to its own file if it grows)
 const StatCard = ({ title, value, icon, colorClass, isLoading }) => (
     <Card className={`shadow-apple-sm ${colorClass || 'bg-white dark:bg-apple-gray-800'}`}>
         <div className="flex items-center justify-between p-4">
@@ -35,7 +34,7 @@ const DashboardPage = () => {
         page: 1, pageSize: 10,
     });
     const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalOrders: 0 });
-    const [stats, setStats] = useState({ total: 0, pending: 0, ready: 0, overdue: 0 }); // These will be based on fetched page
+    const [stats, setStats] = useState({ total: 0, pending: 0, ready: 0, overdue: 0 }); 
 
     const [dailyTotalPayments, setDailyTotalPayments] = useState(0);
     const [loadingDailyPayments, setLoadingDailyPayments] = useState(true);
@@ -58,7 +57,7 @@ const DashboardPage = () => {
         setLoadingOrders(true);
         setOrdersError('');
         try {
-            const { data } = await fetchOrders(filters); // Filters already include page and pageSize
+            const { data } = await fetchOrders(filters); 
             console.log("[DashboardPage] RAW API Response from fetchOrders:", JSON.stringify(data, null, 2));
 
 
@@ -76,12 +75,12 @@ const DashboardPage = () => {
         } catch (err) {
             const errMsg = err.response?.data?.message || 'Failed to fetch orders. Please try again.';
             setOrdersError(errMsg);
-            setOrders([]); // Clear orders on error
-            setPagination({ currentPage: 1, totalPages: 0, totalOrders: 0 }); // Reset pagination
+            setOrders([]); 
+            setPagination({ currentPage: 1, totalPages: 0, totalOrders: 0 }); 
         } finally {
             setLoadingOrders(false);
         }
-    }, [filters]); // Only depends on filters
+    }, [filters]); 
 
     // Calculate stats based on the currently fetched page of orders
     useEffect(() => {
@@ -97,8 +96,8 @@ const DashboardPage = () => {
         setLoadingDailyPayments(true);
         setDailyPaymentsError('');
         try {
-            const todayStr = format(new Date(), 'yyyy-MM-dd'); // Define todayStr INSIDE the async function
-            const { data } = await fetchDailyPaymentsReport(todayStr); // API call INSIDE async function
+            const todayStr = format(new Date(), 'yyyy-MM-dd'); 
+            const { data } = await fetchDailyPaymentsReport(todayStr); 
             setDailyTotalPayments(data.totalAmountFromOrdersWithActivity || 0);
         } catch (err) {
             setDailyPaymentsError('Could not load daily sales data.');
@@ -180,9 +179,9 @@ const DashboardPage = () => {
     } else {
         ordersContent = (
             <>
-                {/* Overlay spinner if loading more pages but some orders are already visible */}
+               
                 {loadingOrders && orders.length > 0 && ( <div className="absolute inset-0 bg-white/50 dark:bg-black/50 flex items-center justify-center z-10 rounded-b-apple-lg"><Spinner /></div> )}
-                <OrderTable orders={orders} onRecordPaymentClick={handleOpenPaymentModal} /> {/* Pass payment handler */}
+                <OrderTable orders={orders} onRecordPaymentClick={handleOpenPaymentModal} /> 
                 {pagination.totalOrders > 0 && pagination.totalPages > 1 && (
                     <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-2">
                         <span className="text-sm text-apple-gray-600 dark:text-apple-gray-400">Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalOrders} orders)</span>
@@ -192,7 +191,7 @@ const DashboardPage = () => {
             </>
         );
     }
-    // --- End Content for Order List ---
+   
 
 
     return (
@@ -206,9 +205,9 @@ const DashboardPage = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                <StatCard title="Today's Sales" value={`${currencySymbol}${(typeof dailyTotalPayments === 'number' ? dailyTotalPayments.toFixed(2) : '0.00')}`} icon={<TrendingUp size={24} className="text-green-500" />} isLoading={loadingDailyPayments} />
+                <StatCard title="Today's Sales" value={`${currencySymbol} ${(typeof dailyTotalPayments === 'number' ? dailyTotalPayments.toFixed(2) : '0.00')}`} icon={<TrendingUp size={24} className="text-green-500" />} isLoading={loadingDailyPayments} />
                 <StatCard title="Total Orders" value={String(pagination.totalOrders)} icon={<Shirt size={24} className="text-apple-blue" />} isLoading={loadingOrders && pagination.totalOrders === 0 && !ordersError } />
-                <StatCard title="Pending/Processing" value={String(stats.pending)} icon={<Clock3 size={24} className="text-apple-orange" />} isLoading={loadingOrders && orders.length === 0 && !ordersError} />
+                <StatCard title="Pending" value={String(stats.pending)} icon={<Clock3 size={24} className="text-apple-orange" />} isLoading={loadingOrders && orders.length === 0 && !ordersError} />
                 <StatCard title="Ready for Pickup" value={String(stats.ready)} icon={<CheckCircle2 size={24} className="text-apple-green" />} isLoading={loadingOrders && orders.length === 0 && !ordersError} />
                 <StatCard title="Overdue Orders" value={String(stats.overdue)} icon={<AlertTriangle size={24} className="text-apple-red" />} colorClass={stats.overdue > 0 ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700' : ''} isLoading={loadingOrders && orders.length === 0 && !ordersError} />
             </div>
@@ -221,7 +220,7 @@ const DashboardPage = () => {
             )}
 
             <Card title="Order List" className="overflow-visible relative" contentClassName="p-0 sm:p-0">
-                <div className="px-4 sm:px-6 pb-6 relative"> {/* Relative for spinner overlay */}
+                <div className="px-4 sm:px-6 pb-6 relative"> 
                     {ordersContent}
                 </div>
             </Card>
