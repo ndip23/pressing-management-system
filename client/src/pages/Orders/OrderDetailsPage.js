@@ -50,8 +50,8 @@ const OrderDetailsPage = () => {
     // --- Placeholder for Company Info & Settings (fetch from context or API) ---
     const companyInfo = {
         name: 'PressFlow Deluxe Cleaners',
-        address: '123 Clean Street, Suite 100, Anytown, ST 54321',
-        phone: '(555) 773-7729',
+        address: 'Malingo,Molyko, Buea',
+        phone: '(+237) 683-616-584',
         logoUrl: '' // '/path/to/your/logo.png' // Example path
     };
     const currencySymbol = 'FCFA'; // Using your currency
