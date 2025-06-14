@@ -20,6 +20,8 @@ const userSchema = new mongoose.Schema({
         enum: ['admin', 'staff'],
         default: 'staff',
     },
+    profilePictureUrl: { type: String, default: '' }, // URL from Cloudinary
+    profilePictureCloudinaryId: { type: String }, // Public ID from Cloudinary (for deletion)
 }, { timestamps: true });
 
 // Hash password before saving

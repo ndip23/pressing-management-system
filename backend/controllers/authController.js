@@ -2,10 +2,8 @@
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
 import asyncHandler from '../middleware/asyncHandler.js';
+import { cloudinary } from '../config/cloudinaryConfig.js';
 
-// @desc    Register a new user (Admin only or initial setup)
-// @route   POST /api/auth/register
-// @access  Private/Admin (or public for initial admin setup)
 const registerUser = asyncHandler(async (req, res) => {
     const { username, password, role } = req.body;
 
@@ -23,11 +21,10 @@ const registerUser = asyncHandler(async (req, res) => {
     const user = await User.create({
         username: username.toLowerCase(),
         password,
-        role: role || 'staff', // Default to staff if role not provided
+        role: role || 'staff', 
     });
 
     if (user) {
-        // Don't send token on register immediately, require login
         res.status(201).json({
             _id: user._id,
             username: user.username,
@@ -40,9 +37,6 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 });
 
-// @desc    Auth user & get token (Login)
-// @route   POST /api/auth/login
-// @access  Public
 const loginUser = asyncHandler(async (req, res) => {
     const { username, password } = req.body;
 
@@ -147,5 +141,37 @@ const updateUserRole = asyncHandler(async (req, res) => {
     }
 });
 
+const updateUserProfilePicture = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
 
-export { registerUser, loginUser, logoutUser, getMe, getUsers, updateUserRole };
+    if (!req.file) { // 'file' will be populated by multer if upload is successful
+        res.status(400);
+        throw new Error('No image file uploaded.');
+    }
+
+    // If user already has a profile picture on Cloudinary, delete the old one
+    if (user.profilePictureCloudinaryId) {
+        try {
+            await cloudinary.uploader.destroy(user.profilePictureCloudinaryId);
+            console.log(`[AuthCtrl] Deleted old Cloudinary image: ${user.profilePictureCloudinaryId}`);
+        } catch (deleteError) {
+            console.error('[AuthCtrl] Failed to delete old Cloudinary image:', deleteError);
+            // Continue, don't block update for this, but log it.
+        }
+    }
+
+    user.profilePictureUrl = req.file.path; // URL provided by multer-storage-cloudinary
+    user.profilePictureCloudinaryId = req.file.filename; // public_id provided by multer-storage-cloudinary
+
+    await user.save();
+
+    res.json({
+        message: 'Profile picture updated successfully.',
+        profilePictureUrl: user.profilePictureUrl,
+    });
+});
+export { registerUser, loginUser, logoutUser, getMe, getUsers, updateUserRole, updateUserProfilePicture };
