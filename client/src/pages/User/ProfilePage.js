@@ -153,13 +153,14 @@ const ProfilePage = () => {
                     ) : (
                         <UserCircle size={96} className="text-apple-gray-300 dark:text-apple-gray-600" />
                     )}
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute bottom-1 right-1 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                        <button 
+                        type="button" 
+                        className="absolute bottom-1 right-1 bg-apple-gray-600 hover:bg-apple-gray-700 dark:bg-apple-gray-200 dark:hover:bg-apple-gray-300 text-white dark:text-apple-gray-800 p-2 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-apple-blue focus:ring-offset-2 dark:focus:ring-offset-apple-gray-900 transition-all duration-150 ease-in-out opacity-0 group-hover:opacity-100"
                         onClick={() => fileInputRef.current && fileInputRef.current.click()}
                         aria-label="Change profile picture"
-                    > <Camera size={16} /> </Button>
+                    >
+                        <Camera size={16} />
+                    </button>
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/png, image/jpeg, image/gif" className="hidden" />
                 </div>
                 <div>
