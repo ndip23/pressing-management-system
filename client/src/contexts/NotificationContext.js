@@ -1,11 +1,11 @@
-// client/src/contexts/NotificationContext.js
+//client/src/contexts/NotificationContext.js
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import {
     fetchAdminNotificationsApi,
     markAdminNotificationReadApi,
     markAllAdminNotificationsReadApi
-} from '../services/api';
+} from '../services/api'; // Ensure these are correctly defined in api.js
 
 const AdminNotificationContext = createContext(null);
 
@@ -17,94 +17,93 @@ export const AdminNotificationProvider = ({ children }) => {
 
     const fetchAdminNotifications = useCallback(async () => {
         if (isAuthenticated && user?.role === 'admin') {
-            // Avoid fetching if already loading to prevent race conditions from interval
-            if (loadingNotifications) return;
-
             setLoadingNotifications(true);
-            // console.log("[NotificationContext] Fetching admin notifications from backend...");
+            console.log("[NotificationContext] Fetching admin notifications from backend...");
             try {
                 const { data } = await fetchAdminNotificationsApi();
-                setNotifications(data.notifications || []);
+                // Ensure timestamps are valid Date objects or parseable strings
+                const processedNotifications = (data.notifications || []).map(n => ({
+                    ...n,
+                    // If backend sends createdAt/updatedAt as strings, ensure they are parsable
+                    // For this context, we expect a 'timestamp' field. If it comes as 'createdAt' from DB:
+                    timestamp: new Date(n.createdAt || n.timestamp || Date.now()) // Fallback to now if missing
+                }));
+                setNotifications(processedNotifications);
                 setUnreadCount(data.unreadCount || 0);
-                // console.log("[NotificationContext] Fetched notifications:", data.notifications, "Unread:", data.unreadCount);
+                console.log("[NotificationContext] Fetched and processed notifications:", processedNotifications);
             } catch (error) {
                 console.error("Failed to fetch admin notifications:", error.response?.data?.message || error.message);
-                // Optionally, you could set an error state to display in the UI
-                // For now, if fetch fails, notifications might appear empty or stale
+                // Fallback to simulated data for UI development if API fails, or clear them
+                // For now, let's clear them if API fails to avoid using stale simulated data
+                setNotifications([]);
+                setUnreadCount(0);
             } finally {
                 setLoadingNotifications(false);
             }
         } else {
-            // Clear notifications if user logs out or is not an admin
-            if (notifications.length > 0 || unreadCount > 0) { // Only update state if it needs clearing
-                setNotifications([]);
-                setUnreadCount(0);
-            }
+            // Using SIMULATED DATA if not authenticated admin for development/UI testing
+            console.warn("[NotificationContext] Not an authenticated admin. Using SIMULATED notifications for UI testing.");
+            const now = new Date();
+            const twoHoursWarning = new Date(now.getTime() + 1.9 * 60 * 60 * 1000);
+            const isAlreadyOverdue = new Date(now.getTime() - 1 * 60 * 60 * 1000);
+            const mockNotifications = [
+                { id: 'sim1', _id: 'sim1', type: 'overdue_warning', message: `Order #MOCK-001 due at ${twoHoursWarning.toLocaleTimeString()}`, link: `/orders/MOCK-001`, timestamp: now, read: false },
+                { id: 'sim2', _id: 'sim2', type: 'overdue_alert', message: `Order #MOCK-002 is OVERDUE (was due ${isAlreadyOverdue.toLocaleTimeString()})`, link: `/orders/MOCK-002`, timestamp: isAlreadyOverdue, read: true },
+                { id: 'sim3', _id: 'sim3', type: 'new_order', message: `New order #MOCK-003 received.`, link: `/orders/MOCK-003`, timestamp: new Date(now.getTime() - 5*60000), read: false },
+            ];
+            setNotifications(mockNotifications);
+            setUnreadCount(mockNotifications.filter(n => !n.read).length);
+            // setLoadingNotifications(false); // Already handled if this block is reached
         }
-    }, [isAuthenticated, user, loadingNotifications, notifications.length, unreadCount]); // Added loadingNotifications to prevent concurrent fetches
+    }, [isAuthenticated, user]);
 
     useEffect(() => {
-        fetchAdminNotifications(); // Initial fetch
-
+        fetchAdminNotifications();
         const intervalId = setInterval(() => {
-            // The check inside fetchAdminNotifications handles if user is still admin/auth
-            fetchAdminNotifications();
-        }, 30000); // Poll every 30 seconds (adjust as needed, or implement WebSockets)
-
-        return () => clearInterval(intervalId); // Cleanup interval
-    }, [fetchAdminNotifications]); // fetchAdminNotifications is memoized
+            if (isAuthenticated && user?.role === 'admin') { // Check again before fetching in interval
+                fetchAdminNotifications();
+            }
+        }, 30000); // Poll every 30 seconds
+        return () => clearInterval(intervalId);
+    }, [fetchAdminNotifications, isAuthenticated, user]); // Add all dependencies
 
     const markAsRead = async (notificationId) => {
         const originalNotifications = [...notifications];
-        const notificationToMark = originalNotifications.find(n => n._id === notificationId);
+        const originalUnreadCount = unreadCount;
+        const notificationToMark = originalNotifications.find(n => n._id === notificationId); // Use _id from MongoDB
 
-        // Optimistic UI Update
         if (notificationToMark && !notificationToMark.read) {
-            setNotifications(prevNots => prevNots.map(n => n._id === notificationId ? { ...n, read: true } : n));
-            setUnreadCount(prevCount => (prevCount > 0 ? prevCount - 1 : 0));
+            setNotifications(prev => prev.map(n => (n._id === notificationId ? { ...n, read: true } : n)));
+            setUnreadCount(prev => (prev > 0 ? prev - 1 : 0));
         } else if (!notificationToMark) {
-             console.warn(`[NotificationContext] markAsRead: Notification ID ${notificationId} not found.`);
-            return;
-        } else if (notificationToMark.read) {
-            // Already read, no action needed for state or API
+            console.warn(`[NotificationContext] markAsRead: Notification with ID ${notificationId} not found.`);
             return;
         }
+        // If already read, no need to make API call or update state further
+        if (notificationToMark && notificationToMark.read) return;
 
 
         try {
-            const { data } = await markAdminNotificationReadApi(notificationId);
-            // Backend response might include the new unreadCount, good for re-syncing
-            if (typeof data.unreadCount === 'number') {
-                setUnreadCount(data.unreadCount);
-            }
-            // Optionally update the specific notification object again from data.notification if needed
+            await markAdminNotificationReadApi(notificationId); // API call uses the ID
             console.log(`[NotificationContext] Notification ${notificationId} marked as read on backend.`);
         } catch (error) {
             console.error(`Failed to mark notification ${notificationId} as read on backend:`, error);
-            // Revert optimistic update if backend call fails
             setNotifications(originalNotifications);
-            if (notificationToMark && !notificationToMark.read) { // Only revert count if it was decremented
-                 setUnreadCount(prev => prev + 1);
-            }
+            setUnreadCount(originalUnreadCount);
             alert("Error updating notification status. Please try again.");
         }
     };
 
     const clearAllNotifications = async () => {
-        const originalNotifications = notifications.map(n => ({...n})); // Deep copy for potential revert
+        const originalNotifications = [...notifications];
         const originalUnreadCount = unreadCount;
-
-        // Optimistic UI Update
-        setNotifications(prevNots => prevNots.map(n => ({ ...n, read: true })));
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
         setUnreadCount(0);
-
         try {
             await markAllAdminNotificationsReadApi();
             console.log("[NotificationContext] All notifications marked as read on backend.");
-            // Backend should confirm unreadCount is 0, or we can trust our optimistic update here.
         } catch (error) {
             console.error("Failed to mark all notifications as read on backend:", error);
-            // Revert optimistic update
             setNotifications(originalNotifications);
             setUnreadCount(originalUnreadCount);
             alert("Error marking all notifications as read. Please try again.");
@@ -113,14 +112,7 @@ export const AdminNotificationProvider = ({ children }) => {
 
     return (
         <AdminNotificationContext.Provider
-            value={{
-                notifications,
-                unreadCount,
-                loadingNotifications,
-                markAsRead,
-                clearAllNotifications,
-                fetchAdminNotifications // Expose for manual refresh if desired
-            }}
+            value={{ notifications, unreadCount, loadingNotifications, markAsRead, clearAllNotifications, fetchAdminNotifications }}
         >
             {children}
         </AdminNotificationContext.Provider>
