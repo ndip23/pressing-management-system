@@ -59,9 +59,9 @@ const OrderTable = ({ orders, onDeleteOrder }) => { // Added onDeleteOrder prop
                                         <Link to={`/orders/${order._id}`} className="p-1 rounded-full hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700" title="View Details"><Eye size={18} className="text-apple-gray-500 hover:text-apple-blue dark:text-apple-gray-400 dark:hover:text-apple-blue-light" /></Link>
                                         <Link to={`/orders/${order._id}/edit`} className="p-1 rounded-full hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700" title="Edit Order"><Edit3 size={18} className="text-apple-gray-500 hover:text-apple-orange dark:text-apple-gray-400 dark:hover:text-orange-400" /></Link>
                                         {user?.role === 'admin' && onDeleteOrder && ( // Show delete button only to admin AND if onDeleteOrder prop is passed
-                                            <Button variant="ghost" size="sm" onClick={() => onDeleteOrder(order._id, order.receiptNumber)} className="p-1 text-apple-gray-500 hover:text-apple-red dark:text-apple-gray-400 dark:hover:text-red-400" title="Delete Order">
+                                            {/*<Button variant="ghost" size="sm" onClick={() => onDeleteOrder(order._id, order.receiptNumber)} className="p-1 text-apple-gray-500 hover:text-apple-red dark:text-apple-gray-400 dark:hover:text-red-400" title="Delete Order">
                                                 <Trash2 size={18} />
-                                            </Button>
+                                            </Button>*/}
                                         )}
                                     </div>
                                 </td>
