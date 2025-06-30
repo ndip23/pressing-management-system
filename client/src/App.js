@@ -15,6 +15,11 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const SettingsPage = lazy(() => import('./pages/Admin/SettingsPage.js')); 
 const ProfilePage = lazy(() => import('./pages/User/ProfilePage'));
 const ManageUsersPage = lazy(() => import('./pages/Admin/ManageUsersPage.js'));
+// Public Page Imports
+const LandingPage = lazy(() => import('./pages/Public/LandingPage'));
+// const PricingPage = lazy(() => import('./pages/Public/PricingPage'));
+// const SignUpPage = lazy(() => import('./pages/Public/SignUpPage'));
+
 
 const CustomerListPage = lazy(() => import('./pages/Customers/CustomerListPage'));
 const CustomerFormPage = lazy(() => import('./pages/Customers/CustomerFormPage'));
@@ -40,9 +45,14 @@ function App() {
         <Router>
             <Suspense fallback={<div className="flex h-screen items-center justify-center"><Spinner size="lg" /></div>}>
                 <Routes>
+                    <Route element={<PublicLayout />}>
+                        <Route path="/" element={<LandingPage />} />
+                        {/* <Route path="/pricing" element={<PricingPage />} /> */}
+                        {/* <Route path="/signup" element={<SignUpPage />} /> */}
+                    </Route>
                     <Route path="/login" element={<LoginPage />} />
                     <Route
-                        path="/"
+                        path="/app"
                         element={
                             <ProtectedRoute>
                                 <MainLayout />
