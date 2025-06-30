@@ -5,6 +5,7 @@ import { useAuth } from './contexts/AuthContext';
 import MainLayout from './components/Layout/MainLayout';
 import Spinner from './components/UI/Spinner';
 
+
 const LoginPage = lazy(() => import('./pages/Auth/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/Dashboard/DashboardPage'));
 const CreateOrderPage = lazy(() => import('./pages/Orders/CreateOrderPage'));
@@ -13,6 +14,7 @@ const EditOrderPage = lazy(() => import('./pages/Orders/EditOrderPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const SettingsPage = lazy(() => import('./pages/Admin/SettingsPage.js')); 
 const ProfilePage = lazy(() => import('./pages/User/ProfilePage'));
+const ManageUsersPage = lazy(() => import('./pages/Admin/ManageUsersPage.js'));
 
 const CustomerListPage = lazy(() => import('./pages/Customers/CustomerListPage'));
 const CustomerFormPage = lazy(() => import('./pages/Customers/CustomerFormPage'));
@@ -60,15 +62,14 @@ function App() {
                         <Route path="profile" element={<ProfilePage />} /> 
                         {/* Admin Routes */}
                         <Route
-                            path="admin/settings" // <--- ADDED ROUTE
+                            path="admin/settings" 
                             element={
                                 <AdminRoute>
                                     <SettingsPage />
                                 </AdminRoute>
                             }
                         />
-                        {/* Example of another admin route */}
-                        {/* <Route path="admin/users" element={<AdminRoute><ManageUsersPage /></AdminRoute>} /> */}
+                         <Route path="admin/users" element={<AdminRoute><ManageUsersPage /></AdminRoute>} /> 
                     </Route>
                     <Route path="*" element={<NotFoundPage />} />
                 </Routes>
