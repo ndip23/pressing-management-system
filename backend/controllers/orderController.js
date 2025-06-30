@@ -7,6 +7,8 @@ import { generateReceiptNumber } from '../utils/generateReceiptNumber.js';
 import { sendNotification } from '../services/notificationService.js';
 
 const createOrder = asyncHandler(async (req, res) => {
+    const { tenantId, user } = req;
+
     const {
         customerId,
         customerName, customerPhone, customerEmail, customerAddress,
@@ -105,6 +107,8 @@ const createOrder = asyncHandler(async (req, res) => {
         discountValue: parseFloat(discountValue) || 0,
         amountPaid: parseFloat(amountPaid) || 0,
         expectedPickupDate, notes, createdBy: req.user.id,
+        tenantId: tenantId, 
+        createdBy: user.id
     });
 
     const createdOrder = await order.save();
@@ -114,10 +118,11 @@ const createOrder = asyncHandler(async (req, res) => {
 
 
 const getOrders = asyncHandler(async (req, res) => {
+    const { tenantId } = req;
     const { paid, overdue, serviceType, status, receiptNumber, customerName, customerPhone, customerId } = req.query;
     const pageSize = parseInt(req.query.pageSize, 10) || 10;
     const page = parseInt(req.query.page, 10) || 1;
-    let query = {};
+    let query = { tenantId: tenantId };
 
     if (paid === 'true') query.isFullyPaid = true;
     if (paid === 'false') query.isFullyPaid = { $ne: true };
@@ -157,10 +162,11 @@ const getOrders = asyncHandler(async (req, res) => {
 
 
 const getOrderById = asyncHandler(async (req, res) => {
+    const { tenantId } = req;
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
         res.status(400); throw new Error('Invalid Order ID format');
     }
-    const order = await Order.findById(req.params.id)
+    const order = await Order.findOne({ _id: req.params.id, tenantId: tenantId })
         .populate('customer', 'name phone email address')
         .populate('createdBy', 'username');
     if (!order) { res.status(404); throw new Error('Order not found'); }

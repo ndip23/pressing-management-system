@@ -48,6 +48,10 @@ const loginUser = asyncHandler(async (req, res) => {
     const user = await User.findOne({ username: username.toLowerCase() });
 
     if (user && (await user.matchPassword(password))) {
+        const tenant = await Tenant.findById(user.tenantId);
+        if (!tenant || !tenant.isActive) {
+             res.status(403); throw new Error('This business account is inactive.');
+        }
         const token = generateToken(user._id, user.username, user.role);
         res.json({
             _id: user._id,

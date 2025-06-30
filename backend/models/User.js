@@ -3,10 +3,15 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema({
+    tenantId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Tenant',
+        required: true,
+        index: true,
+    },
     username: {
         type: String,
         required: [true, 'Username is required'],
-        unique: true,
         trim: true,
         lowercase: true,
     },
@@ -20,25 +25,25 @@ const userSchema = new mongoose.Schema({
         enum: ['admin', 'staff'],
         default: 'staff',
     },
-    profilePictureUrl: { type: String, default: '' }, // URL from Cloudinary
-    profilePictureCloudinaryId: { type: String }, // Public ID from Cloudinary (for deletion)
+    isActive: { // To disable specific user logins
+        type: Boolean,
+        default: true,
+    }
 }, { timestamps: true });
 
-// Hash password before saving
+// Create a compound index to ensure username is unique *per tenant*
+userSchema.index({ username: 1, tenantId: 1 }, { unique: true });
+
 userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) {
-        return next();
-    }
+    if (!this.isModified('password')) return next();
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     next();
 });
 
-// Method to compare entered password with hashed password
 userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
-
 
 const User = mongoose.model('User', userSchema);
 export default User;

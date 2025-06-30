@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import connectDB from './config/db.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
+import publicRoutes from './routes/publicRoutes.js'; 
 
 // Import routes
 import authRoutes from './routes/authRoutes.js';
@@ -41,6 +42,8 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/api/public', publicRoutes); 
+app.use('/api/auth', authRoutes)
 
 app.get('/api/test', (req, res) => res.json({ message: "API test route working!" }));
 

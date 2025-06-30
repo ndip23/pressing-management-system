@@ -34,8 +34,8 @@ const customerSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // If you prefer to define the index separately (gives more control sometimes)
-// customerSchema.index({ email: 1 }, { unique: true, sparse: true });
-// customerSchema.index({ phone: 1 }, { unique: true });
+customerSchema.index({ email: 1 }, { unique: true, sparse: true });
+customerSchema.index({ phone: 1 }, { unique: true });
 
 
 const Customer = mongoose.model('Customer', customerSchema);

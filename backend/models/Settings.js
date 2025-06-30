@@ -42,6 +42,13 @@ const settingsSchema = new mongoose.Schema({
         required: true,
         index: true,
     },
+     tenantId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Tenant',
+        required: true,
+        unique: true, 
+        index: true,
+    },
     notificationTemplates: {
         type: notificationTemplateSchema,
         default: () => ({}),
@@ -52,7 +59,7 @@ const settingsSchema = new mongoose.Schema({
     },
     defaultCurrencySymbol: {
         type: String,
-        default: '$',
+        default: 'FCFA',
     },
     preferredNotificationChannel: {
         type: String,

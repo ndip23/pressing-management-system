@@ -29,7 +29,13 @@ const orderSchema = new mongoose.Schema({
     notificationMethod: { type: String, enum: ['email', 'whatsapp', 'sms', 'manual-email', 'manual-whatsapp', 'manual-sms', 'failed-auto', 'no-contact-auto', 'none'], default: 'none' },
     adminNotifiedImpendingOverdue: { type: Boolean, default: false },
     adminNotifiedActualOverdue: { type: Boolean, default: false },
-    lastPaymentDate: { type: Date }
+    lastPaymentDate: { type: Date },
+    tenantId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Tenant',
+        required: true,
+        index: true,
+    }
 }, { timestamps: true });
 
 orderSchema.pre('save', function (next) {
