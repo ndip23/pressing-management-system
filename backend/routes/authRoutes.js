@@ -1,43 +1,54 @@
+// server/routes/authRoutes.js
 import express from 'express';
-import { storage as cloudinaryStorage } from '../config/cloudinaryConfig.js';
 import multer from 'multer';
+import { storage as cloudinaryStorage } from '../config/cloudinaryConfig.js'; 
 import {
     registerUser,
     loginUser,
     logoutUser,
     getMe,
     getUsers,
-    updateUserRole,
+    getUserById,
+    updateUserById,
+    deleteUser,
+    // updateUserRole 
     updateUserProfilePicture,
-    updateUserProfile, 
+    updateUserProfile,
     changeUserPassword
 } from '../controllers/authController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+
 const upload = multer({ storage: cloudinaryStorage });
 
-router.route('/me')
-    .get(protect, getMe) 
-    .put(protect, updateUserProfile);
-
-router.put('/me/change-password', protect, changeUserPassword);
-
-
-router.post('/register', protect, authorize('admin'), registerUser); 
-
+// --- PUBLIC ROUTES ---
 router.post('/login', loginUser);
-router.post('/logout', protect, logoutUser); 
-router.get('/me', protect, getMe);
+router.post('/logout', protect, logoutUser);
 
+router.route('/me')
+    .get(protect, getMe)                
+    .put(protect, updateUserProfile);   
 
-router.get('/users', protect, authorize('admin'), getUsers);
-router.put('/users/:id/role', protect, authorize('admin'), updateUserRole);
+router.put('/me/change-password', protect, changeUserPassword); 
+
 router.put(
-    '/me/profile-picture',
+    '/me/profile-picture', 
     protect,
     upload.single('profilePicture'), 
     updateUserProfilePicture
 );
+
+
+router.post('/register', protect, authorize('admin'), registerUser);
+
+
+router.get('/users', protect, authorize('admin'), getUsers);
+
+router.route('/users/:id')
+    .get(protect, authorize('admin'), getUserById)
+    .put(protect, authorize('admin'), updateUserById)
+    .delete(protect, authorize('admin'), deleteUser);
 
 export default router;

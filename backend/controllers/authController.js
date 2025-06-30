@@ -1,5 +1,6 @@
 // server/controllers/authController.js
 import User from '../models/User.js';
+import Order from '../models/Order.js';
 import generateToken from '../utils/generateToken.js';
 import asyncHandler from '../middleware/asyncHandler.js';
 import { cloudinary } from '../config/cloudinaryConfig.js'; 
@@ -23,6 +24,99 @@ const registerUser = asyncHandler(async (req, res) => {
         password, 
         role: (role && ['admin', 'staff'].includes(role)) ? role : 'staff',
     });
+    const getUsers = asyncHandler(async (req, res) => {
+    const users = await User.find({ tenantId: req.tenantId }).select('-password');
+    res.json(users);
+});
+    const getUserById = asyncHandler(async (req, res) => {
+    const user = await User.findOne({ _id: req.params.id, tenantId: req.tenantId }).select('-password');
+    if (user) {
+        res.json(user);
+    } else {
+        res.status(404);
+        throw new Error('User not found in your organization.');
+    }
+});
+const updateUserById = asyncHandler(async (req, res) => {
+    const user = await User.findOne({ _id: req.params.id, tenantId: req.tenantId });
+
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found in your organization.');
+    }
+
+    const { username, role, isActive } = req.body;
+
+    // Check for username conflict if changing
+    if (username && username.toLowerCase() !== user.username) {
+        const usernameExists = await User.findOne({ username: username.toLowerCase(), tenantId: req.tenantId });
+        if (usernameExists) {
+            res.status(400);
+            throw new Error('This username is already taken within your organization.');
+        }
+        user.username = username.toLowerCase();
+    }
+
+    if (role && ['admin', 'staff'].includes(role)) {
+        // Prevent demoting the last admin
+        if (user.role === 'admin' && role === 'staff') {
+            const adminCount = await User.countDocuments({ role: 'admin', tenantId: req.tenantId });
+            if (adminCount <= 1) {
+                res.status(400);
+                throw new Error('Cannot demote the only administrator.');
+            }
+        }
+        user.role = role;
+    }
+
+    if (isActive !== undefined) {
+        // Prevent disabling the last admin
+        if (user.role === 'admin' && isActive === false) {
+             const adminCount = await User.countDocuments({ role: 'admin', isActive: true, tenantId: req.tenantId });
+            if (adminCount <= 1) {
+                res.status(400);
+                throw new Error('Cannot disable the only active administrator.');
+            }
+        }
+        user.isActive = isActive;
+    }
+
+    const updatedUser = await user.save();
+    res.json({
+        _id: updatedUser._id,
+        username: updatedUser.username,
+        role: updatedUser.role,
+        isActive: updatedUser.isActive
+    });
+});
+
+// @desc    Delete a user
+// @route   DELETE /api/auth/users/:id
+// @access  Private/Admin
+const deleteUser = asyncHandler(async (req, res) => {
+    const user = await User.findOne({ _id: req.params.id, tenantId: req.tenantId });
+
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found.');
+    }
+
+    if (user.role === 'admin') {
+        res.status(400);
+        throw new Error('Cannot delete an administrator account. Demote to staff first.');
+    }
+
+    // Check if user has created orders. A safer approach is to disable rather than delete.
+    const ordersCreated = await Order.countDocuments({ createdBy: user._id });
+    if (ordersCreated > 0) {
+        res.status(400);
+        throw new Error('Cannot delete user with existing orders. Please disable the account instead.');
+    }
+
+    await user.deleteOne();
+    res.json({ message: 'User deleted successfully.' });
+});
+
 
     if (user) {
         res.status(201).json({
@@ -250,6 +344,10 @@ export {
     loginUser,
     logoutUser,
     getMe,
+    getUsers,
+    getUserById,       
+    updateUserById,    
+    deleteUser, 
     updateUserProfile,
     changeUserPassword,
     updateUserProfilePicture,
