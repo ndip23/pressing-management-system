@@ -4,7 +4,7 @@ import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext';
 import MainLayout from './components/Layout/MainLayout';
 import Spinner from './components/UI/Spinner';
-
+import PublicLayout from './components/Layout/PublicLayout';
 
 const LoginPage = lazy(() => import('./pages/Auth/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/Dashboard/DashboardPage'));
@@ -15,6 +15,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const SettingsPage = lazy(() => import('./pages/Admin/SettingsPage.js')); 
 const ProfilePage = lazy(() => import('./pages/User/ProfilePage'));
 const ManageUsersPage = lazy(() => import('./pages/Admin/ManageUsersPage.js'));
+
 // Public Page Imports
 const LandingPage = lazy(() => import('./pages/Public/LandingPage'));
 // const PricingPage = lazy(() => import('./pages/Public/PricingPage'));

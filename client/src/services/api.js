@@ -55,7 +55,8 @@ api.interceptors.response.use(
 
 // --- Authentication & Current User Profile ---
 export const loginUser = (credentials) => api.post('/auth/login', credentials);
-export const registerUser = (userData) => api.post('/auth/register', userData); // This is for public tenant registration
+// This 'registerUser' is for a public signup flow. For admin creating users, we use createStaffUserApi.
+export const registerUser = (userData) => api.post('/auth/register', userData);
 export const logoutUserApi = () => api.post('/auth/logout');
 export const getMe = () => api.get('/auth/me');
 export const updateMyProfile = (profileData) => api.put('/auth/me', profileData);
@@ -63,7 +64,6 @@ export const changeMyPassword = (passwordData) => api.put('/auth/me/change-passw
 
 // --- Orders ---
 export const fetchOrders = async (filters = {}) => {
-    console.log("[api.js] fetchOrders called with filters:", filters);
     return api.get('/orders', { params: filters });
 };
 export const fetchOrderById = (orderId) => api.get(`/orders/${orderId}`);
@@ -71,7 +71,8 @@ export const createNewOrder = (orderData) => api.post('/orders', orderData);
 export const updateExistingOrder = (orderId, orderData) => api.put(`/orders/${orderId}`, orderData);
 export const deleteOrderApi = (orderId) => api.delete(`/orders/${orderId}`);
 export const sendManualNotification = (orderId) => api.post(`/orders/${orderId}/notify`);
-export const markOrderPaidApi = async (orderId) => api.put(`/orders/${orderId}/mark-paid`); // Note: Backend needs this route
+// Note: Backend needs route for markOrderPaidApi
+export const markOrderPaidApi = async (orderId) => api.put(`/orders/${orderId}/mark-paid`);
 
 // --- Customers ---
 export const fetchCustomers = (searchQuery = '') => {
@@ -92,16 +93,16 @@ export const fetchAdminNotificationsApi = async () => api.get('/admin-notificati
 export const markAdminNotificationReadApi = async (notificationId) => api.put(`/admin-notifications/${notificationId}/read`);
 export const markAllAdminNotificationsReadApi = async () => api.put('/admin-notifications/read-all');
 
-// --- Reporting & File Uploads (as defined in your file) ---
+// --- Reporting & File Uploads (These still require backend implementation) ---
 export const fetchDailyPaymentsReport = async (date) => {
     if (!date) {
         console.error("fetchDailyPaymentsReport: Date parameter is required.");
         return Promise.reject(new Error("Date parameter is required for daily payments report."));
     }
-    return api.get(`/reports/daily-payments?date=${date}`); // Note: Backend needs this /reports/... route
+    return api.get(`/reports/daily-payments?date=${date}`);
 };
 export const uploadMyProfilePicture = async (formData) => {
-    return api.put('/auth/me/profile-picture', formData, { // Changed from POST to PUT for idempotency
+    return api.put('/auth/me/profile-picture', formData, {
         headers: {
             'Content-Type': 'multipart/form-data', 
         },
@@ -109,25 +110,40 @@ export const uploadMyProfilePicture = async (formData) => {
 };
 
 // ====================================================================
-// === ADDED/CORRECTED FUNCTIONS FOR ADMIN USER MANAGEMENT TO FIX ERRORS ===
+// === COMPLETE & CORRECTED FUNCTIONS FOR ADMIN USER MANAGEMENT ===
 // ====================================================================
+
+/**
+ * Fetches a list of all users. (Admin only)
+ */
 export const fetchUsersApi = async () => {
-    return api.get('/auth/users'); // Backend route to get all users
+    return api.get('/auth/users');
 };
 
+/**
+ * Creates a new staff or admin user. (Admin only)
+ * @param {object} userData - Contains { username, password, role }
+ */
 export const createStaffUserApi = async (userData) => {
-    // userData = { username, password, role }
     // The backend route for an admin to create a user is POST /api/auth/users
-    // (We reused the 'registerUser' controller for this)
+    // which maps to the 'registerUser' controller on the backend.
     return api.post('/auth/users', userData);
 };
 
+/**
+ * Updates a user's details by their ID. (Admin only)
+ * @param {string} userId - The ID of the user to update.
+ * @param {object} userData - The data to update, e.g., { username, role, isActive, newPassword }
+ */
 export const updateUserByIdApi = async (userId, userData) => {
-    // userData can include { username, role, isActive, newPassword }
     return api.put(`/auth/users/${userId}`, userData);
 };
 
-export const deleteUserApi = async (userId) => { // This was missing an export or had a different name
+/**
+ * Deletes a user by their ID. (Admin only)
+ * @param {string} userId - The ID of the user to delete.
+ */
+export const deleteUserApi = async (userId) => {
     return api.delete(`/auth/users/${userId}`);
 };
 // ====================================================================

@@ -94,6 +94,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                                 <span className="text-xs font-semibold text-apple-gray-500 dark:text-apple-gray-400 uppercase tracking-wider">Admin Area</span>
                             </div>
                             <NavItem to="/admin/settings" icon={Settings}>Settings</NavItem>
+                            <NavItem to="/admin/manage-users" icon={Users}>Manage Users</NavItem> 
                             {/* If you want a link for admins to manage other admin/staff accounts (using API tools for now) */}
                             {/* You could add a placeholder link or a link to documentation here: */}
                             {/* <NavItem to="/admin-guide/user-management" icon={UsersCog} disabled={true}>Manage Logins (Guide)</NavItem> */}

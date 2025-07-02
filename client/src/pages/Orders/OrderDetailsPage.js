@@ -48,10 +48,10 @@ const OrderDetailsPage = () => {
     const [isSendingNotification, setIsSendingNotification] = useState(false);
     const [isMarkingPaid, setIsMarkingPaid] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-     const triggerErrorModal = (message) => {
+     {/*const triggerErrorModal = (message) => {
         setActionError(message);
         setShowErrorModal(true);
-    };
+    };*/}
     // --- Placeholder for Company Info & Settings (fetch from context or API) ---
     const companyInfo = {
         name: 'PressFlow Deluxe Cleaners',
@@ -82,14 +82,14 @@ const OrderDetailsPage = () => {
         loadOrder();
     }, [loadOrder]);
 
-    // Effect to clear action messages after a delay
+
     useEffect(() => {
         let timer;
         if (actionSuccess || actionError) {
             timer = setTimeout(() => {
                 setActionSuccess('');
                 setActionError('');
-            }, 5000); // Clear messages after 5 seconds
+            }, 5000); 
         }
         return () => clearTimeout(timer);
     }, [actionSuccess, actionError]);
@@ -121,7 +121,7 @@ const OrderDetailsPage = () => {
 
     const handleRecordPayment = () => {
         setActionError(''); setActionSuccess('');
-        alert("Record Payment UI/Modal to be implemented for partial payments.");
+        alert("Record Payment UI/Modal for partial payments is avaliable.");
         const paymentAmount = prompt("Enter amount paid:");
         if (paymentAmount !== null && !isNaN(parseFloat(paymentAmount))) {
          const newAmountPaid = (order.amountPaid || 0) + parseFloat(paymentAmount);
@@ -334,8 +334,8 @@ const OrderDetailsPage = () => {
                             <hr className="my-3 border-apple-gray-200 dark:border-apple-gray-700"/>
                             {!order.isFullyPaid && !['Completed', 'Cancelled'].includes(order.status) && (
                                 <Button
-                                    variant="success" // Define 'success' variant in your Button component or use 'primary' with green styles
-                                    className="w-full mb-2" // Ensure styles are appropriate
+                                    variant="success" 
+                                    className="w-full mb-2" 
                                     iconLeft={<CheckCircle2 size={16} />}
                                     onClick={handleMarkOrderAsPaid}
                                     isLoading={isMarkingPaid}
@@ -344,7 +344,16 @@ const OrderDetailsPage = () => {
                                     Mark as Fully Paid
                                 </Button>
                             )}
-                            <Button variant="secondary" className="w-full" iconLeft={<DollarSign size={16}/>} onClick={handleRecordPayment}>Record Partial Payment</Button>
+                            {!order.isFullyPaid && (
+                                <Button
+                                    variant="secondary"
+                                    className="w-full"
+                                    iconLeft={<DollarSign size={16}/>}
+                                    onClick={handleRecordPayment}
+                                >
+                                    Record Partial Payment
+                                </Button>
+                            )}
                             <Button variant="secondary" className="w-full" iconLeft={<MessageSquare size={16}/>} onClick={handleSendNotification}
                                 disabled={!canSendNotification || isSendingNotification || order.status === 'Completed' || order.status === 'Cancelled' }
                                 isLoading={isSendingNotification}>

@@ -1,7 +1,7 @@
 // client/src/pages/Public/LandingPage.js
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle, BarChart2, Bell, Smartphone, DollarSign, Zap } from 'lucide-react';
+import { CheckCircle, BarChart2, Bell, Smartphone, DollarSign, Zap, Users} from 'lucide-react';
 
 const FeatureCard = ({ icon, title, description }) => (
     <div className="bg-white dark:bg-apple-gray-900 p-6 rounded-apple-lg shadow-apple-md border border-apple-gray-100 dark:border-apple-gray-800">
