@@ -348,7 +348,7 @@ const OrderDetailsPage = () => {
                                 <Button
                                     variant="secondary"
                                     className="w-full"
-                                    iconLeft={<DollarSign size={16}/>}
+                                    iconLeft={({currencySymbol})}
                                     onClick={handleRecordPayment}
                                 >
                                     Record Partial Payment
