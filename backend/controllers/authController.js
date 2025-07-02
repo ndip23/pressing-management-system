@@ -351,6 +351,5 @@ export {
     updateUserProfile,
     changeUserPassword,
     updateUserProfilePicture,
-    getUsers,
     updateUserRole,
 };
