@@ -146,6 +146,12 @@ export const updateUserByIdApi = async (userId, userData) => {
 export const deleteUserApi = async (userId) => {
     return api.delete(`/auth/users/${userId}`);
 };
+export const registerTenantWithSetup = async (setupData) => {
+    return api.post('/public/register-with-setup', setupData);
+};
+export const fetchPrices = async () => {
+    return api.get('/prices');
+};
 // ====================================================================
 
 export default api;

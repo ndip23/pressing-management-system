@@ -62,6 +62,9 @@ export const AuthProvider = ({ children }) => {
             // }
         }
     }, [token]); // Added token as a dependency for the logout API call condition
+    const loginWithToken = useCallback(async (newToken) => {
+        await fetchAndSetUser(newToken);
+    }, [fetchAndSetUser]);
 
     // Re-add fetchAndSetUser and logout to the dependency array of useEffect
     // after ensuring they are stable (which they should be with useCallback).
@@ -97,6 +100,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         logout,
+        loginWithToken,
     };
 
     if (loading) {

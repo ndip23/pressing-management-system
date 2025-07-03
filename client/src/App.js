@@ -16,10 +16,12 @@ const SettingsPage = lazy(() => import('./pages/Admin/SettingsPage.js'));
 const ProfilePage = lazy(() => import('./pages/User/ProfilePage'));
 const ManageUsersPage = lazy(() => import('./pages/Admin/ManageUsersPage.js'));
 
+
 // Public Page Imports
 const LandingPage = lazy(() => import('./pages/Public/LandingPage'));
-// const PricingPage = lazy(() => import('./pages/Public/PricingPage'));
-// const SignUpPage = lazy(() => import('./pages/Public/SignUpPage'));
+const FeaturesPage = lazy(() => import('./pages/Public/FeaturesPage'));
+const PricingPage = lazy(() => import('./pages/Public/PricingPage'));
+const SignUpPage = lazy(() => import('./pages/Public/SignUpPage'));
 
 
 const CustomerListPage = lazy(() => import('./pages/Customers/CustomerListPage'));
@@ -48,8 +50,9 @@ function App() {
                 <Routes>
                     <Route element={<PublicLayout />}>
                         <Route path="/" element={<LandingPage />} />
-                        {/* <Route path="/pricing" element={<PricingPage />} /> */}
-                        {/* <Route path="/signup" element={<SignUpPage />} /> */}
+                        <Route path="/features" element={<FeaturesPage />} />
+                        <Route path="/pricing" element={<PricingPage />} /> 
+                        <Route path="/signup" element={<SignUpPage />} /> 
                     </Route>
                     <Route path="/login" element={<LoginPage />} />
                     <Route
