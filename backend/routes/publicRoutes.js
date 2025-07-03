@@ -1,8 +1,6 @@
 // server/routes/publicRoutes.js
 import express from 'express';
-import { registerTenant } from '../controllers/publicController.js';
+import { registerTenantWithSetup } from '../controllers/publicController.js';
 const router = express.Router();
-
-router.post('/register', registerTenant);
-
+router.post('/register-with-setup', registerTenantWithSetup);
 export default router;

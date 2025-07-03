@@ -44,7 +44,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/api/public', publicRoutes); 
 app.use('/api/auth', authRoutes)
-
+app.use('/api/prices', priceRoutes);
 app.get('/api/test', (req, res) => res.json({ message: "API test route working!" }));
 
 // Mount routers

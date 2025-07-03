@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema({
 
 // Create a compound index to ensure username is unique *per tenant*
 userSchema.index({ username: 1, tenantId: 1 }, { unique: true });
-
+userSchema.index({ email: 1 }, { unique: true, sparse: true });
 userSchema.pre('save', async function (next) {
     if (!this.isModified('password')) return next();
     const salt = await bcrypt.genSalt(10);

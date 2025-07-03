@@ -1,21 +1,16 @@
 // server/controllers/settingsController.js
 import Settings from '../models/Settings.js';
 import asyncHandler from '../middleware/asyncHandler.js';
+import Price from '../models/Price.js'; 
 
 // @desc    Get application settings
 // @route   GET /api/settings
 // @access  Private/Admin
 const getAppSettings = asyncHandler(async (req, res) => {
-    const settings = await Settings.getSettings(); // Uses static method from model
-    if (!settings) {
-        // This case should ideally be handled by Settings.getSettings() creating one
-        // but as a fallback:
-        res.status(404);
-        throw new Error('Settings not found and could not be initialized.');
-    }
+    const settings = await Settings.findOne({ tenantId: req.tenantId });
+    if (!settings) { res.status(404); throw new Error('Settings not found for this tenant.'); }
     res.json(settings);
 });
-
 // @desc    Update application settings
 // @route   PUT /api/settings
 // @access  Private/Admin
