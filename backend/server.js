@@ -13,6 +13,7 @@ import orderRoutes from './routes/orderRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 import adminNotificationRoutes from './routes/adminNotificationRoutes.js'; 
 import reportRoutes from './routes/reportRoutes.js'; 
+import priceRoutes from './routes/priceRoutes.js';
 // Import scheduler
 import { startOrderChecks } from './schedulers/orderChecker.js'; 
 
