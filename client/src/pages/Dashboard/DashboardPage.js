@@ -1,7 +1,7 @@
 // client/src/pages/Dashboard/DashboardPage.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchOrders, fetchDailyPaymentsReport, updateExistingOrder } from '../../services/api'; 
+import { fetchOrders, fetchDailyPaymentsReport, updateExistingOrder, } from '../../services/api'; 
 import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
@@ -11,6 +11,7 @@ import Modal from '../../components/UI/Modal';
 import Input from '../../components/UI/Input';   
 import { PlusCircle, AlertTriangle, CheckCircle2, Clock3, Shirt, TrendingUp, Filter as FilterIcon, RotateCcw, Search as SearchIcon, DollarSign } from 'lucide-react'; // Added more icons
 import { format, isPast, parseISO } from 'date-fns';
+import { useAuth } from '../../contexts/AuthContext'; 
 
 const StatCard = ({ title, value, icon, colorClass, isLoading }) => (
     <Card className={`shadow-apple-sm ${colorClass || 'bg-white dark:bg-apple-gray-800'}`}>
@@ -26,6 +27,7 @@ const StatCard = ({ title, value, icon, colorClass, isLoading }) => (
 
 
 const DashboardPage = () => {
+    const { user } = useAuth()
     const [orders, setOrders] = useState([]);
     const [loadingOrders, setLoadingOrders] = useState(true);
     const [ordersError, setOrdersError] = useState('');
