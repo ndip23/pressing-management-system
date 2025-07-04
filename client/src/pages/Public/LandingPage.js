@@ -30,7 +30,7 @@ const LandingPage = () => {
                             <Link to="/signup" className="bg-apple-blue text-white px-8 py-3 rounded-apple font-semibold hover:bg-sky-600 transition-transform transform hover:scale-105 shadow-apple-lg">
                                 Get Started for Free
                             </Link>
-                            <Link to="/#features" className="bg-white dark:bg-apple-gray-800 text-apple-blue dark:text-white px-8 py-3 rounded-apple font-semibold hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700 transition-transform transform hover:scale-105 shadow-apple-lg">
+                            <Link to="/features" className="bg-white dark:bg-apple-gray-800 text-apple-blue dark:text-white px-8 py-3 rounded-apple font-semibold hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700 transition-transform transform hover:scale-105 shadow-apple-lg">
                                 Learn More
                             </Link>
                         </div>
