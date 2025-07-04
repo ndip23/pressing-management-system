@@ -88,12 +88,18 @@ export const deleteCustomerApi = (customerId) => api.delete(`/customers/${custom
 export const fetchAppSettings = async () => api.get('/settings');
 export const updateAppSettingsApi = async (settingsData) => api.put('/settings', settingsData);
 
-// --- Admin Bell Notifications ---
-export const fetchAdminNotificationsApi = async () => api.get('/admin-notifications');
-export const markAdminNotificationReadApi = async (notificationId) => api.put(`/admin-notifications/${notificationId}/read`);
-export const markAllAdminNotificationsReadApi = async () => api.put('/admin-notifications/read-all');
+// --- User Bell Notifications ---
+export const fetchAdminNotificationsApi = async () => {
+    return api.get('/notifications'); 
+};
+export const markAdminNotificationReadApi = async (notificationId) => {
+    return api.put(`/notifications/${notificationId}/read`);
+};
+export const markAllAdminNotificationsReadApi = async () => {
+    return api.put('/notifications/read-all');
+};
 
-// --- Reporting & File Uploads (These still require backend implementation) ---
+// --- Reporting & File Uploads  ---
 export const fetchDailyPaymentsReport = async (date) => {
     if (!date) {
         console.error("fetchDailyPaymentsReport: Date parameter is required.");

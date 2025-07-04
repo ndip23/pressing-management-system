@@ -11,7 +11,7 @@ import Button from '../UI/Button';
 import { formatDistanceToNowStrict, isValid as isValidDate } from 'date-fns';
 
 const Navbar = ({ toggleSidebar, sidebarOpen }) => { // Added sidebarOpen back if toggleSidebar needs it
-    const { user, logout } = useAuth();
+    const { user, isAuthenticated } = useAuth();
     const { notifications, unreadCount, markAsRead, clearAllNotifications, loadingNotifications } = useAdminNotifications();
     const [darkMode, setDarkMode] = useState(() => {
         const savedMode = localStorage.getItem('darkMode');
@@ -78,7 +78,7 @@ const Navbar = ({ toggleSidebar, sidebarOpen }) => { // Added sidebarOpen back i
                         {darkMode ? <Sun size={20} /> : <Moon size={20} />}
                     </Button>
 
-                    {user?.role === 'admin' && (
+                    {isAuthenticated && (
                         <div className="relative" ref={notificationRef}>
                             <Button variant="ghost" size="sm" onClick={handleBellClick} className="p-1.5" aria-label="View Notifications" aria-expanded={showNotifications}>
                                 <Bell size={20} />
