@@ -9,32 +9,25 @@ import asyncHandler from '../middleware/asyncHandler.js';
 // @access  Private (Staff/Admin)
 const createCustomer = asyncHandler(async (req, res) => {
     const { name, phone, email, address } = req.body;
+     const { tenantId } = req;
 
-    if (!name || !phone) {
-        res.status(400);
-        throw new Error('Customer name and phone number are required.');
-    }
-
-    const phoneExists = await Customer.findOne({ phone });
-    if (phoneExists) {
-        res.status(400);
-        throw new Error(`Customer with phone number ${phone} already exists.`);
-    }
-
+    const existingQuery = { tenantId, $or: [{ phone }] };
     if (email) {
-        const emailExists = await Customer.findOne({ email: email.toLowerCase() });
-        if (emailExists) {
-            res.status(400);
-            throw new Error(`Customer with email ${email} already exists.`);
-        }
+        existingQuery.$or.push({ email: email.toLowerCase() });
+    }
+    const customerExists = await Customer.findOne(existingQuery);
+    if (customerExists) {
+        res.status(400);
+        throw new Error(`A customer with this phone or email already exists in your organization.`);
     }
 
     const customer = new Customer({
+        tenantId,
         name,
         phone,
         email: email ? email.toLowerCase() : undefined,
         address,
-        // createdBy: req.user.id // If you implement this
+        createdBy: req.user.id // If you implement this
     });
 
     const createdCustomer = await customer.save();
@@ -45,16 +38,22 @@ const createCustomer = asyncHandler(async (req, res) => {
 // @route   GET /api/customers
 // @access  Private (Staff/Admin)
 const getCustomers = asyncHandler(async (req, res) => {
+    const { tenantId } = req;
     const { search } = req.query;
-    let query = {};
+
+    let query = { tenantId: tenantId };
 
     if (search) {
-        const searchRegex = new RegExp(search, 'i');
         query = {
-            $or: [
-                { name: searchRegex },
-                { phone: searchRegex },
-                { email: searchRegex }
+            $and: [
+                { tenantId: tenantId }, 
+                {
+                    $or: [
+                        { name: searchRegex },
+                        { phone: searchRegex },
+                        { email: searchRegex }
+                    ]
+                }
             ]
         };
     }
@@ -80,44 +79,43 @@ const getCustomers = asyncHandler(async (req, res) => {
 // @route   GET /api/customers/:id
 // @access  Private (Staff/Admin)
 const getCustomerById = asyncHandler(async (req, res) => {
+    const { tenantId } = req;
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        res.status(400);
-        throw new Error('Invalid customer ID format');
+        res.status(400); throw new Error('Invalid customer ID format');
     }
-    const customer = await Customer.findById(req.params.id);
+    const customer = await Customer.findOne({ _id: req.params.id, tenantId });
     if (customer) {
         res.json(customer);
     } else {
-        res.status(404);
-        throw new Error('Customer not found');
+        res.status(404); throw new Error('Customer not found.');
     }
 });
+
 
 // @desc    Update customer
 // @route   PUT /api/customers/:id
 // @access  Private (Staff/Admin)
 const updateCustomer = asyncHandler(async (req, res) => {
+    const { tenantId } = req;
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        res.status(400);
-        throw new Error('Invalid customer ID format');
+        res.status(400); throw new Error('Invalid customer ID format');
     }
-    const customer = await Customer.findById(req.params.id);
+    const customer = await Customer.findOne({ _id: req.params.id, tenantId });
 
     if (!customer) {
-        res.status(404);
-        throw new Error('Customer not found');
+        res.status(404); throw new Error('Customer not found.');
     }
 
     const { name, phone, email, address } = req.body;
 
     if (phone && phone !== customer.phone) {
-        const phoneExists = await Customer.findOne({ phone, _id: { $ne: customer._id } });
+        const phoneExists = await Customer.findOne({ phone, tenantId, _id: { $ne: customer._id } });
         if (phoneExists) {
-            res.status(400);
-            throw new Error(`Another customer with phone number ${phone} already exists.`);
+            res.status(400); throw new Error(`Another customer with phone number ${phone} already exists.`);
         }
         customer.phone = phone;
     }
+
 
     if (email !== undefined && email !== customer.email) { // Check for undefined to allow clearing email
         if (email) { // Only check for duplicates if new email is not empty
@@ -143,27 +141,24 @@ const updateCustomer = asyncHandler(async (req, res) => {
 // @route   DELETE /api/customers/:id
 // @access  Private/Admin
 const deleteCustomer = asyncHandler(async (req, res) => {
+    const { tenantId } = req;
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        res.status(400);
-        throw new Error('Invalid customer ID format');
+        res.status(400); throw new Error('Invalid customer ID format');
     }
-    const customer = await Customer.findById(req.params.id);
-
+    const customer = await Customer.findOne({ _id: req.params.id, tenantId });
     if (!customer) {
-        res.status(404);
-        throw new Error('Customer not found');
+        res.status(404); throw new Error('Customer not found.');
     }
 
-    const ordersCount = await Order.countDocuments({ customer: customer._id });
+    const ordersCount = await Order.countDocuments({ customer: customer._id, tenantId });
     if (ordersCount > 0) {
-        res.status(400);
-        throw new Error('Cannot delete customer with existing orders. Please reassign or delete their orders first.');
-        // Consider an "archive" or "deactivate" feature for customers instead of hard delete if they have orders.
+        res.status(400); throw new Error('Cannot delete customer with existing orders. Consider deactivating customers in the future.');
     }
 
     await customer.deleteOne();
     res.json({ message: 'Customer removed successfully' });
 });
+
 
 export {
     createCustomer,

@@ -6,6 +6,7 @@ import Price from '../models/Price.js';
 // @route   GET /api/prices
 // @access  Private
 const getPrices = asyncHandler(async (req, res) => {
+    
     const prices = await Price.find({ tenantId: req.tenantId });
     res.json(prices);
 });

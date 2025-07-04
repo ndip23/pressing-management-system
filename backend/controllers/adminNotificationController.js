@@ -6,6 +6,8 @@ import AdminNotification from '../models/AdminNotification.js';
 // @route   GET /api/admin-notifications
 // @access  Private/Admin
 const getMyNotifications = asyncHandler(async (req, res) => {
+    const { tenantId } = req; 
+    let query = { tenantId: tenantId };
     const limit = parseInt(req.query.limit, 10) || 20; // Max notifications to return
 
     const notifications = await AdminNotification.find({ userId: req.user.id })

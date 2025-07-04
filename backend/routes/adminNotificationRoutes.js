@@ -5,16 +5,15 @@ import {
     markNotificationAsRead,
     markAllNotificationsAsRead
 } from '../controllers/adminNotificationController.js';
-import { protect, authorize } from '../middleware/authMiddleware.js';
+import { protect } from '../middleware/authMiddleware.js'; // Only need 'protect'
 
 const router = express.Router();
 
-// All routes in this file will first run 'protect' then 'authorize('admin')'
-// This ensures only logged-in admins can access these endpoints.
-router.use(protect, authorize('admin'));
+// All routes in this file are now protected for any logged-in user (admin or staff)
+router.use(protect);
 
 router.get('/', getMyNotifications);
 router.put('/read-all', markAllNotificationsAsRead);
-router.put('/:id/read', markNotificationAsRead); // Ensure :id route is specific enough
+router.put('/:id/read', markNotificationAsRead);
 
 export default router;
