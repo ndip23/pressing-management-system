@@ -5,12 +5,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useAdminNotifications } from '../../contexts/NotificationContext';
 import {
     Bell, UserCircle, Sun, Moon, Menu, AlertTriangle, LogOut,
-    Settings as SettingsIconLucide, XCircle, PlusCircle // Added PlusCircle for example icon
-} from 'lucide-react'; // Make sure SearchIcon is not needed or imported if it is
+    Settings as SettingsIconLucide, XCircle, PlusCircle 
+} from 'lucide-react'; 
 import Button from '../UI/Button';
 import { formatDistanceToNowStrict, isValid as isValidDate } from 'date-fns';
 
-const Navbar = ({ toggleSidebar, sidebarOpen }) => { // Added sidebarOpen back if toggleSidebar needs it
+const Navbar = ({ toggleSidebar, sidebarOpen }) => { 
     const { user, isAuthenticated } = useAuth();
     const { notifications, unreadCount, markAsRead, clearAllNotifications, loadingNotifications } = useAdminNotifications();
     const [darkMode, setDarkMode] = useState(() => {
@@ -46,12 +46,12 @@ const Navbar = ({ toggleSidebar, sidebarOpen }) => { // Added sidebarOpen back i
 
     const handleBellClick = () => {
         setShowNotifications(prevShow => !prevShow);
-        setShowUserMenu(false); // Close user menu when opening notifications
+        setShowUserMenu(false); 
     };
 
     const handleUserMenuClick = () => {
         setShowUserMenu(prevShow => !prevShow);
-        setShowNotifications(false); // Close notifications when opening user menu
+        setShowNotifications(false); 
     };
 
     const getIconForNotification = (type) => {
