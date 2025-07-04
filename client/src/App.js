@@ -55,15 +55,9 @@ function App() {
                         <Route path="/signup" element={<SignUpPage />} /> 
                     </Route>
                     <Route path="/login" element={<LoginPage />} />
-                    <Route
-                        path="/app"
-                        element={
-                            <ProtectedRoute>
-                                <MainLayout />
-                            </ProtectedRoute>
-                        }
-                    >
-                        <Route index element={<DashboardPage />} />
+                     <Route path="/app" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+                     <Route index element={<Navigate to="dashboard" replace />} />
+                     <Route path="dashboard" element={<DashboardPage />} />
                         <Route path="orders/new" element={<CreateOrderPage />} />
                         <Route path="orders/:id" element={<OrderDetailsPage />} />
                         <Route path="orders/:id/edit" element={<EditOrderPage />} />

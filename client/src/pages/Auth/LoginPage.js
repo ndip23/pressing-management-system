@@ -13,7 +13,7 @@ const LoginPage = () => {
     const { login, isAuthenticated, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
-    const from = location.state?.from?.pathname || "/";
+    const from = location.state?.from?.pathname || "/app/dashboard";
 
     useEffect(() => {
         if (isAuthenticated && !authLoading) {

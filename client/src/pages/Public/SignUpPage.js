@@ -137,6 +137,31 @@ const Step4_Confirmation = ({ data, prevStep, handleSubmit, isSubmitting }) => (
         </div>
     </div>
 );
+const Step5_SuccessAndLogin = ({ companyName, adminUsername }) => {
+    return (
+        <div className="text-center space-y-4 animate-fade-in p-4">
+            <PartyPopper size={48} className="mx-auto text-apple-green" />
+            <h3 className="font-bold text-2xl text-apple-gray-800 dark:text-white">
+                Registration Successful!
+            </h3>
+            <p className="text-apple-gray-600 dark:text-apple-gray-400">
+                The account for <strong className="text-apple-gray-800 dark:text-white">{companyName}</strong> has been created.
+            </p>
+            <p className="text-sm text-apple-gray-500 dark:text-apple-gray-400 pt-2">
+                You can now log in with your new admin credentials:
+                <br />
+                Username: <strong className="text-apple-gray-700 dark:text-apple-gray-200">{adminUsername}</strong>
+            </p>
+            <div className="pt-4">
+                <Link to="/login">
+                    <Button variant="primary" size="lg">
+                        Proceed to Login
+                    </Button>
+                </Link>
+            </div>
+        </div>
+    );
+};
 
 // --- Main SignUpPage Component ---
 const SignUpPage = () => {
@@ -164,24 +189,29 @@ const SignUpPage = () => {
     const nextStep = () => setStep(prev => Math.min(prev + 1, 4));
     const prevStep = () => setStep(prev => Math.max(prev - 1, 1));
 
-    const handleSubmit = async () => {
-        setIsSubmitting(true); setError('');
+const handleSubmit = async () => {
+        setIsSubmitting(true);
+        setError('');
         try {
-            const { data } = await registerTenantWithSetup(formData);
-            // After successful registration, log the user in with the returned token
-            await auth.loginWithToken(data.token);
-            navigate('/app/dashboard');
+            // Call the backend to create the tenant and user
+            await registerTenantWithSetup(formData);
+            // On success, simply move to the final success step
+            setStep(5);
         } catch (err) {
             setError(err.response?.data?.message || 'Registration failed. A user or business with these details may already exist.');
-            setStep(1); // Reset to first step on major error
-        } finally { setIsSubmitting(false); }
+            setStep(1); // On major error, reset to the first step
+        } finally {
+            setIsSubmitting(false);
+        }
     };
+
 
     const renderStep = () => {
         switch (step) {
             case 1:
                 return <Step1_AdminAccount data={formData.adminUser} setData={updateFormData} nextStep={nextStep} />;
             case 2:
+                // Pass the combined currency and company data, and the correct setters
                 return <Step2_CompanyInfo data={{...formData.companyInfo, currencySymbol: formData.currencySymbol}} setData={(section, field, value) => {
                     if (section === 'currencySymbol') setTopLevelFormData('currencySymbol', value);
                     else updateFormData('companyInfo', field, value);
@@ -190,6 +220,8 @@ const SignUpPage = () => {
                 return <Step3_SetupServices formData={formData} setFormData={setFormData} nextStep={nextStep} prevStep={prevStep} />;
             case 4:
                 return <Step4_Confirmation data={formData} prevStep={prevStep} handleSubmit={handleSubmit} isSubmitting={isSubmitting} />;
+            case 5:
+                return <Step5_SuccessAndLogin companyName={formData.companyInfo.name} adminUsername={formData.adminUser.username} />;
             default:
                 return <Step1_AdminAccount data={formData.adminUser} setData={updateFormData} nextStep={nextStep} />;
         }
