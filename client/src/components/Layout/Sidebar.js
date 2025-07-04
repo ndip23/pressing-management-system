@@ -76,13 +76,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 </div>
 
                 <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto custom-scrollbar"> {/* Added custom-scrollbar if you defined it */}
-                     <NavItem to="/app/dashboard" icon={LayoutDashboard} end={true}>Dashboard</NavItem>
-                    <NavItem to="app/orders/new" icon={PlusCircle}>New Order</NavItem>
+                     <NavItem to="dashboard" icon={LayoutDashboard} end={true}>Dashboard</NavItem>
+                    <NavItem to="/orders/new" icon={PlusCircle}>New Order</NavItem>
 
                     {/* MODIFIED: "Manage Users" is now "Customers" and points to /customers */}
-                    <NavItem to="app/customers" icon={Users}>Customers</NavItem>
-                    <NavItem to="app/payments" icon={CreditCard}>Payments</NavItem>
-                    <NavItem to="app/admin/manage-users" icon={KeyRound}>Manage Staff</NavItem>
+                    <NavItem to="/customers" icon={Users}>Customers</NavItem>
+                    <NavItem to="/payments" icon={CreditCard}>Payments</NavItem>
+                    <NavItem to="/admin/manage-users" icon={KeyRound}>Manage Staff</NavItem>
                     {/* If you still wanted a placeholder for Payments, it would go here */}
                     {/* <NavItem to="/payments" icon={CreditCard} disabled={true}>Payments (Soon)</NavItem> */}
 
@@ -93,8 +93,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                             <div className="pt-4 pb-1 px-3"> {/* Added more top padding */}
                                 <span className="text-xs font-semibold text-apple-gray-500 dark:text-apple-gray-400 uppercase tracking-wider">Admin Area</span>
                             </div>
-                            <NavItem to="app/admin/settings" icon={Settings}>Settings</NavItem>
-                            <NavItem to="app/admin/manage-users" icon={Users}>Manage Users</NavItem> 
+                            <NavItem to="/admin/settings" icon={Settings}>Settings</NavItem>
+                            <NavItem to="/admin/manage-users" icon={Users}>Manage Users</NavItem> 
                             {/* If you want a link for admins to manage other admin/staff accounts (using API tools for now) */}
                             {/* You could add a placeholder link or a link to documentation here: */}
                             {/* <NavItem to="/admin-guide/user-management" icon={UsersCog} disabled={true}>Manage Logins (Guide)</NavItem> */}
