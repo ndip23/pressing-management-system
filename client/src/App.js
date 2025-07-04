@@ -58,26 +58,26 @@ function App() {
                      <Route path="/app" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
                      <Route index element={<Navigate to="dashboard" replace />} />
                      <Route path="dashboard" element={<DashboardPage />} />
-                        <Route path="orders/new" element={<CreateOrderPage />} />
-                        <Route path="orders/:id" element={<OrderDetailsPage />} />
-                        <Route path="orders/:id/edit" element={<EditOrderPage />} />
-                        <Route path="payments" element={<DailyPaymentsPage />} />
+                        <Route path="/app/orders/new" element={<CreateOrderPage />} />
+                        <Route path="/app/orders/:id" element={<OrderDetailsPage />} />
+                        <Route path="/app/orders/:id/edit" element={<EditOrderPage />} />
+                        <Route path="/app/payments" element={<DailyPaymentsPage />} />
                         {/* Customer Routes */}
-                        <Route path="customers" element={<CustomerListPage />} />
-                        <Route path="customers/new" element={<CustomerFormPage mode="create" />} />
-                        <Route path="customers/:id/edit" element={<CustomerFormPage mode="edit" />} />
-                        <Route path="customers/:id/details" element={<CustomerDetailsPage />} />
-                        <Route path="profile" element={<ProfilePage />} /> 
+                        <Route path="/app/customers" element={<CustomerListPage />} />
+                        <Route path="/app/customers/new" element={<CustomerFormPage mode="create" />} />
+                        <Route path="/app/customers/:id/edit" element={<CustomerFormPage mode="edit" />} />
+                        <Route path="/app/customers/:id/details" element={<CustomerDetailsPage />} />
+                        <Route path="/app/profile" element={<ProfilePage />} /> 
                         {/* Admin Routes */}
                         <Route
-                            path="admin/settings" 
+                            path="/app/admin/settings" 
                             element={
                                 <AdminRoute>
                                     <SettingsPage />
                                 </AdminRoute>
                             }
                         />
-                         <Route path="admin/users" element={<AdminRoute><ManageUsersPage /></AdminRoute>} /> 
+                         <Route path="/app/admin/users" element={<AdminRoute><ManageUsersPage /></AdminRoute>} /> 
                     </Route>
                     <Route path="*" element={<NotFoundPage />} />
                 </Routes>
