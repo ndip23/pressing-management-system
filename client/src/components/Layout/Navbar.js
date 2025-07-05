@@ -11,7 +11,7 @@ import Button from '../UI/Button';
 import { formatDistanceToNowStrict, isValid as isValidDate } from 'date-fns';
 
 const Navbar = ({ toggleSidebar, sidebarOpen }) => { 
-    const { user, isAuthenticated } = useAuth();
+    const { user, logout, isAuthenticated } = useAuth();
     const { notifications, unreadCount, markAsRead, clearAllNotifications, loadingNotifications } = useAdminNotifications();
     const [darkMode, setDarkMode] = useState(() => {
         const savedMode = localStorage.getItem('darkMode');
@@ -152,7 +152,7 @@ const Navbar = ({ toggleSidebar, sidebarOpen }) => {
                                     <UserCircle size={16} className="mr-2 text-apple-gray-500"/> My Profile
                                 </Link>
                                 {user?.role === 'admin' && (
-                                <Link to="/admin/settings" onClick={() => setShowUserMenu(false)} className="flex items-center w-full text-left px-4 py-2 text-sm text-apple-gray-700 dark:text-apple-gray-200 hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700/50">
+                                <Link to="/app/admin/settings" onClick={() => setShowUserMenu(false)} className="flex items-center w-full text-left px-4 py-2 text-sm text-apple-gray-700 dark:text-apple-gray-200 hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700/50">
                                     <SettingsIconLucide size={16} className="mr-2 text-apple-gray-500"/> App Settings
                                 </Link>
                                 )}
