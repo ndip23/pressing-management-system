@@ -41,11 +41,25 @@ export const loginUser = (credentials) => api.post('/auth/login', credentials);
 export const logoutUserApi = () => api.post('/auth/logout');
 export const getMe = () => api.get('/auth/me');
 export const updateMyProfile = (profileData) => api.put('/auth/me', profileData);
-export const changeMyPassword = (passwordData) => api.put('/auth/me/change-password', passwordData);
+export const requestPasswordChangeOtpApi = async (data) => {
+    return api.post('/auth/me/request-password-change-otp', data);
+};
+
+export const confirmPasswordChangeApi = async (data) => {
+    return api.put('/auth/me/confirm-password-change', data);
+};
 export const uploadMyProfilePicture = async (formData) => { 
     return api.post('/auth/me/profile-picture', formData, { 
         headers: { 'Content-Type': 'multipart/form-data' },
     });
+};
+export const initiateRegistrationApi = async (setupData) => {
+    return api.post('/public/initiate-registration', setupData);
+};
+
+export const finalizeRegistrationApi = async (verificationData) => {
+    // verificationData = { email, otp }
+    return api.post('/public/finalize-registration', verificationData);
 };
 
 // --- Admin User Management ---

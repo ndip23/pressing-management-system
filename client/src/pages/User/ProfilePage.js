@@ -1,16 +1,24 @@
 // client/src/pages/User/ProfilePage.js
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { updateMyProfile, changeMyPassword, uploadMyProfilePicture } from '../../services/api';
+import {
+    updateMyProfile,
+    requestPasswordChangeOtpApi,
+    confirmPasswordChangeApi,
+    uploadMyProfilePicture
+} from '../../services/api';
 import Card from '../../components/UI/Card';
 import Input from '../../components/UI/Input';
 import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
-import { UserCircle, ShieldCheck, Briefcase, Edit3, KeyRound, Save, AlertTriangle, CheckCircle2, Camera, UploadCloud, Eye, EyeOff } from 'lucide-react'; // Added Mail, Eye, EyeOff
+import {
+    UserCircle, ShieldCheck, Briefcase, Edit3, KeyRound, Save,
+    AlertTriangle, CheckCircle2, Camera, UploadCloud, Eye, EyeOff
+} from 'lucide-react'; // Removed Mail as it's not used directly here
 
 // Reusable DetailItem component for displaying profile info
 const DetailItem = ({ label, value, icon: IconComponent, children }) => (
-    <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4"> {/* Removed border here, will be handled by Card's internal dl styling */}
+    <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4 px-4 sm:px-6">
         <dt className="text-sm font-medium text-apple-gray-500 dark:text-apple-gray-400 flex items-center">
             {IconComponent && <IconComponent size={16} className="mr-2 text-apple-gray-400 dark:text-apple-gray-500" />}
             {label}
@@ -21,74 +29,74 @@ const DetailItem = ({ label, value, icon: IconComponent, children }) => (
     </div>
 );
 
+// Reusable Password Toggle Icon
+const PasswordToggleIcon = ({ show, toggle }) => (
+    <span onClick={toggle} className="cursor-pointer text-apple-gray-400 hover:text-apple-gray-600 dark:hover:text-apple-gray-200">
+        {show ? <EyeOff size={18} /> : <Eye size={18} />}
+    </span>
+);
+
+
 const ProfilePage = () => {
+    // CORRECTED: `logout` is removed as it's handled by the Navbar
     const { user, updateUserInContext, loading: authLoading } = useAuth();
 
     // Profile Details State
     const [username, setUsername] = useState('');
-    // const [email, setEmail] = useState(''); // If you add email for editing
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [profileSaving, setProfileSaving] = useState(false);
-    const [profileError, setProfileError] = useState('');
-    const [profileSuccess, setProfileSuccess] = useState('');
+    const [profileMessage, setProfileMessage] = useState({ type: '', text: '' }); // Combined error/success
 
     // Profile Picture State
-    const [profilePictureFile, setProfilePictureFile] = useState(null);
-    const [profilePicturePreview, setProfilePicturePreview] = useState('');
+    const [pictureFile, setPictureFile] = useState(null);
+    const [picturePreview, setPicturePreview] = useState('');
     const [uploadingPicture, setUploadingPicture] = useState(false);
-    const [pictureError, setPictureError] = useState('');
-    const [pictureSuccess, setPictureSuccess] = useState('');
+    const [pictureMessage, setPictureMessage] = useState({ type: '', text: '' });
     const fileInputRef = useRef(null);
 
     // Change Password State
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmNewPassword, setConfirmNewPassword] = useState('');
+    const [passwordStep, setPasswordStep] = useState(1);
+    const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
+    const [otp, setOtp] = useState('');
     const [passwordChanging, setPasswordChanging] = useState(false);
-    const [passwordError, setPasswordError] = useState('');
-    const [passwordSuccess, setPasswordSuccess] = useState('');
+    const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
 
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     useEffect(() => {
         if (user) {
             setUsername(user.username || '');
-            // setEmail(user.email || ''); // if managing email
-            setProfilePicturePreview(user.profilePictureUrl || '');
+            setPicturePreview(user.profilePictureUrl || '');
         }
     }, [user]);
 
+    // Effect for clearing all action messages after a delay
     useEffect(() => {
         let timer;
-        if (profileSuccess || profileError || pictureSuccess || pictureError || passwordSuccess || passwordError) {
+        if (profileMessage.text || pictureMessage.text || passwordMessage.text) {
             timer = setTimeout(() => {
-                setProfileSuccess(''); setProfileError('');
-                setPictureSuccess(''); setPictureError('');
-                setPasswordSuccess(''); setPasswordError('');
-            }, 4000);
+                setProfileMessage({ type: '', text: '' });
+                setPictureMessage({ type: '', text: '' });
+                setPasswordMessage({ type: '', text: '' });
+            }, 5000);
         }
         return () => clearTimeout(timer);
-    }, [profileSuccess, profileError, pictureSuccess, pictureError, passwordSuccess, passwordError]);
+    }, [profileMessage, pictureMessage, passwordMessage]);
 
     const handleProfileUpdate = async (e) => {
         e.preventDefault();
-        if (!username.trim() || username === user.username) {
-            setIsEditingProfile(false); // Just close if no change or empty
-            setProfileError('');
-            return;
+        if (!username.trim() || username.trim() === user.username) {
+            setIsEditingProfile(false); setProfileMessage({ type: '', text: '' }); return;
         }
-        setProfileSaving(true); setProfileError(''); setProfileSuccess('');
+        setProfileSaving(true); setProfileMessage({ type: '', text: '' });
         try {
-            const payload = { username: username.trim() };
-            // if (email !== user.email) payload.email = email;
-            const { data: updatedUser } = await updateMyProfile(payload);
+            const { data: updatedUser } = await updateMyProfile({ username: username.trim() });
             updateUserInContext(updatedUser);
-            setProfileSuccess('Profile updated successfully!');
+            setProfileMessage({ type: 'success', text: 'Profile updated successfully!' });
             setIsEditingProfile(false);
         } catch (err) {
-            setProfileError(err.response?.data?.message || 'Failed to update profile.');
+            setProfileMessage({ type: 'error', text: err.response?.data?.message || 'Failed to update profile.' });
         } finally {
             setProfileSaving(false);
         }
@@ -96,73 +104,70 @@ const ProfilePage = () => {
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            if (file.size > 2 * 1024 * 1024) { // Max 2MB
-                setPictureError("File is too large (max 2MB)."); setProfilePictureFile(null); setProfilePicturePreview(user.profilePictureUrl || ''); return;
-            }
-            if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
-                setPictureError("Invalid file type (JPG, PNG, GIF only)."); setProfilePictureFile(null); setProfilePicturePreview(user.profilePictureUrl || ''); return;
-            }
-            setPictureError(''); setProfilePictureFile(file); setProfilePicturePreview(URL.createObjectURL(file));
-        }
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) { setPictureMessage({ type: 'error', text: "File is too large (max 2MB)." }); return; }
+        if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) { setPictureMessage({ type: 'error', text: "Invalid file type (JPG, PNG, GIF only)." }); return; }
+        setPictureMessage({ type: '', text: '' }); setPictureFile(file); setPicturePreview(URL.createObjectURL(file));
     };
 
     const handlePictureUpload = async () => {
-        if (!profilePictureFile) { setPictureError("Please select an image file."); return; }
-        setUploadingPicture(true); setPictureError(''); setPictureSuccess('');
+        if (!pictureFile) { setPictureMessage({ type: 'error', text: "Please select an image file." }); return; }
+        setUploadingPicture(true); setPictureMessage({ type: '', text: '' });
         const formData = new FormData();
-        formData.append('profilePicture', profilePictureFile);
-        console.log("[ProfilePage] Attempting to upload picture. FormData prepared.");
-
+        formData.append('profilePicture', pictureFile);
         try {
-            const response = await uploadMyProfilePicture(formData);
-            console.log("[ProfilePage] Full API response for picture upload:", response);
-            const responseData = response.data;
-            console.log("[ProfilePage] Backend response data (response.data):", responseData);
-
+            const { data: responseData } = await uploadMyProfilePicture(formData);
             if (responseData && responseData.profilePictureUrl) {
                 updateUserInContext({ profilePictureUrl: responseData.profilePictureUrl });
-                setProfilePicturePreview(responseData.profilePictureUrl);
-                setProfilePictureFile(null);
-                if (fileInputRef.current) fileInputRef.current.value = "";
-                setPictureSuccess(responseData.message || 'Profile picture updated!');
-                console.log("[ProfilePage] Picture upload success path taken.");
-            } else {
-                console.error("[ProfilePage] Unexpected backend response structure for picture upload:", responseData);
-                setPictureError(responseData?.message || 'Unexpected response from server after upload.');
-            }
+                setPicturePreview(responseData.profilePictureUrl);
+                setPictureFile(null); if (fileInputRef.current) fileInputRef.current.value = "";
+                setPictureMessage({ type: 'success', text: responseData.message || 'Profile picture updated!' });
+            } else { setPictureMessage({ type: 'error', text: responseData?.message || 'Unexpected response from server.' }); }
         } catch (err) {
-            console.error("[ProfilePage] Error during picture upload API call:", err);
-            if (err.response) { console.error("[ProfilePage] Axios error response data:", err.response.data); }
-            setPictureError(err.response?.data?.message || err.message || 'Failed to upload profile picture.');
+            setPictureMessage({ type: 'error', text: err.response?.data?.message || 'Failed to upload profile picture.' });
         } finally {
             setUploadingPicture(false);
         }
     };
 
-    const handlePasswordChange = async (e) => {
+    // --- DEFINED THE MISSING HANDLER ---
+    const handlePasswordInputChange = (e) => {
+        setPasswordData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
+    const handleRequestOtp = async (e) => {
         e.preventDefault();
-        if (newPassword !== confirmNewPassword) { setPasswordError('New passwords do not match.'); return; }
-        if (newPassword.length < 6) { setPasswordError('New password must be at least 6 characters.'); return; }
-        setPasswordChanging(true); setPasswordError(''); setPasswordSuccess('');
+        setPasswordMessage({ type: '', text: '' });
+        if (passwordData.newPassword !== passwordData.confirmNewPassword) { setPasswordMessage({ type: 'error', text: 'New passwords do not match.' }); return; }
+        if (passwordData.newPassword.length < 6) { setPasswordMessage({ type: 'error', text: 'New password must be at least 6 characters.' }); return; }
+        setPasswordChanging(true);
         try {
-            const { data } = await changeMyPassword({ currentPassword, newPassword });
-            setPasswordSuccess(data.message || 'Password changed successfully!');
-            setCurrentPassword(''); setNewPassword(''); setConfirmNewPassword('');
+            const { data } = await requestPasswordChangeOtpApi({ currentPassword: passwordData.currentPassword });
+            setPasswordMessage({ type: 'success', text: data.message || "A verification code has been sent to your email." });
+            setPasswordStep(2);
         } catch (err) {
-            setPasswordError(err.response?.data?.message || 'Failed to change password.');
+            setPasswordMessage({ type: 'error', text: err.response?.data?.message || 'Failed to request OTP.' });
         } finally {
             setPasswordChanging(false);
         }
     };
 
-    const PasswordToggleIcon = ({ show, toggle }) => (
-        show ? (
-            <EyeOff size={18} onClick={toggle} className="cursor-pointer text-apple-gray-400 hover:text-apple-gray-600 dark:hover:text-apple-gray-200" />
-        ) : (
-            <Eye size={18} onClick={toggle} className="cursor-pointer text-apple-gray-400 hover:text-apple-gray-600 dark:hover:text-apple-gray-200" />
-        )
-    );
+    const handleConfirmPasswordChange = async (e) => {
+        e.preventDefault();
+        setPasswordMessage({ type: '', text: '' });
+        if (!otp || otp.length !== 6) { setPasswordMessage({ type: 'error', text: 'Please enter the 6-digit code.' }); return; }
+        setPasswordChanging(true);
+        try {
+            const { data } = await confirmPasswordChangeApi({ otp, newPassword: passwordData.newPassword });
+            setPasswordMessage({ type: 'success', text: data.message || 'Password changed successfully!' });
+            setPasswordStep(1); setPasswordData({ currentPassword: '', newPassword: '', confirmNewPassword: '' }); setOtp('');
+        } catch (err) {
+            setPasswordMessage({ type: 'error', text: err.response?.data?.message || 'Verification failed. Please check your code or go back.' });
+        } finally {
+            setPasswordChanging(false);
+        }
+    };
+
 
     if (authLoading && !user) { return <div className="flex justify-center items-center h-64"><Spinner size="lg" /></div>; }
     if (!user) { return <div className="text-center p-6">User data not available. Please log in.</div>; }
@@ -171,57 +176,53 @@ const ProfilePage = () => {
         <div className="max-w-2xl mx-auto space-y-8 pb-12">
             <div className="flex items-center space-x-4 pt-2">
                 <div className="relative group">
-                    {profilePicturePreview ? (
-                        <img src={profilePicturePreview} alt={user.username} className="h-24 w-24 rounded-full object-cover border-4 border-white dark:border-apple-gray-700 shadow-md" />
-                    ) : (
-                        <UserCircle size={96} className="text-apple-gray-300 dark:text-apple-gray-600" />
-                    )}
-                    <button type="button" className="absolute bottom-1 right-1 bg-apple-gray-600 hover:bg-apple-gray-700 dark:bg-apple-gray-200 dark:hover:bg-apple-gray-300 text-white dark:text-apple-gray-800 p-2 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-apple-blue focus:ring-offset-2 dark:focus:ring-offset-apple-gray-900 transition-all duration-150 ease-in-out opacity-0 group-hover:opacity-100"
-                        onClick={() => fileInputRef.current && fileInputRef.current.click()} aria-label="Change profile picture"> <Camera size={16} /> </button>
+                    {picturePreview ? (<img src={picturePreview} alt={user.username} className="h-24 w-24 rounded-full object-cover border-4 border-white dark:border-apple-gray-700 shadow-md" />) : (<UserCircle size={96} className="text-apple-gray-300 dark:text-apple-gray-600" />)}
+                    <button type="button" className="absolute bottom-1 right-1 bg-apple-gray-600 hover:bg-apple-gray-700 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => fileInputRef.current?.click()} aria-label="Change profile picture"><Camera size={16} /></button>
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/png, image/jpeg, image/gif" className="hidden" />
                 </div>
                 <div><h1 className="text-3xl font-semibold text-apple-gray-800 dark:text-apple-gray-100">{user.username}</h1><p className="text-md text-apple-gray-500 dark:text-apple-gray-400 capitalize">{user.role}</p></div>
             </div>
 
-            {profilePictureFile && !uploadingPicture && ( <div className="flex items-center justify-start gap-x-3 -mt-4 ml-28"> <Button onClick={handlePictureUpload} iconLeft={<UploadCloud size={16}/>} variant="primary" size="sm">Upload</Button> <Button onClick={() => { setProfilePictureFile(null); setProfilePicturePreview(user.profilePictureUrl || ''); if(fileInputRef.current) fileInputRef.current.value = ""; }} variant="secondary" size="sm">Cancel</Button> </div> )}
+            {pictureFile && !uploadingPicture && (<div className="flex items-center justify-start gap-x-3 -mt-4 ml-28"><Button onClick={handlePictureUpload} iconLeft={<UploadCloud size={16}/>} variant="primary" size="sm">Upload</Button><Button onClick={() => { setPictureFile(null); setPicturePreview(user.profilePictureUrl || ''); if(fileInputRef.current) fileInputRef.current.value = ""; }} variant="secondary" size="sm">Cancel</Button></div>)}
             {uploadingPicture && <div className="-mt-4 ml-28 text-sm text-apple-gray-500 flex items-center"><Spinner size="sm" className="inline mr-2"/>Uploading...</div>}
-            {pictureSuccess && <p className="my-2 text-sm text-apple-green text-center flex items-center justify-center"><CheckCircle2 size={16} className="mr-1"/> {pictureSuccess}</p>}
-            {pictureError && <p className="my-2 text-sm text-apple-red text-center flex items-center justify-center"><AlertTriangle size={16} className="mr-1"/> {pictureError}</p>}
+            {pictureMessage.text && <p className={`my-2 text-sm text-center flex items-center justify-center ${pictureMessage.type === 'success' ? 'text-apple-green' : 'text-apple-red'}`}><CheckCircle2 size={16} className="mr-1"/> {pictureMessage.text}</p>}
 
-            <Card title="Account Information" contentClassName="px-4 sm:px-6 divide-y divide-apple-gray-100 dark:divide-apple-gray-800"
-                actions={!isEditingProfile && ( <Button variant="ghost" size="sm" onClick={() => {setIsEditingProfile(true); setProfileError(''); setProfileSuccess('');}} iconLeft={<Edit3 size={16}/>}> Edit </Button> )}>
-                {profileSuccess && !isEditingProfile && <div className="p-3 text-sm bg-green-100 text-apple-green rounded-apple flex items-center"><CheckCircle2 size={18} className="mr-2"/>{profileSuccess}</div>}
-                {profileError && isEditingProfile && <div className="p-3 mb-4 text-sm bg-red-100 text-apple-red rounded-apple flex items-center"><AlertTriangle size={18} className="mr-2"/>{profileError}</div>}
-
+            <Card title="Account Information" contentClassName="p-0 divide-y divide-apple-gray-100 dark:divide-apple-gray-800"
+                actions={!isEditingProfile && (<Button variant="ghost" size="sm" onClick={() => {setIsEditingProfile(true); setProfileMessage({type: '', text: ''});}} iconLeft={<Edit3 size={16}/>}>Edit</Button>)}>
+                {profileMessage.text && !isEditingProfile && <div className={`p-3 text-sm ${profileMessage.type === 'success' ? 'bg-green-100 text-apple-green' : 'bg-red-100 text-apple-red'} rounded-apple flex items-center`}><CheckCircle2 size={18} className="mr-2"/>{profileMessage.text}</div>}
                 {!isEditingProfile ? (
-                    <dl> {/* Removed extra divide-y as DetailItem handles its own bottom border */}
-                        <DetailItem label="Username" value={user.username} icon={UserCircle} />
-                        <DetailItem label="Role" value={user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'N/A'} icon={user.role === 'admin' ? ShieldCheck : Briefcase} />
-                        {/* Example: If user object had email from backend /me endpoint */}
-                        {/* <DetailItem label="Email" value={user.email || 'Not Provided'} icon={Mail} /> */}
-                    </dl>
+                    <dl><DetailItem label="Username" value={user.username} icon={UserCircle} /><DetailItem label="Role" value={user.role?.charAt(0).toUpperCase() + user.role?.slice(1)} icon={user.role === 'admin' ? ShieldCheck : Briefcase} /></dl>
                 ) : (
-                    <form onSubmit={handleProfileUpdate} className="space-y-4 pt-2 pb-1"> {/* Added padding to form */}
+                    <form onSubmit={handleProfileUpdate} className="space-y-4 p-4 sm:p-6">
+                         {profileMessage.text && isEditingProfile && <div className={`p-3 mb-4 text-sm ${profileMessage.type === 'error' ? 'bg-red-100 text-apple-red' : ''} rounded-apple flex items-center`}><AlertTriangle size={18} className="mr-2"/>{profileMessage.text}</div>}
                         <Input label="Username" id="username" name="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
-                        {/* Example: Email field if editable
-                        <Input label="Email" id="email" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} /> */}
-                        <div className="flex justify-end space-x-3 pt-2">
-                            <Button type="button" variant="secondary" onClick={() => { setIsEditingProfile(false); setProfileError(''); setUsername(user.username); /* setEmail(user.email); */ }}>Cancel</Button>
-                            <Button type="submit" variant="primary" isLoading={profileSaving} iconLeft={<Save size={16}/>}>Save Profile</Button>
-                        </div>
+                        <div className="flex justify-end space-x-3 pt-2"><Button type="button" variant="secondary" onClick={() => { setIsEditingProfile(false); setProfileMessage({type:'',text:''}); setUsername(user.username); }}>Cancel</Button><Button type="submit" variant="primary" isLoading={profileSaving} iconLeft={<Save size={16}/>}>Save Profile</Button></div>
                     </form>
                 )}
             </Card>
 
-            <Card title="Change Password" contentClassName="px-4 sm:px-6">
-                {passwordSuccess && <div className="p-3 mb-4 text-sm bg-green-100 text-apple-green rounded-apple flex items-center"><CheckCircle2 size={18} className="mr-2"/>{passwordSuccess}</div>}
-                {passwordError && <div className="p-3 mb-4 text-sm bg-red-100 text-apple-red rounded-apple flex items-center"><AlertTriangle size={18} className="mr-2"/>{passwordError}</div>}
-                <form onSubmit={handlePasswordChange} className="space-y-4 py-2">
-                    <Input label="Current Password" id="currentPassword" name="currentPassword" type={showCurrentPassword ? "text" : "password"} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required autoComplete="current-password" suffixIcon={<PasswordToggleIcon show={showCurrentPassword} toggle={() => setShowCurrentPassword(!showCurrentPassword)} />} />
-                    <Input label="New Password" id="newPassword" name="newPassword" type={showNewPassword ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required autoComplete="new-password" minLength={6} suffixIcon={<PasswordToggleIcon show={showNewPassword} toggle={() => setShowNewPassword(!showNewPassword)} />} />
-                    <Input label="Confirm New Password" id="confirmNewPassword" name="confirmNewPassword" type={showConfirmPassword ? "text" : "password"} value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} required autoComplete="new-password" minLength={6} suffixIcon={<PasswordToggleIcon show={showConfirmPassword} toggle={() => setShowConfirmPassword(!showConfirmPassword)} />} />
-                    <div className="flex justify-end pt-2"> <Button type="submit" variant="primary" isLoading={passwordChanging} iconLeft={<KeyRound size={16}/>}> Change Password </Button> </div>
-                </form>
+            <Card title="Change Password" contentClassName="p-4 sm:p-6">
+                {passwordMessage.text && <div className={`p-3 mb-4 text-sm ${passwordMessage.type === 'success' ? 'bg-green-100 text-apple-green' : 'bg-red-100 text-apple-red'} rounded-apple flex items-center`}><CheckCircle2 size={18} className="mr-2"/>{passwordMessage.text}</div>}
+                
+                {passwordStep === 1 && (
+                    <form onSubmit={handleRequestOtp} className="space-y-4 py-2">
+                        <Input label="Current Password" id="currentPassword" name="currentPassword" type={showCurrentPassword ? "text" : "password"} value={passwordData.currentPassword} onChange={handlePasswordInputChange} required autoComplete="current-password" suffixIcon={<PasswordToggleIcon show={showCurrentPassword} toggle={() => setShowCurrentPassword(!showCurrentPassword)} />} />
+                        <Input label="New Password" id="newPassword" name="newPassword" type={showNewPassword ? "text" : "password"} value={passwordData.newPassword} onChange={handlePasswordInputChange} required autoComplete="new-password" minLength={6} suffixIcon={<PasswordToggleIcon show={showNewPassword} toggle={() => setShowNewPassword(!showNewPassword)} />} />
+                        <Input label="Confirm New Password" id="confirmNewPassword" name="confirmNewPassword" type={showNewPassword ? "text" : "password"} value={passwordData.confirmNewPassword} onChange={handlePasswordInputChange} required autoComplete="new-password" minLength={6} />
+                        <div className="flex justify-end pt-2"> <Button type="submit" variant="primary" isLoading={passwordChanging} iconLeft={<KeyRound size={16}/>}> Send Verification Code </Button> </div>
+                    </form>
+                )}
+
+                {passwordStep === 2 && (
+                    <form onSubmit={handleConfirmPasswordChange} className="space-y-4 py-2">
+                        <p className="text-sm text-apple-gray-500 dark:text-apple-gray-400">A verification code was sent to your registered email. Enter it below to confirm the password change.</p>
+                        <Input label="6-Digit Verification Code" id="otp" name="otp" value={otp} onChange={(e) => setOtp(e.target.value)} required maxLength={6} />
+                        <div className="flex justify-between items-center pt-2">
+                            <Button type="button" variant="secondary" onClick={() => setPasswordStep(1)} disabled={passwordChanging}>Back</Button>
+                            <Button type="submit" variant="primary" isLoading={passwordChanging} iconLeft={<CheckCircle2 size={16}/>}>Confirm & Change Password</Button>
+                        </div>
+                    </form>
+                )}
             </Card>
         </div>
     );
