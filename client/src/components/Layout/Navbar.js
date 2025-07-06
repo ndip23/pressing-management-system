@@ -148,7 +148,7 @@ const Navbar = ({ toggleSidebar, sidebarOpen }) => {
                                     <p className="text-xs text-apple-gray-500 dark:text-apple-gray-400 capitalize">{user?.role} role</p>
                                 </div>
                                 <div className="border-t border-apple-gray-200 dark:border-apple-gray-700"></div>
-                                <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center w-full text-left px-4 py-2 text-sm text-apple-gray-700 dark:text-apple-gray-200 hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700/50">
+                                <Link to="/app/profile" onClick={() => setShowUserMenu(false)} className="flex items-center w-full text-left px-4 py-2 text-sm text-apple-gray-700 dark:text-apple-gray-200 hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700/50">
                                     <UserCircle size={16} className="mr-2 text-apple-gray-500"/> My Profile
                                 </Link>
                                 {user?.role === 'admin' && (
