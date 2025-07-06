@@ -87,7 +87,7 @@ function App() {
                                     <ManageUsersPage />
                                 </AdminRoute>
                             }/>
-                             <Route path="admin/pricing" element={
+                             <Route path="pricing" element={
                                 <AdminRoute>
                                 <PricingSettingsPage />
                              </AdminRoute>
