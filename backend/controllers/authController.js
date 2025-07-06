@@ -300,6 +300,89 @@ const updateUserProfilePicture = asyncHandler(async (req, res) => {
         throw new Error('Failed to update profile picture due to a server error.');
     }
 });
+// --- STEP 1: REQUEST OTP FOR PASSWORD CHANGE ---
+// @desc    Verify current password and send OTP to user's email
+// @route   POST /api/auth/me/request-password-change-otp
+// @access  Private
+const requestPasswordChangeOtp = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user.id);
+    if (!user) { res.status(404); throw new Error('User not found'); }
+    if (!user.email) { res.status(400); throw new Error('No verified email on file to send OTP. Please contact admin.'); }
+
+    const { currentPassword } = req.body;
+    if (!currentPassword) { res.status(400); throw new Error('Current password is required to initiate change.'); }
+
+    if (!(await user.matchPassword(currentPassword))) {
+        res.status(401); // Unauthorized
+        throw new Error('Incorrect current password.');
+    }
+
+    // All checks passed, generate and send OTP
+    const nanoid = customAlphabet('1234567890', 6);
+    const otp = nanoid();
+
+    // Hash the OTP before saving
+    const salt = await bcrypt.genSalt(10);
+    user.passwordChangeOtp = await bcrypt.hash(otp, salt);
+    user.passwordChangeOtpExpires = addMinutes(new Date(), 10); // OTP expires in 10 minutes
+    await user.save();
+
+    // Send the plaintext OTP to the user's email
+    try {
+        await sendNotification(
+            { email: user.email, name: user.username },
+            'passwordChangeOtp', // templateType key
+            { receiptNumber: 'N/A' }, // Dummy order object for placeholders
+            { otp: otp } // Pass plaintext OTP as a custom placeholder
+        );
+        res.json({ message: `A verification code has been sent to ${user.email}.` });
+    } catch (error) {
+        console.error("Failed to send password change OTP email:", error);
+        // Clear OTP fields if email fails to prevent user being stuck
+        user.passwordChangeOtp = undefined;
+        user.passwordChangeOtpExpires = undefined;
+        await user.save();
+        res.status(500);
+        throw new Error('Failed to send verification email. Please try again later.');
+    }
+});
+
+
+// --- STEP 2: CONFIRM OTP AND CHANGE PASSWORD ---
+// @desc    Verify OTP and update user's password
+// @route   PUT /api/auth/me/confirm-password-change
+// @access  Private
+const confirmPasswordChange = asyncHandler(async (req, res) => {
+    const { otp, newPassword } = req.body;
+    if (!otp || !newPassword) { res.status(400); throw new Error('OTP and new password are required.'); }
+    if (newPassword.length < 6) { res.status(400); throw new Error('New password must be at least 6 characters long.'); }
+    
+    const user = await User.findById(req.user.id);
+    if (!user || !user.passwordChangeOtp || !user.passwordChangeOtpExpires) {
+        res.status(400); throw new Error('No pending password change request found. Please start over.');
+    }
+
+    if (new Date() > user.passwordChangeOtpExpires) {
+        res.status(400); throw new Error('Your OTP has expired. Please request a new one.');
+    }
+
+    const isMatch = await user.matchPasswordChangeOtp(otp);
+    if (!isMatch) {
+        res.status(400); throw new Error('Invalid OTP provided.');
+    }
+
+    // OTP is correct, update password and clear OTP fields
+    user.password = newPassword; // The pre-save hook will hash this
+    user.passwordChangeOtp = undefined;
+    user.passwordChangeOtpExpires = undefined;
+    await user.save();
+
+    // For higher security, you would invalidate all other active sessions/tokens for this user here.
+    // For now, we just confirm success.
+
+    res.json({ message: 'Password changed successfully.' });
+});
+
 
 // Final Export Block
 export {
@@ -315,4 +398,6 @@ export {
     getUserById,
     updateUserById,
     deleteUser,
+    requestPasswordChangeOtp, 
+    confirmPasswordChange,
 };

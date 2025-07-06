@@ -18,17 +18,28 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: [true, 'Password is required'],
-        minlength: [6, 'Password must be at least 6 characters long'],
+        validate: {
+        validator: function(v) {
+            return /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/.test(v);
+        },
+        message: props => `Password must be at least 8 characters and contain an uppercase letter, a lowercase letter, and a number.`
+    }
     },
     role: {
         type: String,
         enum: ['admin', 'staff'],
         default: 'staff',
     },
-    isActive: { // To disable specific user logins
+    isActive: {
         type: Boolean,
         default: true,
-    }
+    },
+     passwordChangeOtp: {
+        type: String,
+    },
+    passwordChangeOtpExpires: {
+        type: Date,
+    },
 }, { timestamps: true });
 
 // Create a compound index to ensure username is unique *per tenant*
@@ -41,9 +52,11 @@ userSchema.pre('save', async function (next) {
     next();
 });
 
-userSchema.methods.matchPassword = async function (enteredPassword) {
-    return await bcrypt.compare(enteredPassword, this.password);
+userSchema.methods.matchPasswordChangeOtp = async function (enteredOtp) {
+    if (!this.passwordChangeOtp) return false;
+    return await bcrypt.compare(enteredOtp, this.passwordChangeOtp);
 };
+
 
 const User = mongoose.model('User', userSchema);
 export default User;

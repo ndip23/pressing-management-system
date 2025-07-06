@@ -1,140 +1,132 @@
 // server/controllers/publicController.js
 import asyncHandler from '../middleware/asyncHandler.js';
 import mongoose from 'mongoose';
+import { customAlphabet } from 'nanoid';
+import { addMinutes } from 'date-fns';
+import PendingUser from '../models/PendingUser.js'; // The temporary storage model
 import Tenant from '../models/Tenant.js';
 import User from '../models/User.js';
 import Settings from '../models/Settings.js';
 import Price from '../models/Price.js';
+import { sendNotification } from '../services/notificationService.js';
 import generateToken from '../utils/generateToken.js';
 
-// @desc    Register a new tenant with full initial setup data
-// @route   POST /api/public/register-with-setup
+// --- STEP 1: INITIATE REGISTRATION & SEND OTP ---
+// @desc    Validate signup data, store it temporarily, and send OTP
+// @route   POST /api/public/initiate-registration
 // @access  Public
-const registerTenantWithSetup = asyncHandler(async (req, res) => {
-    const {
-        adminUser,      // { username, password, email (optional) }
-        companyInfo,    // { name, address, phone }
-        currencySymbol,
-        itemTypes,      // ['Shirt', 'Trousers', ...]
-        serviceTypes,   // ['Wash', 'Iron Only', ...]
-        priceList       // [{ itemType: 'Shirt', serviceType: 'Wash', price: 500 }, ...]
-    } = req.body;
+const initiateRegistration = asyncHandler(async (req, res) => {
+    const { adminUser, companyInfo, priceList, itemTypes, serviceTypes } = req.body;
 
-    // --- Validation ---
-    if (!adminUser || !companyInfo || !priceList || !itemTypes || !serviceTypes) {
-        res.status(400);
-        throw new Error('Missing required setup information sections.');
-    }
-    if (!companyInfo.name || !adminUser.username || !adminUser.password) {
-        res.status(400);
-        throw new Error('Business name, admin username, and password are required.');
-    }
-    if (adminUser.password.length < 6) {
-        res.status(400);
-        throw new Error('Password must be at least 6 characters long.');
-    }
-    if (itemTypes.length === 0 || serviceTypes.length === 0) {
-        res.status(400);
-        throw new Error('You must define at least one item type and one service type.');
-    }
+    // --- Perform initial validation ---
+    if (!adminUser?.email) { res.status(400); throw new Error('A valid email address is required for verification.'); }
+    if (!companyInfo?.name || !adminUser?.username || !adminUser?.password) { res.status(400); throw new Error('Business name, admin username, and password are required.'); }
+    if (adminUser.password.length < 6) { res.status(400); throw new Error('Password must be at least 6 characters long.'); }
 
+    // Check if email or username is already in the main User collection or business name in Tenant
+    const userExists = await User.findOne({ $or: [{ email: adminUser.email.toLowerCase() }, { username: adminUser.username.toLowerCase() }] });
+    if (userExists) { res.status(400); throw new Error('A user with this email or username already exists.'); }
     const businessExists = await Tenant.findOne({ name: companyInfo.name });
-    if (businessExists) {
-        res.status(400);
-        throw new Error('A business with this name already exists. Please choose another name.');
+    if (businessExists) { res.status(400); throw new Error('A business with this name already exists.'); }
+    // --- End Validation ---
+
+    // Remove any previous pending registration for this email to allow retries
+    await PendingUser.deleteOne({ email: adminUser.email.toLowerCase() });
+
+    // Generate a 6-digit numeric OTP
+    const nanoid = customAlphabet('1234567890', 6);
+    const otp = nanoid();
+
+    // Create the pending user document in the temporary collection
+    const pendingUser = new PendingUser({
+        email: adminUser.email.toLowerCase(),
+        otp: otp, // The pre-save hook in PendingUser model will hash this
+        otpExpires: addMinutes(new Date(), 15), // OTP expires in 15 minutes
+        signupData: req.body, // Store the entire form payload
+    });
+    await pendingUser.save();
+
+    // Send the OTP email to the user
+    try {
+        await sendNotification(
+            { email: adminUser.email, name: adminUser.username },
+            'signupOtp', // This is the templateType key
+            { receiptNumber: 'N/A' }, // Dummy data to satisfy placeholder logic if needed
+            { otp: otp } // Pass plaintext OTP as a custom placeholder
+        );
+    } catch (emailError) {
+        console.error(`[PublicCtrl] FAILED to send OTP email to ${adminUser.email}:`, emailError);
+        // If email fails, we should not proceed.
+        res.status(500); throw new Error("Could not send verification email. Please check the address and try again.");
     }
 
-    // A robust system should make email globally unique for password resets, etc.
-    const initialUserExists = await User.findOne({ username: adminUser.username.toLowerCase() });
-    if (initialUserExists) {
-        res.status(400);
-        throw new Error('This admin username is already taken. Please choose another.');
-    }
-    if (adminUser.email) {
-        const emailExists = await User.findOne({ email: adminUser.email.toLowerCase() });
-         if (emailExists) {
-            res.status(400);
-            throw new Error('This email address is already in use by another account.');
-        }
-    }
-    // --- End Validation ---
+    res.status(200).json({ message: `A verification code has been sent to ${adminUser.email}.` });
+});
+
+
+// --- STEP 2: VERIFY OTP & FINALIZE REGISTRATION ---
+// @desc    Verify OTP and create the tenant, user, settings, and prices
+// @route   POST /api/public/finalize-registration
+// @access  Public
+const finalizeRegistration = asyncHandler(async (req, res) => {
+    const { email, otp } = req.body;
+    if (!email || !otp) { res.status(400); throw new Error('Email and OTP are required.'); }
+
+    const pendingUser = await PendingUser.findOne({ email: email.toLowerCase() });
+
+    if (!pendingUser) { res.status(400); throw new Error('Invalid registration request or it has expired. Please start over.'); }
+    if (new Date() > pendingUser.otpExpires) { res.status(400); throw new Error('Your OTP has expired. Please start the registration over.'); }
+
+    const isMatch = await pendingUser.matchOtp(otp);
+    if (!isMatch) { res.status(400); throw new Error('Invalid OTP provided.'); }
+
+    // --- OTP is valid, proceed with creation in a transaction ---
+    const { signupData } = pendingUser;
+    const { adminUser, companyInfo, currencySymbol, itemTypes, serviceTypes, priceList } = signupData;
 
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-        // Step 1: Create the new Tenant
-        const tenant = new Tenant({
-            name: companyInfo.name,
-            // You can add more tenant-level fields here later (plan, etc.)
-        });
+        const tenant = new Tenant({ name: companyInfo.name, /* ... other tenant fields */ });
         const savedTenant = await tenant.save({ session });
         const tenantId = savedTenant._id;
 
-        // Step 2: Create the first admin User for this tenant
         const user = new User({
             tenantId,
             username: adminUser.username.toLowerCase(),
-            password: adminUser.password, // Password will be hashed by pre-save hook
-            email: adminUser.email ? adminUser.email.toLowerCase() : undefined,
-            role: 'admin', // First user of a tenant is always an admin
+            password: adminUser.password, // Will be hashed by pre-save hook
+            email: adminUser.email.toLowerCase(),
+            role: 'admin',
         });
         const savedUser = await user.save({ session });
 
-
-        // Step 3: Create the Settings document for this tenant
-        // Note: The post-save hook on Tenant model already does this, but doing it here
-        // gives us more control to add all setup data at once. To avoid conflict,
-        // you might remove the post-save hook from Tenant.js if using this approach.
-        // Let's assume we removed the hook for this more explicit method.
         await Settings.create([{
-            tenantId,
-            companyInfo,
-            defaultCurrencySymbol: currencySymbol || '$',
-            itemTypes: itemTypes || [],
-            serviceTypes: serviceTypes || [],
+            tenantId, companyInfo, defaultCurrencySymbol, itemTypes, serviceTypes
         }], { session });
 
-        // Step 4: Create the initial Price List for this tenant
         if (priceList && priceList.length > 0) {
-            const pricesToInsert = priceList.map(p => ({
-                ...p,
-                tenantId, // Add tenantId to each price entry
-            }));
-            await Price.insertMany(pricesToInsert, { session });
+            await Price.insertMany(priceList.map(p => ({ ...p, tenantId })), { session });
         }
 
-        // If all operations succeed, commit the transaction
         await session.commitTransaction();
+        await pendingUser.deleteOne(); // Clean up the temporary document
 
-        // Step 5: Generate a token and respond to log the user in automatically
         const token = generateToken(savedUser._id, savedUser.username, savedUser.role, savedUser.tenantId);
-
         res.status(201).json({
-            _id: savedUser._id,
-            username: savedUser.username,
-            role: savedUser.role,
-            tenantId: savedUser.tenantId,
-            token: token,
-            message: `Business '${tenant.name}' registered successfully!`
+            _id: savedUser._id, username: savedUser.username, role: savedUser.role,
+            tenantId: savedUser.tenantId, token,
+            message: `Account for '${tenant.name}' created successfully!`
         });
 
     } catch (error) {
-        // If any operation fails, abort the entire transaction
         await session.abortTransaction();
-        console.error("Tenant Registration Transaction Failed:", error);
-        
-        // Don't leak detailed database errors to the client
-        // Provide a generic error or specific validation messages if applicable
-        if (error.code === 11000) { // Duplicate key error
-             res.status(400).send({ message: 'A business with this name or a user with this username/email already exists.' });
-        } else {
-             res.status(500).send({ message: 'Server error during registration. Please try again later.' });
-        }
+        console.error("Finalize Registration Transaction Failed:", error);
+        if (error.code === 11000) { throw new Error('A business, user, or email with these details was registered while you were verifying.'); }
+        throw new Error('A server error occurred during final account creation.');
     } finally {
-        // End the session
         session.endSession();
     }
 });
 
-export { registerTenantWithSetup };
+export { initiateRegistration, finalizeRegistration };

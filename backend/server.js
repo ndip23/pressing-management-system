@@ -1,6 +1,7 @@
 // server/server.js
 import express from 'express';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
 import cors from 'cors';
 import connectDB from './config/db.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
@@ -40,7 +41,7 @@ const corsOptions = {
     credentials: true,
 };
 app.use(cors(corsOptions));
-
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/api/public', publicRoutes); 

@@ -10,7 +10,7 @@ import {
     markOrderAsFullyPaid,
 } from '../controllers/orderController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
-
+import { body, validationResult } from 'express-validator';
 const router = express.Router();
 
 router.route('/')

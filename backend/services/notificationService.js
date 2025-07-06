@@ -22,17 +22,14 @@ if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS &
         transporter = null;
     }
 } else {
-    console.warn('[NotificationService] Email credentials (EMAIL_HOST, EMAIL_USER, EMAIL_PASS, EMAIL_PORT) not fully configured. Email notifications will be disabled for this session.');
+    console.warn('[NotificationService] Email credentials not fully configured. Email notifications will be disabled.');
     transporter = null;
 }
 
 // --- Twilio Client Setup ---
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
-// Use TWILIO_WHATSAPP_FROM if you specifically want to send via a WhatsApp number,
-// otherwise use TWILIO_PHONE_NUMBER for general SMS/Voice capable number.
 const twilioSenderNumber = process.env.TWILIO_WHATSAPP_FROM || process.env.TWILIO_PHONE_NUMBER;
-
 let twilioClient = null;
 if (twilioAccountSid && twilioAuthToken && twilioSenderNumber) {
     try {
@@ -43,10 +40,7 @@ if (twilioAccountSid && twilioAuthToken && twilioSenderNumber) {
         twilioClient = null;
     }
 } else {
-    console.warn('[NotificationService] Twilio credentials (ACCOUNT_SID, AUTH_TOKEN, and TWILIO_WHATSAPP_FROM/TWILIO_PHONE_NUMBER) not fully configured. Twilio notifications will be disabled.');
-    if (!twilioAccountSid) console.warn('[NotificationService] Detail: TWILIO_ACCOUNT_SID is missing or empty.');
-    if (!twilioAuthToken) console.warn('[NotificationService] Detail: TWILIO_AUTH_TOKEN is missing or empty.');
-    if (!twilioSenderNumber) console.warn('[NotificationService] Detail: TWILIO_WHATSAPP_FROM or TWILIO_PHONE_NUMBER is missing or empty.');
+    console.warn('[NotificationService] Twilio credentials not fully configured. Twilio notifications will be disabled.');
     twilioClient = null;
 }
 
@@ -63,37 +57,40 @@ const applyPlaceholders = (text, placeholders) => {
     return result;
 };
 
-// --- Helper to Format Phone Number to E.164 (Basic) ---
+// --- Helper to Format Phone Number ---
 const formatPhoneNumberE164 = (phoneNumber) => {
     if (!phoneNumber || typeof phoneNumber !== 'string') return null;
     let cleaned = phoneNumber.replace(/\D/g, '');
-    if (phoneNumber.startsWith('+')) return phoneNumber; // Assume already E.164 if starts with +
-    // Basic US/Canada assumption for 10-digit numbers. This needs to be more robust for international.
-    if (cleaned.length === 10) cleaned = `1${cleaned}`; 
-    if (cleaned.length > 0 && cleaned.length >= 11) return `+${cleaned}`; // Basic check for some length
-    console.warn(`[NotificationService] Could not reliably format phone number '${phoneNumber}' to E.164.`);
+    if (phoneNumber.startsWith('+')) return phoneNumber;
+    if (cleaned.length === 10) cleaned = `1${cleaned}`; // Basic US/Canada assumption
+    if (cleaned.length >= 11) return `+${cleaned}`;
     return null;
 };
 
 // --- Main Send Notification Function ---
 const sendNotification = async (customer, templateType, order, customPlaceholders = {}) => {
-    if (!customer || !order) {
-        console.error("[NotificationService] Called with missing customer or order object.");
-        return { sent: false, method: 'none', message: "Missing customer or order data." };
+    if (!customer || (!customer.email && !customer.phone)) {
+        console.warn(`[NotificationService] Called for customer without email or phone.`);
+        return { sent: false, method: 'none', message: "No customer contact info provided." };
     }
 
-    const settings = await Settings.getSettings();
-    const company = settings.companyInfo || { name: 'Your Pressing Service' };
+    const settings = await Settings.findOne({ tenantId: order.tenantId }); // Fetch settings for the correct tenant
+    if (!settings) {
+        console.error(`[NotificationService] CRITICAL: Settings not found for tenant ${order.tenantId}.`);
+        return { sent: false, method: 'none', message: "System settings not configured." };
+    }
+    
+    const company = settings.companyInfo || {};
     const templates = settings.notificationTemplates || {};
-    const currencySymbol = settings.defaultCurrencySymbol || 'FCFA';
+    const currencySymbol = settings.defaultCurrencySymbol || '$';
 
-    console.log(`[NotificationService] Processing notification for order ${order.receiptNumber}, type: ${templateType}, Customer: ${customer.name}`);
+    console.log(`[NotificationService] Processing notification for order ${order.receiptNumber || 'N/A'}, type: ${templateType}`);
 
     const commonPlaceholders = {
         '{{customerName}}': customer.name || 'Valued Customer',
-        '{{receiptNumber}}': order.receiptNumber,
-        '{{companyName}}': company.name,
-        '{{orderStatus}}': order.status,
+        '{{receiptNumber}}': order.receiptNumber || 'N/A',
+        '{{companyName}}': company.name || 'Your Pressing Service',
+        '{{orderStatus}}': order.status || 'Updated',
         '{{expectedPickupDate}}': order.expectedPickupDate ? new Date(order.expectedPickupDate).toLocaleDateString() : 'N/A',
         '{{totalAmount}}': `${currencySymbol}${(order.totalAmount || 0).toFixed(2)}`,
         ...customPlaceholders,
@@ -102,10 +99,10 @@ const sendNotification = async (customer, templateType, order, customPlaceholder
     let twilioMessageSent = false;
     let emailSent = false;
     let finalMethod = 'none';
-    let statusMessage = 'Notification not sent. No suitable contact or service configured.';
+    let statusMessage = 'Notification not sent.';
 
-    // --- 1. Attempt Twilio (WhatsApp or SMS with Free-Form Text) ---
-    if (twilioClient && customer.phone) {
+    // --- 1. Attempt Twilio (WhatsApp or SMS) if configured and customer has phone ---
+        if (twilioClient && customer.phone) {
         const e164ToNumber = formatPhoneNumberE164(customer.phone);
         const fromNumber = twilioSenderNumber; // This is your configured Twilio sender
         const isWhatsAppSender = fromNumber.toLowerCase().startsWith('whatsapp:');
@@ -153,54 +150,50 @@ const sendNotification = async (customer, templateType, order, customPlaceholder
         console.warn(`[NotificationService] ${statusMessage} (Order: ${order.receiptNumber})`);
     }
 
-    // --- 2. Attempt Email (if Twilio was not sent OR if you want to send both) ---
-    // To send both, remove `!twilioMessageSent` condition. For fallback, keep it.
+    // --- 2. Attempt Email as fallback or primary if no phone ---
     if (!twilioMessageSent && transporter && customer.email) {
         let emailSubjectTemplate = templates.subject || 'Order #{{receiptNumber}} Update from {{companyName}}';
-        let emailBodyTemplate = `Dear {{customerName}},\nYour order #{{receiptNumber}} status is: {{orderStatus}}.\n\nThank you,\n{{companyName}}`;
+        let emailBodyTemplate = `Dear {{customerName}},\n\nYour order #{{receiptNumber}} status is: {{orderStatus}}.\n\nThank you,\n{{companyName}}`;
 
+        // CORRECTED: All template logic is now contained in this single block
         if (templateType === 'readyForPickup') {
-            // You can have specific email subjects in settings too, e.g., templates.readyForPickupEmailSubject
             emailSubjectTemplate = templates.readyForPickupEmailSubject || templates.subject || 'Your Order #{{receiptNumber}} is Ready!';
-            emailBodyTemplate = templates.readyForPickupEmailBody || `Dear {{customerName}},\nYour order #{{receiptNumber}} from {{companyName}} is ready for pickup!`;
+            emailBodyTemplate = templates.readyForPickupBody || `Dear {{customerName}},\nYour order #{{receiptNumber}} from {{companyName}} is ready for pickup!`;
         } else if (templateType === 'manualReminder') {
             emailSubjectTemplate = templates.manualReminderEmailSubject || templates.subject || 'Reminder: Your Order #{{receiptNumber}}';
             emailBodyTemplate = templates.manualReminderEmailBody || `Dear {{customerName}},\nThis is a reminder for your order #{{receiptNumber}}.\n\nThank you,\n{{companyName}}`;
+        } else if (templateType === 'signupOtp') {
+            emailSubjectTemplate = templates.signupOtpSubject || 'Your PressFlow Verification Code';
+            emailBodyTemplate = templates.signupOtpBody || 'Welcome to {{companyName}}!\n\nYour verification code is: {{otp}}\n\nThis code will expire in 15 minutes.\n\nIf you did not request this, please ignore this email.';
+        } else if (templateType === 'passwordChangeOtp') {
+            emailSubjectTemplate = templates.passwordChangeOtpSubject || 'Your PressFlow Password Change Code';
+            bodyTemplate = templates.passwordChangeOtpBody || 'Hi {{customerName}},\n\nA password change was requested for your account. Use the verification code below to confirm this change:\n\nVerification Code: {{otp}}\n\nThis code will expire in 10 minutes. If you did not request this, please secure your account or contact support.';
         }
 
         const finalEmailSubject = applyPlaceholders(emailSubjectTemplate, commonPlaceholders);
         const finalEmailBody = applyPlaceholders(emailBodyTemplate, commonPlaceholders);
 
         try {
-            console.log(`[NotificationService] Attempting Email for '${templateType}' to ${customer.email} for order ${order.receiptNumber}`);
+            console.log(`[NotificationService] Attempting Email for '${templateType}' to ${customer.email}`);
             const mailInfo = await transporter.sendMail({
-                from: process.env.EMAIL_FROM,
-                to: customer.email,
-                subject: finalEmailSubject,
-                text: finalEmailBody,
+                from: process.env.EMAIL_FROM, to: customer.email, subject: finalEmailSubject, text: finalEmailBody,
             });
-            console.log(`[NotificationService] Email ('${templateType}') sent to ${customer.email} for order ${order.receiptNumber}. Message ID: ${mailInfo.messageId}`);
+            console.log(`[NotificationService] Email ('${templateType}') sent successfully. Message ID: ${mailInfo.messageId}`);
             emailSent = true;
-            finalMethod = (finalMethod !== 'none' && finalMethod !== 'email') ? `${finalMethod}+email` : 'email'; // Append if Twilio also sent, or set to email
+            finalMethod = 'email';
             statusMessage = `Email sent successfully to ${customer.email}.`;
         } catch (error) {
             const emailErr = `Email sending to ${customer.email} failed: ${error.message}`;
-            console.error(`[NotificationService] ${emailErr} (Order: ${order.receiptNumber})`, error);
+            console.error(`[NotificationService] ${emailErr}`, error);
             if (finalMethod === 'none') statusMessage = emailErr;
         }
-    } else if (!twilioMessageSent && !transporter && customer.email) {
-        statusMessage = "Email (Nodemailer) client not initialized, but customer has email.";
-        console.warn(`[NotificationService] ${statusMessage} (Order: ${order.receiptNumber})`);
-    } else if (!twilioMessageSent && transporter && !customer.email && finalMethod === 'none') {
-         statusMessage = `No email for customer ${customer.name} to send email fallback.`;
-         console.warn(`[NotificationService] ${statusMessage} (Order: ${order.receiptNumber})`);
     }
 
     const overallSentStatus = twilioMessageSent || emailSent;
     if (!overallSentStatus) {
-        console.warn(`[NotificationService] Ultimately failed to send any notification for order ${order.receiptNumber}. Last status: ${statusMessage}`);
+        console.warn(`[NotificationService] Ultimately failed to send any notification. Final status: ${statusMessage}`);
     } else {
-        console.log(`[NotificationService] Notification process completed for order ${order.receiptNumber}. Method(s): ${finalMethod}.`);
+        console.log(`[NotificationService] Notification process completed. Method: ${finalMethod}.`);
     }
 
     return { sent: overallSentStatus, method: finalMethod, message: statusMessage };
