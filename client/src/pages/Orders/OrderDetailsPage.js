@@ -1,14 +1,13 @@
 // client/src/pages/Orders/OrderDetailsPage.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { fetchOrderById, updateExistingOrder, sendManualNotification, markOrderPaidApi } from '../../services/api';
 import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
 import OrderStatusBadge from '../../components/Dashboard/OrderStatusBadge';
-import { ArrowLeft, Edit3, Printer, DollarSign, MessageSquare, AlertTriangle, CheckCircle2, Clock3, RefreshCw, User, Mail, Phone, MapPin } from 'lucide-react';
+import { ArrowLeft,  Printer,  MessageSquare, AlertTriangle, CheckCircle2, Clock3,  } from 'lucide-react';
 import { format, parseISO, isPast } from 'date-fns';
-import ErrorModal from '../../components/UI/ErrorModal';
 
 // DetailItem for on-screen detailed cards
 const DetailItem = ({ label, value, className = "", children }) => (
@@ -47,11 +46,7 @@ const OrderDetailsPage = () => {
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
     const [isSendingNotification, setIsSendingNotification] = useState(false);
     const [isMarkingPaid, setIsMarkingPaid] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
-     {/*const triggerErrorModal = (message) => {
-        setActionError(message);
-        setShowErrorModal(true);
-    };*/}
+  
     // --- Placeholder for Company Info & Settings (fetch from context or API) ---
     const companyInfo = {
         name: 'PressFlow Deluxe Cleaners',

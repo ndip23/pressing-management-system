@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../../components/UI/Button'; // Assuming your Button component is here
-import { Zap, CreditCard, Bell, Users, CheckCircle, BarChart, SlidersHorizontal, PackagePlus, Clock, Printer } from 'lucide-react';
+import {  CreditCard, Bell, Users, SlidersHorizontal, PackagePlus, Clock, Printer } from 'lucide-react';
 
 // --- Reusable Header/Navbar for Public Pages ---
 // For consistency, you might want to move this into its own component later

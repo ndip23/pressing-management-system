@@ -6,7 +6,7 @@ import Card from '../../components/UI/Card';
 import Input from '../../components/UI/Input';
 import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
-import { UserCircle, ShieldCheck, Briefcase, Edit3, KeyRound, Save, AlertTriangle, CheckCircle2, Camera, UploadCloud, Mail, Eye, EyeOff } from 'lucide-react'; // Added Mail, Eye, EyeOff
+import { UserCircle, ShieldCheck, Briefcase, Edit3, KeyRound, Save, AlertTriangle, CheckCircle2, Camera, UploadCloud, Eye, EyeOff } from 'lucide-react'; // Added Mail, Eye, EyeOff
 
 // Reusable DetailItem component for displaying profile info
 const DetailItem = ({ label, value, icon: IconComponent, children }) => (
@@ -22,7 +22,7 @@ const DetailItem = ({ label, value, icon: IconComponent, children }) => (
 );
 
 const ProfilePage = () => {
-    const { user, updateUserInContext, loading: authLoading, logout } = useAuth();
+    const { user, updateUserInContext, loading: authLoading } = useAuth();
 
     // Profile Details State
     const [username, setUsername] = useState('');

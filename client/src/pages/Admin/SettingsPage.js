@@ -4,7 +4,7 @@ import Card from '../../components/UI/Card';
 import Input from '../../components/UI/Input';
 import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
-import Select from '../../components/UI/Select'; // Added Select for preferred channel
+import Select from '../../components/UI/Select'; 
 import { Save, Settings as SettingsIcon, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 const SettingsPage = () => {
@@ -69,7 +69,6 @@ const SettingsPage = () => {
         setSuccessMessage('');
 
         const payload = { ...settings };
-        // Remove fields not intended for direct update
         ['singletonKey', '_id', '__v', 'createdAt', 'updatedAt'].forEach(key => delete payload[key]);
 
         try {
@@ -142,7 +141,7 @@ const SettingsPage = () => {
             </div>
         );
     }
-
+    
     return (
         <div className="space-y-6">
             <div className="flex items-center space-x-3 mb-6">

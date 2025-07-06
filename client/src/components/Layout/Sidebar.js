@@ -9,7 +9,8 @@ import {
     Package,    // For Logo
     CreditCard, // This was for a placeholder "Payments" link, remove if not used
     X,
-    KeyRound           // For closing sidebar on mobile
+    KeyRound,
+    Tags           // For closing sidebar on mobile
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext'; // To conditionally show Admin section
 import Button from '../UI/Button';
@@ -94,6 +95,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                             </div>
                             <NavItem to="/app/admin/settings" icon={Settings}>Settings</NavItem>
                             <NavItem to="/app/admin/users" icon={KeyRound}>Manage Staff</NavItem>
+                            <NavItem to="/app/admin/pricing" icon={Tags}>Services & Pricing</NavItem>
                             {/*<NavItem to="/app/admin/manage-users" icon={Users}>Manage Users</NavItem> */}
                             {/* If you want a link for admins to manage other admin/staff accounts (using API tools for now) */}
                             {/* You could add a placeholder link or a link to documentation here: */}

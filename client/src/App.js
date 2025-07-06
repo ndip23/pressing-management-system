@@ -6,6 +6,7 @@ import MainLayout from './components/Layout/MainLayout';
 import Spinner from './components/UI/Spinner';
 import PublicLayout from './components/Layout/PublicLayout';
 
+
 // Page Imports (Lazy Loaded)
 const LoginPage = lazy(() => import('./pages/Auth/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/Dashboard/DashboardPage'));
@@ -26,7 +27,7 @@ const CustomerListPage = lazy(() => import('./pages/Customers/CustomerListPage')
 const CustomerFormPage = lazy(() => import('./pages/Customers/CustomerFormPage'));
 const CustomerDetailsPage = lazy(() => import('./pages/Customers/CustomerDetailsPage'));
 const DailyPaymentsPage = lazy(() => import('./pages/Reports/DailyPaymentsPage'));
-
+const PricingSettingsPage = lazy(() => import('./pages/Admin/PricingPage.js'));
 // Route Protection Components
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated, loading } = useAuth();
@@ -86,6 +87,11 @@ function App() {
                                     <ManageUsersPage />
                                 </AdminRoute>
                             }/>
+                             <Route path="admin/pricing" element={
+                                <AdminRoute>
+                                <PricingSettingsPage />
+                             </AdminRoute>
+                            } />
                         </Route>
                     </Route>
 
