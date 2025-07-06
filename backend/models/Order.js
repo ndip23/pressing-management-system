@@ -54,7 +54,16 @@ orderSchema.pre('save', function (next) {
         this.totalAmount = parseFloat((this.subTotalAmount - this.discountAmount).toFixed(2));
         if (this.totalAmount < 0) this.totalAmount = 0;
     }
-
+    const paymentSchema = new mongoose.Schema({
+        amount: { type: Number, required: true },
+        date: { type: Date, default: Date.now },
+        method: { type: String, enum: ['Cash', 'Card', 'Mobile Money', 'Other'], default: 'Cash' },
+        recordedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true,
+        }
+    }, { _id: false, timestamps: true });
     
     if (typeof this.amountPaid === 'number' && typeof this.totalAmount === 'number') {
         if (this.amountPaid > this.totalAmount) {
@@ -86,6 +95,7 @@ orderSchema.pre('save', function (next) {
     }
     next();
 });
+
 
 const Order = mongoose.model('Order', orderSchema);
 export default Order;
