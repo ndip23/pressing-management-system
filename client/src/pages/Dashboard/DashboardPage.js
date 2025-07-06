@@ -9,7 +9,7 @@ import OrderTable from '../../components/Dashboard/OrderTable';
 import FilterControls from '../../components/Dashboard/FilterControls';
 import Modal from '../../components/UI/Modal'; 
 import Input from '../../components/UI/Input';   
-import { PlusCircle, AlertTriangle, CheckCircle2, Clock3, Shirt, TrendingUp, Filter as FilterIcon, RotateCcw, Search as SearchIcon, DollarSign } from 'lucide-react'; // Added more icons
+import { PlusCircle, AlertTriangle, CheckCircle2, Clock3, Shirt, TrendingUp, Filter as FilterIcon, Search as SearchIcon, DollarSign } from 'lucide-react'; // Added more icons
 import { format, isPast, parseISO } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext'; 
 

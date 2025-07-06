@@ -14,12 +14,13 @@ const OrderItemRow = ({
     serviceTypes = [],
     calculatedPrice
 }) => {
+    // This handler directly calls the function passed from the parent.
+    // It's crucial that `onChange` is the `handleItemChange` function from CreateOrderForm.
     const handleFieldChange = (field, value) => {
-        const processedValue = field === 'quantity' ? (parseInt(value, 10) || 1) : value;
-        onChange(item.id, field, processedValue);
+        onChange(item.id, field, value);
     };
 
-    const currencySymbol = 'FCFA'; // Using your example currency
+    const currencySymbol = 'FCFA'; // Or from context
 
     return (
         <div className="p-4 border border-apple-gray-200 dark:border-apple-gray-700 rounded-apple-md shadow-apple-sm bg-apple-gray-50 dark:bg-apple-gray-800/30">
@@ -37,12 +38,12 @@ const OrderItemRow = ({
                     <X size={18} />
                 </Button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-x-4 gap-y-2 items-end"> {/* items-end for vertical alignment */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-x-4 gap-y-2 items-end">
                 <div className="md:col-span-3">
                     <Select
-                        label="Item Type"
+                        label="Item Type*"
                         id={`itemType-${item.id}`}
-                        value={item.itemType}
+                        value={item.itemType} // This is bound to the state from the parent
                         onChange={(e) => handleFieldChange('itemType', e.target.value)}
                         options={itemTypes.map(type => ({ value: type, label: type }))}
                         placeholder="Select Item"
@@ -52,7 +53,7 @@ const OrderItemRow = ({
                 </div>
                 <div className="md:col-span-3">
                     <Select
-                        label="Service Type"
+                        label="Service Type*"
                         id={`serviceType-${item.id}`}
                         value={item.serviceType}
                         onChange={(e) => handleFieldChange('serviceType', e.target.value)}
@@ -64,11 +65,11 @@ const OrderItemRow = ({
                 </div>
                 <div className="md:col-span-1">
                     <Input
-                        label="Qty"
+                        label="Qty*"
                         id={`quantity-${item.id}`}
                         type="number"
                         value={item.quantity}
-                        onChange={(e) => handleFieldChange('quantity', e.target.value)}
+                        onChange={(e) => handleFieldChange('quantity', parseInt(e.target.value, 10) || 1)}
                         min="1"
                         required
                         className="mb-0"
@@ -84,18 +85,16 @@ const OrderItemRow = ({
                         className="mb-0"
                     />
                 </div>
-                {/* METHOD 1: ADD A VISIBLE LABEL */}
-                <div className="md:col-span-2 pb-5">
-                    <label htmlFor={`itemPriceDisplay-${item.id}`} className="block text-sm font-medium text-apple-gray-700 dark:text-apple-gray-300 mb-1">
+                <div className="md:col-span-2">
+                    <label htmlFor={`itemPrice-${item.id}`} className="block text-sm font-medium text-apple-gray-700 dark:text-apple-gray-300 mb-1">
                         Line Price
                     </label>
                     <div
-                        id={`itemPriceDisplay-${item.id}`} // Added id for label association
+                        id={`itemPrice-${item.id}`}
                         className="h-10 flex items-center justify-end px-3 py-2 border border-apple-gray-300 dark:border-apple-gray-700 rounded-apple shadow-sm bg-apple-gray-100 dark:bg-apple-gray-800 text-apple-gray-700 dark:text-apple-gray-100 sm:text-sm"
-                        aria-label="Calculated line price"
                     >
                         <span className="font-medium">
-                            {currencySymbol} {(calculatedPrice || 0).toFixed(2)}
+                            {currencySymbol}{(calculatedPrice || 0).toFixed(2)}
                         </span>
                     </div>
                 </div>
