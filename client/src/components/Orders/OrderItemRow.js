@@ -85,8 +85,8 @@ const OrderItemRow = ({
                         className="mb-0"
                     />
                 </div>
-                <div className="md:col-span-3">
-                    <label htmlFor={`itemPrice-${item.id}`} className="block text-sm font-medium text-apple-gray-700 dark:text-apple-gray-300 mb-1">
+                <div className="md:col-span-2">
+                    <label htmlFor={`itemPrice-${item.id}`} className="block text-sm font-medium text-apple-gray-700 dark:text-apple-gray-300 ">
                         Line Price
                     </label>
                     <div

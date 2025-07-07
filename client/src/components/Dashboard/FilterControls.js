@@ -111,7 +111,6 @@ const FilterControls = ({ filters, onFilterChange, onResetFilters, onApplyFilter
             {showAdvanced && (
                 <div className="mt-4 pt-4 border-t border-apple-gray-200 dark:border-apple-gray-700">
                     <p className="text-sm text-apple-gray-500 dark:text-apple-gray-400">Advanced filters (e.g., by service type, date range) can be added here.</p>
-                    {/* Example:
                     <Select
                         label="Service Type"
                         name="serviceType"
@@ -124,7 +123,7 @@ const FilterControls = ({ filters, onFilterChange, onResetFilters, onApplyFilter
                             { value: 'iron', label: 'Iron' },
                         ]}
                         className="mb-3"
-                    /> */}
+                    /> 
                 </div>
             )}
         </div>

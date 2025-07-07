@@ -1,5 +1,5 @@
 // client/src/components/Orders/CreateOrderForm.js
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Link } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../UI/Input';
 import Select from '../UI/Select';
@@ -25,6 +25,7 @@ import {
   CheckSquare,
   XSquare,
   AlertTriangle,
+  Card
 } from 'lucide-react';
 import {
   format,
@@ -43,7 +44,7 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
         itemTypes: [],
         serviceTypes: [],
         priceList: [],
-        currencySymbol: 'FCFA',
+        currencySymbol: '$', // Default, will be updated from settings
         loading: true,
     });
 
@@ -57,7 +58,6 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
     }), []);
 
     const [items, setItems] = useState([getNewItem()]);
-    const [subTotal, setSubTotal] = useState(0);
     const [discountType, setDiscountType] = useState('none');
     const [discountValueState, setDiscountValueState] = useState('0');
     const [amountPaid, setAmountPaid] = useState('0');
@@ -85,12 +85,16 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
     useEffect(() => {
         const loadOperationalData = async () => {
             try {
-                const [settingsRes, pricesRes] = await Promise.all([fetchAppSettings(), fetchPrices()]);
+                console.log("[CreateOrderForm] Fetching operational data...");
+                const [settingsRes, pricesRes] = await Promise.all([
+                    fetchAppSettings(),
+                    fetchPrices()
+                ]);
                 setOperationalData({
                     itemTypes: settingsRes.data.itemTypes || [],
                     serviceTypes: settingsRes.data.serviceTypes || [],
                     priceList: pricesRes.data || [],
-                    currencySymbol: settingsRes.data.defaultCurrencySymbol || 'FCFA',
+                    currencySymbol: settingsRes.data.defaultCurrencySymbol || '$',
                     loading: false,
                 });
             } catch (err) {
@@ -116,7 +120,6 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
                 setExpectedPickupDateOnly(format(initialDate, 'yyyy-MM-dd'));
                 setExpectedPickupTime(format(initialDate, 'HH:mm'));
             }
-            setSubTotal(initialOrderData.subTotalAmount || 0);
             setDiscountType(initialOrderData.discountType || 'none');
             setDiscountValueState(String(initialOrderData.discountValue || 0));
             setAmountPaid(String(initialOrderData.amountPaid || 0));
@@ -134,7 +137,9 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
         setCustomerSearchQuery(query);
         if (query.length > 1) {
             setIsSearchingCustomers(true);
-            try { const { data } = await fetchCustomers(query); setSearchedCustomers(data?.customers || []); } catch (err) { console.error(err); setSearchedCustomers([]); } finally { setIsSearchingCustomers(false); }
+            try { const { data } = await fetchCustomers(query); setSearchedCustomers(data?.customers || []); }
+            catch (err) { console.error("Customer search error:", err); setSearchedCustomers([]); }
+            finally { setIsSearchingCustomers(false); }
         } else { setSearchedCustomers([]); }
     };
     const handleSelectCustomer = (customer) => {
@@ -145,23 +150,21 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
     const handleCreateNewCustomerToggle = () => { setCustomerSelectionMode('new'); setSelectedCustomerId(null); };
     const handleEditFromReview = () => setShowConfirmationModal(false);
 
-    // --- DYNAMIC CALCULATIONS with useMemo for performance ---
+    // --- DYNAMIC CALCULATIONS ---
     const getItemPrice = useCallback((itemType, serviceType) => {
         if (!itemType || !serviceType) return 0;
         const priceEntry = operationalData.priceList.find(p => p.itemType === itemType && p.serviceType === serviceType);
         return priceEntry ? priceEntry.price : 0;
     }, [operationalData.priceList]);
 
-    const calculatedSubTotal = useMemo(() =>
-        items.reduce((sum, item) => {
+    const subTotal = useMemo(() =>
+        parseFloat(items.reduce((sum, item) => {
             const pricePerUnit = getItemPrice(item.itemType, item.serviceType);
             const qty = parseInt(item.quantity, 10) || 0;
             return sum + (pricePerUnit * qty);
-        }, 0),
+        }, 0).toFixed(2)),
         [items, getItemPrice]
     );
-
-    useEffect(() => setSubTotal(parseFloat(calculatedSubTotal.toFixed(2))), [calculatedSubTotal]);
 
     const { calculatedDiscountAmount, finalTotalAmount } = useMemo(() => {
         let discount = 0;
@@ -201,12 +204,10 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
     const handleConfirmAndCreateOrder = async () => {
         if (!orderDataForReview) { setError("Internal Error: No order data for submission."); setShowConfirmationModal(false); return; }
         setIsLoading(true); setError(''); setShowConfirmationModal(false);
-
         const payload = {
             items: orderDataForReview.items, expectedPickupDate: orderDataForReview.expectedPickupDate,
             subTotalAmount: orderDataForReview.subTotalAmount, discountType: orderDataForReview.discountType,
-            discountValue: orderDataForReview.discountValue, amountPaid: orderDataForReview.amountPaid,
-            notes: orderDataForReview.notes,
+            discountValue: orderDataForReview.discountValue, amountPaid: orderDataForReview.amountPaid, notes: orderDataForReview.notes,
         };
         if (orderDataForReview.customerSelectionMode === 'existing' && orderDataForReview.customer.id) {
             payload.customerId = orderDataForReview.customer.id;
@@ -215,7 +216,6 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
             payload.customerName = orderDataForReview.customer.name; payload.customerPhone = orderDataForReview.customer.phone;
             payload.customerEmail = orderDataForReview.customer.email; payload.customerAddress = orderDataForReview.customer.address;
         }
-
         try {
             const response = isEditMode && initialOrderData?._id ? await updateExistingOrder(initialOrderData._id, payload) : await createNewOrder(payload);
             alert(`Order ${isEditMode ? 'updated' : 'created'}! Receipt: ${response.data.receiptNumber}`);
@@ -226,7 +226,24 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
     };
 
     if (operationalData.loading) {
-        return <div className="p-8 text-center"><Spinner size="lg" /><p className="mt-2 text-sm">Loading pricing & services...</p></div>;
+        return <div className="p-8 text-center"><Spinner size="lg" /><p className="mt-2 text-sm text-apple-gray-500">Loading Pricing & Services...</p></div>;
+    }
+
+    if (!operationalData.loading && operationalData.itemTypes.length === 0) {
+        return (
+            <Card>
+                <div className="p-6 text-center">
+                    <AlertTriangle size={32} className="mx-auto text-orange-500 mb-4" />
+                    <h3 className="font-semibold text-lg">Setup Required</h3>
+                    <p className="text-sm text-apple-gray-600 dark:text-apple-gray-400 mt-2">
+                        No item types or services are configured for your business.
+                    </p>
+                    <Link to="/app/admin/settings">
+                        <Button className="mt-4">Go to Settings to add services</Button>
+                    </Link>
+                </div>
+            </Card>
+        );
     }
 
     return (
@@ -250,7 +267,7 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
                     <div className="mt-6 space-y-4">
                         {items.map((item, index) => {
                             const pricePerUnit = getItemPrice(item.itemType, item.serviceType);
-                            const itemPrice = (pricePerUnit * (parseInt(item.quantity, 10) || 0));
+                            const itemPrice = pricePerUnit * (parseInt(item.quantity, 10) || 0);
                             return ( <OrderItemRow key={item.id} item={item} index={index} onRemove={() => handleRemoveItem(item.id)} onChange={handleItemChange} itemTypes={operationalData.itemTypes} serviceTypes={operationalData.serviceTypes.map(s => ({ value: s, label: s }))} calculatedPrice={itemPrice} currencySymbol={operationalData.currencySymbol} /> );
                         })}
                         <Button type="button" onClick={handleAddItem} variant="secondary" iconLeft={<Plus size={16}/>}>Add Item</Button>
@@ -290,7 +307,13 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
                         <div className="p-3 border rounded-apple-md dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-800/30"> <h4 className="font-medium mb-1">Summary:</h4> <p><strong>Subtotal:</strong> {operationalData.currencySymbol}{orderDataForReview.subTotalAmount.toFixed(2)}</p> {orderDataForReview.discountType !== 'none' && orderDataForReview.calculatedDiscountAmount > 0 && ( <p><strong>Discount ({orderDataForReview.discountType === 'percentage' ? `${orderDataForReview.discountValue}%` : `${operationalData.currencySymbol}${orderDataForReview.discountValue.toFixed(2)}`}):</strong> -{operationalData.currencySymbol}{orderDataForReview.calculatedDiscountAmount.toFixed(2)}</p> )} <p className="text-base font-semibold"><strong>Final Total:</strong> {operationalData.currencySymbol}{orderDataForReview.finalTotalAmount.toFixed(2)}</p> <p><strong>Advance Paid:</strong> {operationalData.currencySymbol}{orderDataForReview.amountPaid.toFixed(2)}</p> <p className={`font-semibold ${orderDataForReview.balanceDue > 0 ? 'text-apple-red' : 'text-apple-green'}`}> <strong>Balance Due:</strong> {operationalData.currencySymbol}{orderDataForReview.balanceDue.toFixed(2)} </p> <p><strong>Expected Pickup:</strong> {orderDataForReview.expectedPickupDate ? format(parseISO(orderDataForReview.expectedPickupDate), 'MMM d, yyyy, h:mm a') : <span className="italic text-apple-red">Missing</span>}</p> {orderDataForReview.notes && <p className="mt-1"><strong>Notes:</strong> <span className="block whitespace-pre-wrap">{orderDataForReview.notes}</span></p>} </div>
                         <p className="pt-2 text-center font-semibold">Is all information correct?</p>
                     </div>
-                    <div className="mt-6 pt-4 border-t dark:border-apple-gray-700 flex flex-wrap justify-end gap-3"> <Button variant="secondary" onClick={handleEditFromReview} iconLeft={<Edit2 size={16}/>} disabled={isLoading}>Edit</Button> <Button variant="ghost" onClick={() => setShowConfirmationModal(false)} disabled={isLoading} className="text-apple-red" iconLeft={<XSquare size={16}/>}>Cancel</Button> <Button variant="primary" onClick={handleConfirmAndCreateOrder} isLoading={isLoading} iconLeft={<Save size={16}/>}> {isEditMode ? "Confirm & Save Changes" : "Confirm & Create Order"} </Button> </div>
+                    <div className="mt-6 pt-4 border-t dark:border-apple-gray-700 flex flex-wrap justify-end gap-3">
+                        <Button variant="secondary" onClick={handleEditFromReview} iconLeft={<Edit2 size={16}/>} disabled={isLoading}>Edit</Button>
+                        <Button variant="ghost" onClick={() => setShowConfirmationModal(false)} disabled={isLoading} className="text-apple-red" iconLeft={<XSquare size={16}/>}>Cancel</Button>
+                        <Button variant="primary" onClick={handleConfirmAndCreateOrder} isLoading={isLoading} iconLeft={<Save size={16}/>}>
+                            {isEditMode ? "Confirm & Save Changes" : "Confirm & Create Order"}
+                        </Button>
+                    </div>
                 </Modal>
             )}
         </>
