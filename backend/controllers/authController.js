@@ -5,6 +5,9 @@ import Order from '../models/Order.js';
 import Tenant from '../models/Tenant.js';
 import generateToken from '../utils/generateToken.js';
 import asyncHandler from '../middleware/asyncHandler.js';
+import { customAlphabet } from 'nanoid'; 
+import { addMinutes } from 'date-fns'; 
+import { sendNotification } from '../services/notificationService.js'; 
 import { cloudinary } from '../config/cloudinaryConfig.js'; 
 
 // @desc    Register a new user (for an existing tenant, by an admin)
@@ -12,42 +15,13 @@ import { cloudinary } from '../config/cloudinaryConfig.js';
 // @access  Private/Admin
 const registerUser = asyncHandler(async (req, res) => {
     const { username, password, role } = req.body;
-    const { tenantId } = req; // Get tenantId from the admin's session via protect middleware
-
-    if (!username || !password) {
-        res.status(400);
-        throw new Error('Please provide username and password');
-    }
-
-    // Check if user already exists WITHIN THE SAME TENANT
-    const userExists = await User.findOne({
-        username: username.toLowerCase(),
-        tenantId: tenantId
-    });
-
-    if (userExists) {
-        res.status(400);
-        throw new Error('User already exists with that username in this organization.');
-    }
-
-    const user = await User.create({
-        tenantId, // Associate new user with the admin's tenant
-        username: username.toLowerCase(),
-        password,
-        role: (role && ['admin', 'staff'].includes(role)) ? role : 'staff',
-    });
-
-    if (user) {
-        res.status(201).json({
-            _id: user._id,
-            username: user.username,
-            role: user.role,
-            message: 'User registered successfully. They can now login.',
-        });
-    } else {
-        res.status(400);
-        throw new Error('Invalid user data provided.');
-    }
+    const { tenantId } = req; // Get tenantId from the admin's session
+    if (!username || !password) { res.status(400); throw new Error('Please provide username and password'); }
+    const userExists = await User.findOne({ username: username.toLowerCase(), tenantId });
+    if (userExists) { res.status(400); throw new Error('User already exists with that username in this organization.'); }
+    const user = await User.create({ tenantId, username: username.toLowerCase(), password, role: (role && ['admin', 'staff'].includes(role)) ? role : 'staff' });
+    if (user) { res.status(201).json({ _id: user._id, username: user.username, role: user.role, message: 'User registered successfully.' }); }
+    else { res.status(400); throw new Error('Invalid user data provided.'); }
 });
 
 // @desc    Auth user & get token (Login)
@@ -55,37 +29,17 @@ const registerUser = asyncHandler(async (req, res) => {
 // @access  Public
 const loginUser = asyncHandler(async (req, res) => {
     const { username, password } = req.body;
-    if (!username || !password) {
-        res.status(400); throw new Error('Please provide username and password.');
-    }
-
-    // For a multi-tenant app, login should ideally use a globally unique identifier like an email.
-    // If using a username that is only unique per tenant, you'd need the user to provide
-    // their business name/ID, find the tenant first, then find the user within that tenant.
-    // For now, we assume username is globally unique for simplicity of login form.
-    const user = await User.findOne({ username: username.toLowerCase() });
-
-    if (user && (await user.matchPassword(password))) {
-        if (!user.isActive) {
-            res.status(403); throw new Error('Your user account has been disabled.');
-        }
-
+    if (!username || !password) { res.status(400); throw new Error('Please provide username and password.'); }
+    const user = await User.findOne({ username: username.toLowerCase() }).select('+password');
+    if (!user) { res.status(401); throw new Error('Invalid username or password.'); }
+    if (await user.matchPassword(password)) {
+        if (!user.isActive) { res.status(403); throw new Error('Your user account has been disabled.'); }
         const tenant = await Tenant.findById(user.tenantId);
-        if (!tenant || !tenant.isActive) {
-             res.status(403); throw new Error('This business account is inactive or has been disabled.');
-        }
-
+        if (!tenant || !tenant.isActive) { res.status(403); throw new Error('This business account is inactive.'); }
         const token = generateToken(user._id, user.username, user.role, user.tenantId);
-        res.json({
-            _id: user._id,
-            username: user.username,
-            role: user.role,
-            profilePictureUrl: user.profilePictureUrl || '', 
-            token: token,
-        });
+        res.json({ _id: user._id, username: user.username, role: user.role, token: token });
     } else {
-        res.status(401); // Unauthorized
-        throw new Error('Invalid username or password.');
+        res.status(401); throw new Error('Invalid username or password.');
     }
 });
 
@@ -100,17 +54,10 @@ const logoutUser = asyncHandler(async (req, res) => {
 // @route   GET /api/auth/me
 // @access  Private
 const getMe = asyncHandler(async (req, res) => {
-    // req.user is set by 'protect' middleware
     if (req.user) {
-        res.json({
-            _id: req.user._id,
-            username: req.user.username,
-            role: req.user.role,
-            // profilePictureUrl: req.user.profilePictureUrl || '',
-        });
+        res.json({ _id: req.user._id, username: req.user.username, role: req.user.role });
     } else {
-        res.status(404);
-        throw new Error('User not found.');
+        res.status(404); throw new Error('User not found.');
     }
 });
 
@@ -139,32 +86,54 @@ const updateUserProfile = asyncHandler(async (req, res) => {
         _id: updatedUser._id,
         username: updatedUser.username,
         role: updatedUser.role,
-        // profilePictureUrl: updatedUser.profilePictureUrl || '',
+        profilePictureUrl: updatedUser.profilePictureUrl || '',
     });
 });
-
-// @desc    Change current user's own password
-// @route   PUT /api/auth/me/change-password
+// @desc    Request OTP to change password (Step 1)
+// @route   POST /api/auth/me/request-password-change-otp
 // @access  Private
-const changeUserPassword = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user.id);
+const requestPasswordChangeOtp = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user.id).select('+password'); // Select password to match
     if (!user) { res.status(404); throw new Error('User not found'); }
-
-    const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) { res.status(400); throw new Error('Please provide both current and new passwords.'); }
+    if (!user.email) { res.status(400); throw new Error('No email on file to send OTP.'); }
+    const { currentPassword } = req.body;
+    if (!currentPassword) { res.status(400); throw new Error('Current password is required.'); }
     if (!(await user.matchPassword(currentPassword))) { res.status(401); throw new Error('Incorrect current password.'); }
-    if (newPassword.length < 6) { res.status(400); throw new Error('New password must be at least 6 characters long.'); }
+    const nanoid = customAlphabet('1234567890', 6);
+    const otp = nanoid();
+    const salt = await bcrypt.genSalt(10);
+    user.passwordChangeOtp = await bcrypt.hash(otp, salt);
+    user.passwordChangeOtpExpires = addMinutes(new Date(), 10);
+    await user.save();
+    try {
+        await sendNotification({ email: user.email, name: user.username }, 'passwordChangeOtp', { receiptNumber: 'N/A' }, { otp: otp });
+        res.json({ message: `A verification code has been sent to ${user.email}.` });
+    } catch (error) {
+        user.passwordChangeOtp = undefined; user.passwordChangeOtpExpires = undefined; await user.save();
+        res.status(500); throw new Error('Failed to send verification email.');
+    }
+});
 
-    user.password = newPassword; // Mongoose pre-save hook will hash it
+// @desc    Confirm OTP and change password (Step 2)
+// @route   PUT /api/auth/me/confirm-password-change
+// @access  Private
+const confirmPasswordChange = asyncHandler(async (req, res) => {
+    const { otp, newPassword } = req.body;
+    if (!otp || !newPassword) { res.status(400); throw new Error('OTP and new password are required.'); }
+    if (newPassword.length < 6) { res.status(400); throw new Error('New password must be at least 6 characters long.'); }
+    const user = await User.findById(req.user.id).select('+passwordChangeOtp +passwordChangeOtpExpires');
+    if (!user || !user.passwordChangeOtp || !user.passwordChangeOtpExpires) { res.status(400); throw new Error('No pending password change request found.'); }
+    if (new Date() > user.passwordChangeOtpExpires) { res.status(400); throw new Error('Your OTP has expired.'); }
+    const isMatch = await user.matchPasswordChangeOtp(otp);
+    if (!isMatch) { res.status(400); throw new Error('Invalid OTP provided.'); }
+    user.password = newPassword;
+    user.passwordChangeOtp = undefined;
+    user.passwordChangeOtpExpires = undefined;
     await user.save();
     res.json({ message: 'Password changed successfully.' });
 });
 
 // --- ADMIN USER MANAGEMENT FUNCTIONS ---
-
-// @desc    Get all users for the admin's tenant
-// @route   GET /api/auth/users
-// @access  Private/Admin
 const getUsers = asyncHandler(async (req, res) => {
     const users = await User.find({ tenantId: req.tenantId }).select('-password');
     res.json(users);
@@ -300,104 +269,21 @@ const updateUserProfilePicture = asyncHandler(async (req, res) => {
         throw new Error('Failed to update profile picture due to a server error.');
     }
 });
-// --- STEP 1: REQUEST OTP FOR PASSWORD CHANGE ---
-// @desc    Verify current password and send OTP to user's email
-// @route   POST /api/auth/me/request-password-change-otp
-// @access  Private
-const requestPasswordChangeOtp = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user.id);
-    if (!user) { res.status(404); throw new Error('User not found'); }
-    if (!user.email) { res.status(400); throw new Error('No verified email on file to send OTP. Please contact admin.'); }
 
-    const { currentPassword } = req.body;
-    if (!currentPassword) { res.status(400); throw new Error('Current password is required to initiate change.'); }
-
-    if (!(await user.matchPassword(currentPassword))) {
-        res.status(401); // Unauthorized
-        throw new Error('Incorrect current password.');
-    }
-
-    // All checks passed, generate and send OTP
-    const nanoid = customAlphabet('1234567890', 6);
-    const otp = nanoid();
-
-    // Hash the OTP before saving
-    const salt = await bcrypt.genSalt(10);
-    user.passwordChangeOtp = await bcrypt.hash(otp, salt);
-    user.passwordChangeOtpExpires = addMinutes(new Date(), 10); // OTP expires in 10 minutes
-    await user.save();
-
-    // Send the plaintext OTP to the user's email
-    try {
-        await sendNotification(
-            { email: user.email, name: user.username },
-            'passwordChangeOtp', // templateType key
-            { receiptNumber: 'N/A' }, // Dummy order object for placeholders
-            { otp: otp } // Pass plaintext OTP as a custom placeholder
-        );
-        res.json({ message: `A verification code has been sent to ${user.email}.` });
-    } catch (error) {
-        console.error("Failed to send password change OTP email:", error);
-        // Clear OTP fields if email fails to prevent user being stuck
-        user.passwordChangeOtp = undefined;
-        user.passwordChangeOtpExpires = undefined;
-        await user.save();
-        res.status(500);
-        throw new Error('Failed to send verification email. Please try again later.');
-    }
-});
-
-
-// --- STEP 2: CONFIRM OTP AND CHANGE PASSWORD ---
-// @desc    Verify OTP and update user's password
-// @route   PUT /api/auth/me/confirm-password-change
-// @access  Private
-const confirmPasswordChange = asyncHandler(async (req, res) => {
-    const { otp, newPassword } = req.body;
-    if (!otp || !newPassword) { res.status(400); throw new Error('OTP and new password are required.'); }
-    if (newPassword.length < 6) { res.status(400); throw new Error('New password must be at least 6 characters long.'); }
-    
-    const user = await User.findById(req.user.id);
-    if (!user || !user.passwordChangeOtp || !user.passwordChangeOtpExpires) {
-        res.status(400); throw new Error('No pending password change request found. Please start over.');
-    }
-
-    if (new Date() > user.passwordChangeOtpExpires) {
-        res.status(400); throw new Error('Your OTP has expired. Please request a new one.');
-    }
-
-    const isMatch = await user.matchPasswordChangeOtp(otp);
-    if (!isMatch) {
-        res.status(400); throw new Error('Invalid OTP provided.');
-    }
-
-    // OTP is correct, update password and clear OTP fields
-    user.password = newPassword; // The pre-save hook will hash this
-    user.passwordChangeOtp = undefined;
-    user.passwordChangeOtpExpires = undefined;
-    await user.save();
-
-    // For higher security, you would invalidate all other active sessions/tokens for this user here.
-    // For now, we just confirm success.
-
-    res.json({ message: 'Password changed successfully.' });
-});
-
-
-// Final Export Block
 export {
     registerUser,
     loginUser,
     logoutUser,
     getMe,
     updateUserProfile,
-    changeUserPassword,
     updateUserProfilePicture,
-    // Admin functions
+    //changeUserPassword, 
     getUsers,
     getUserById,
     updateUserById,
     deleteUser,
-    requestPasswordChangeOtp, 
+    // New OTP-based password change flow
+    requestPasswordChangeOtp,
     confirmPasswordChange,
+    // updateUserRole is redundant if using updateUserById
 };
