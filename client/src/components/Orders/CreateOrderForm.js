@@ -8,6 +8,7 @@ import DatePicker from '../UI/DatePicker';
 import OrderItemRow from './OrderItemRow';
 import Modal from '../UI/Modal';
 import Spinner from '../UI/Spinner';
+import Card from '../UI/Card';
 import {
   createNewOrder,
   updateExistingOrder,
@@ -24,8 +25,7 @@ import {
   Edit2,
   CheckSquare,
   XSquare,
-  AlertTriangle,
-  Card
+  AlertTriangle
 } from 'lucide-react';
 import {
   format,
