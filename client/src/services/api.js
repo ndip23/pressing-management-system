@@ -86,6 +86,15 @@ export const sendManualNotification = (orderId) => api.post(`/orders/${orderId}/
 export const markOrderPaidApi = async (orderId) => {
     return api.put(`/orders/${orderId}/mark-paid`);
 };
+export const recordPartialPaymentApi = async (orderId, paymentData) => {
+     paymentData =  amount => {
+        if (typeof amount !== 'number' || amount <= 0) {
+            throw new Error("Payment amount must be a positive number.");
+        }
+        return { amount, method: 'Cash' }; 
+    };
+    return api.post(`/orders/${orderId}/payments`, paymentData);
+};
 
 // export const recordPaymentApi = async (orderId, paymentData) => {
 //     // paymentData should be { amount, method }
