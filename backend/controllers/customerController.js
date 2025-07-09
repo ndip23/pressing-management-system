@@ -71,6 +71,8 @@ const getCustomers = asyncHandler(async (req, res) => {
         pages: Math.ceil(totalCustomers / limit),
         totalCustomers
     });
+    console.log(`[getCustomers] Fetching for tenantId: ${req.tenantId}`);
+    console.log(`[getCustomers] Found ${customers.length} customers.`);
 });
 
 // @desc    Get customer by ID for the current tenant
