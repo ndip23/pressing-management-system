@@ -150,7 +150,13 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
     // --- DYNAMIC CALCULATIONS ---
     const getItemPrice = useCallback((itemType, serviceType) => {
         if (!itemType || !serviceType) return 0;
-        const priceEntry = operationalData.priceList.find(p => p.itemType === itemType && p.serviceType === serviceType);
+         const serviceTypeToCompare = serviceType.toLowerCase();
+        const priceEntry = operationalData.priceList.find(
+            p => p.itemType === itemType && p.serviceType.toLowerCase() === serviceTypeToCompare
+        );
+        if (!priceEntry) {
+            console.log(`[getItemPrice] No price found for Item: '${itemType}', Service: '${serviceTypeToCompare}'. Checking against price list:`, operationalData.priceList);
+        }
         return priceEntry ? priceEntry.price : 0;
     }, [operationalData.priceList]);
 
