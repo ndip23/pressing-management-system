@@ -9,20 +9,20 @@ import asyncHandler from '../middleware/asyncHandler.js';
 // @access  Private
 const createCustomer = asyncHandler(async (req, res) => {
     const { name, phone, email, address } = req.body;
-    const { tenantId, user } = req; 
+    const { tenantId, user } = req;
 
     if (!name || !phone) {
         res.status(400); throw new Error('Customer name and phone number are required.');
     }
 
+    // Check for existing customer with the same phone OR email within the same tenant
     const existingQuery = { tenantId, $or: [{ phone }] };
     if (email) {
         existingQuery.$or.push({ email: email.toLowerCase() });
     }
     const customerExists = await Customer.findOne(existingQuery);
     if (customerExists) {
-        res.status(400);
-        throw new Error(`A customer with this phone or email already exists in your organization.`);
+        res.status(400); throw new Error(`A customer with this phone or email already exists in your organization.`);
     }
 
     const customer = new Customer({
@@ -31,7 +31,7 @@ const createCustomer = asyncHandler(async (req, res) => {
         phone,
         email: email ? email.toLowerCase() : undefined,
         address,
-        createdBy: user.id 
+        // createdBy: user.id // Uncomment if you add this field to your Customer model
     });
 
     const createdCustomer = await customer.save();
@@ -43,8 +43,9 @@ const createCustomer = asyncHandler(async (req, res) => {
 // @access  Private
 const getCustomers = asyncHandler(async (req, res) => {
     const { tenantId } = req;
-    const { search } = req.query;
+    const { search, page = 1, pageSize = 10 } = req.query; // Default page and pageSize
     const query = { tenantId: tenantId };
+
     if (search) {
         const searchRegex = new RegExp(search, 'i');
         query.$or = [
@@ -53,18 +54,23 @@ const getCustomers = asyncHandler(async (req, res) => {
             { email: searchRegex }
         ];
     }
-    
 
-    const pageSize = parseInt(req.query.pageSize, 10) || 25;
-    const page = parseInt(req.query.page, 10) || 1;
-    const count = await Customer.countDocuments(query);
+    const limit = parseInt(pageSize, 10);
+    const skip = (parseInt(page, 10) - 1) * limit;
+
+    const totalCustomers = await Customer.countDocuments(query);
     const customers = await Customer.find(query)
         .sort({ name: 1 })
-        .limit(pageSize)
-        .skip(pageSize * (page - 1))
-        .lean(); 
+        .limit(limit)
+        .skip(skip)
+        .lean(); // Use .lean() for faster read-only queries
 
-    res.json({ customers, page, pages: Math.ceil(count / pageSize), totalCustomers: count });
+    res.json({
+        customers,
+        page: parseInt(page, 10),
+        pages: Math.ceil(totalCustomers / limit),
+        totalCustomers
+    });
 });
 
 // @desc    Get customer by ID for the current tenant
@@ -115,7 +121,7 @@ const updateCustomer = asyncHandler(async (req, res) => {
             }
             customer.email = email.toLowerCase();
         } else {
-            customer.email = undefined;
+            customer.email = undefined; // Allow clearing of email
         }
     }
 
@@ -141,7 +147,7 @@ const deleteCustomer = asyncHandler(async (req, res) => {
 
     const ordersCount = await Order.countDocuments({ customer: customer._id, tenantId: tenantId });
     if (ordersCount > 0) {
-        res.status(400); throw new Error('Cannot delete customer with existing orders. Consider an "archive" feature instead.');
+        res.status(400); throw new Error('Cannot delete customer with existing orders. Please reassign or delete their orders first.');
     }
 
     await customer.deleteOne();
