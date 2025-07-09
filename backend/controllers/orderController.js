@@ -313,6 +313,70 @@ const markOrderAsFullyPaid = asyncHandler(async (req, res) => {
     const populatedOrder = await Order.findById(updatedOrder._id).populate('customer', 'name phone email address').populate('createdBy', 'username');
     res.json(populatedOrder);
 });
+// @desc    Mark an order as fully paid
+// @route   PUT /api/orders/:id/mark-paid
+// @access  Private
+const markOrderAsPaid = asyncHandler(async (req, res) => {
+    const order = await Order.findOne({ _id: req.params.id, tenantId: req.tenantId });
+
+    if (!order) {
+        res.status(404);
+        throw new Error('Order not found.');
+    }
+    if (order.isFullyPaid) {
+        res.status(400);
+        throw new Error('Order is already marked as fully paid.');
+    }
+
+    // Set amountPaid to the totalAmount and add the final payment transaction
+    const balanceDue = order.totalAmount - order.amountPaid;
+    
+    // Add a new payment transaction for the remaining balance
+    if (balanceDue > 0) {
+        order.payments.push({
+            amount: balanceDue,
+            method: 'Cash', // Or a default/inferred method
+            recordedBy: req.user.id,
+        });
+    }
+
+    // The pre-save hook will recalculate amountPaid from the payments array
+    // and then set isFullyPaid to true.
+    const updatedOrder = await order.save();
+    
+    const populatedOrder = await Order.findById(updatedOrder._id)
+        .populate('customer', 'name phone email address')
+        .populate('createdBy', 'username');
+
+    res.json(populatedOrder);
+});
+
+// Add other payment-related controllers here if you build the modal
+const recordPartialPayment = asyncHandler(async (req, res) => {
+    const { amount, method } = req.body;
+    if (!amount || amount <= 0) {
+        res.status(400); throw new Error('A valid payment amount is required.');
+    }
+
+    const order = await Order.findOne({ _id: req.params.id, tenantId: req.tenantId });
+    if (!order) { res.status(404); throw new Error('Order not found.'); }
+    if (order.isFullyPaid) { res.status(400); throw new Error('Order is already fully paid.'); }
+
+    const newTotalPaid = order.amountPaid + parseFloat(amount);
+    if (newTotalPaid > order.totalAmount + 0.01) { // Add tolerance
+        res.status(400); throw new Error(`Payment of ${amount} exceeds balance due of ${order.totalAmount - order.amountPaid}.`);
+    }
+
+    order.payments.push({
+        amount: parseFloat(amount),
+        method: method || 'Cash',
+        recordedBy: req.user.id,
+    });
+
+    const updatedOrder = await order.save();
+    const populatedOrder = await Order.findById(updatedOrder._id).populate('customer', 'name phone email address').populate('createdBy', 'username');
+    res.json(populatedOrder);
+});
 
 export {
     createOrder,
@@ -321,5 +385,7 @@ export {
     updateOrder,
     deleteOrder,
     manuallyNotifyCustomer,
-    markOrderAsFullyPaid
+    markOrderAsFullyPaid,
+    markOrderAsPaid,
+    recordPartialPayment
 };

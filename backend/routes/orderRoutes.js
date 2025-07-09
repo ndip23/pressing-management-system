@@ -24,5 +24,7 @@ router.route('/:id')
 
 router.post('/:id/notify', protect, manuallyNotifyCustomer);
 router.put('/:id/mark-paid', protect, markOrderAsFullyPaid);
+router.put('/:id/mark-paid', protect, markOrderAsPaid); 
+router.post('/:id/payments', protect, recordPartialPayment); 
 
 export default router;
