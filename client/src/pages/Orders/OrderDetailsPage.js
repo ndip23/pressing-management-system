@@ -2,12 +2,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { fetchOrderById, updateExistingOrder, sendManualNotification, deleteOrderApi, markOrderPaidApi, recordPartialPaymentApi } from '../../services/api';
+import { fetchOrderById, updateExistingOrder, sendManualNotification, markOrderPaidApi, recordPartialPaymentApi } from '../../services/api';
 import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
 import OrderStatusBadge from '../../components/Dashboard/OrderStatusBadge';
-import { ArrowLeft, Edit3, Printer, DollarSign, MessageSquare, AlertTriangle, CheckCircle2, Clock3, RefreshCw, Trash2, User, Mail, Phone, MapPin } from 'lucide-react';
+import { ArrowLeft, Printer, DollarSign, MessageSquare, AlertTriangle, CheckCircle2, Clock3 } from 'lucide-react';
 import { format, parseISO, isPast, isValid as isValidDate } from 'date-fns';
 
 const DetailItem = ({ label, value, className = "", children }) => (
@@ -31,7 +31,7 @@ const calculateItemPriceForReceipt = (item) => {
 const OrderDetailsPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    //const { user } = useAuth();
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -39,7 +39,7 @@ const OrderDetailsPage = () => {
     const [actionSuccess, setActionSuccess] = useState('');
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
     const [isSendingNotification, setIsSendingNotification] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
+    //const [isDeleting, setIsDeleting] = useState(false);
     const [isMarkingPaid, setIsMarkingPaid] = useState(false);
 
     const companyInfo = { name: 'PressFlow Deluxe Cleaners', address: 'Malingo,Molyko, Buea', phone: '(+237) 683-616-584', logoUrl: '' };
@@ -209,7 +209,7 @@ const OrderDetailsPage = () => {
                             <Button variant="secondary" className="w-full" iconLeft={<MessageSquare size={16}/>} onClick={handleSendNotification} disabled={!canSendNotification || isSendingNotification || order.status === 'Completed' || order.status === 'Cancelled' } isLoading={isSendingNotification}>
                                 {order.notified && !order.notificationMethod?.startsWith('failed-') ? 'Resend Notification' : 'Send Notification'}
                             </Button>
-                             {user?.role === 'admin' && ( <> <hr className="my-3"/> <Button variant="danger" className="w-full" iconLeft={<Trash2 size={16}/>} onClick={handleDeleteOrder} isLoading={isDeleting} disabled={isDeleting}> Delete This Order </Button> </> )}
+                            {/*{user?.role === 'admin' && ( <> <hr className="my-3"/> <Button variant="danger" className="w-full" iconLeft={<Trash2 size={16}/>} onClick={handleDeleteOrder} isLoading={isDeleting} disabled={isDeleting}> Delete This Order </Button> </> )}*/}
                         </div>
                     </Card>
                 </div>

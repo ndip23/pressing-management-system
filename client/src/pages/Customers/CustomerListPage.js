@@ -6,10 +6,11 @@ import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
 import Input from '../../components/UI/Input';
 import Spinner from '../../components/UI/Spinner';
+import { useAuth } from '../../contexts/AuthContext'; // Import useAuth for role checks
 import { Users, PlusCircle, Search, Edit3, Trash2, Eye, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 const CustomerListPage = () => {
-    // --- State Management ---
+    const { user } = useAuth(); // Get user for role-based actions
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -25,12 +26,12 @@ const CustomerListPage = () => {
         totalCustomers: 0,
     });
 
-    // --- Data Fetching ---
+    // Data Fetching
     const loadCustomers = useCallback(async (search, page) => {
         setLoading(true);
         setError('');
         try {
-            const filters = { search: search, page: page, pageSize: 10 }; // Hardcoded page size
+            const filters = { search: search, page: page, pageSize: 10 };
             const { data } = await fetchCustomers(filters);
 
             if (data && Array.isArray(data.customers)) {
@@ -41,7 +42,7 @@ const CustomerListPage = () => {
                     totalCustomers: data.totalCustomers || 0,
                 });
             } else {
-                console.warn("CustomerListPage: Unexpected data structure from API. Expected { customers: [], ... }", data);
+                console.warn("CustomerListPage: Unexpected data structure from API.", data);
                 setCustomers([]);
                 setPagination({ currentPage: 1, totalPages: 1, totalCustomers: 0 });
             }
@@ -58,17 +59,17 @@ const CustomerListPage = () => {
     useEffect(() => {
         const timerId = setTimeout(() => {
             setDebouncedSearchTerm(searchTerm);
-        }, 500); // Wait 500ms after user stops typing
+        }, 500); // 500ms delay
         return () => clearTimeout(timerId);
     }, [searchTerm]);
 
-    // Effect to fetch data when debounced search term or current page changes
+    // Effect to fetch data when search term or page changes
     useEffect(() => {
         loadCustomers(debouncedSearchTerm, pagination.currentPage);
     }, [debouncedSearchTerm, pagination.currentPage, loadCustomers]);
 
 
-    // --- Action Handlers ---
+    // Action Handlers
     useEffect(() => {
         let timer;
         if (actionError || actionSuccess) {
@@ -114,14 +115,14 @@ const CustomerListPage = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex items-center space-x-3">
                     <Users size={28} className="text-apple-blue" />
-                    <h1 className="text-2xl sm:text-3xl font-semibold text-apple-gray-800 dark:text-apple-gray-100">Manage Customers</h1>
+                    <h1 className="text-2xl sm:text-3xl font-semibold">Manage Customers</h1>
                 </div>
-                <Link to="/customers/new"><Button variant="primary" iconLeft={<PlusCircle size={18} />}>Add New Customer</Button></Link>
+                <Link to="/app/customers/new"><Button variant="primary" iconLeft={<PlusCircle size={18} />}>Add New Customer</Button></Link>
             </div>
 
             <Card>
                 <div className="p-4 border-b border-apple-gray-200 dark:border-apple-gray-700">
-                    <Input id="customerSearch" placeholder="Search by name, phone, or email..." value={searchTerm} onChange={handleSearchChange} prefixIcon={<Search size={16} />} className="mb-0" />
+                    <Input id="customerSearch" placeholder="Search by name, phone, or email..." value={searchTerm} onChange={handleSearchChange} prefixIcon={<Search size={16} />} className="mb-0 max-w-sm" />
                 </div>
 
                 {actionSuccess && ( <div className="p-3 m-4 text-sm bg-green-100 text-apple-green rounded-apple flex items-center"><CheckCircle2 size={18} className="mr-2"/>{actionSuccess}</div> )}
@@ -131,14 +132,14 @@ const CustomerListPage = () => {
                     {loading && customers.length === 0 ? (
                         <div className="flex justify-center items-center h-64"><Spinner size="lg" /></div>
                     ) : error ? (
-                        <div className="p-4 text-center text-apple-red bg-red-50 dark:bg-red-900/30 rounded-apple">
+                        <div className="p-4 text-center text-apple-red bg-red-50 dark:bg-red-900/30 rounded-apple m-4">
                             <AlertTriangle size={24} className="mx-auto mb-2" /> {error}
                             <Button onClick={() => loadCustomers(searchTerm, pagination.currentPage)} variant="secondary" className="mt-3 ml-2" isLoading={loading}>Try Again</Button>
                         </div>
                     ) : customers.length === 0 ? (
                         <div className="p-6 text-center text-apple-gray-500 dark:text-apple-gray-400">
                             {searchTerm ? `No customers found matching "${searchTerm}".` : "No customers have been added yet."}
-                            {!searchTerm && <p className="mt-2"><Link to="/customers/new" className="text-apple-blue hover:underline">Add the first customer!</Link></p>}
+                            {!searchTerm && <p className="mt-2"><Link to="/app/customers/new" className="text-apple-blue hover:underline">Add the first customer!</Link></p>}
                         </div>
                     ) : (
                         <table className="min-w-full divide-y divide-apple-gray-200 dark:divide-apple-gray-700">
@@ -158,15 +159,17 @@ const CustomerListPage = () => {
                                         <td className="px-4 py-3 whitespace-nowrap text-sm text-apple-gray-600 dark:text-apple-gray-300">{customer.email || <span className="italic text-apple-gray-400 dark:text-apple-gray-500">N/A</span>}</td>
                                         <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
                                             <div className="flex items-center justify-center space-x-2">
-                                                <Link to={`/customers/${customer._id}/details`} className="p-1.5 rounded-full hover:bg-apple-gray-200 dark:hover:bg-apple-gray-700" title="View Details">
+                                                <Link to={`/app/customers/${customer._id}/details`} className="p-1.5 rounded-full hover:bg-apple-gray-200 dark:hover:bg-apple-gray-700" title="View Details">
                                                     <Eye size={18} className="text-apple-gray-500 hover:text-apple-blue dark:text-apple-gray-400 dark:hover:text-apple-blue-light" />
                                                 </Link>
-                                                <Link to={`/customers/${customer._id}/edit`} className="p-1.5 rounded-full hover:bg-apple-gray-200 dark:hover:bg-apple-gray-700" title="Edit Customer">
+                                                <Link to={`/app/customers/${customer._id}/edit`} className="p-1.5 rounded-full hover:bg-apple-gray-200 dark:hover:bg-apple-gray-700" title="Edit Customer">
                                                     <Edit3 size={18} className="text-apple-gray-500 hover:text-apple-orange dark:text-apple-gray-400 dark:hover:text-orange-400" />
                                                 </Link>
-                                                <Button variant="ghost" size="sm" onClick={() => handleDeleteCustomer(customer._id, customer.name)} className="p-1.5 text-apple-gray-500 hover:text-apple-red dark:text-apple-gray-400 dark:hover:text-red-400" title="Delete Customer">
-                                                    <Trash2 size={18} />
-                                                </Button>
+                                                {user?.role === 'admin' && (
+                                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteCustomer(customer._id, customer.name)} className="p-1.5 text-apple-gray-500 hover:text-apple-red dark:text-apple-gray-400 dark:hover:text-red-400" title="Delete Customer">
+                                                        <Trash2 size={18} />
+                                                    </Button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -175,7 +178,6 @@ const CustomerListPage = () => {
                         </table>
                     )}
                 </div>
-                {/* Pagination Controls */}
                 {!loading && !error && pagination.totalPages > 1 && (
                     <div className="p-4 border-t border-apple-gray-200 dark:border-apple-gray-700 flex flex-col sm:flex-row justify-between items-center gap-2">
                         <span className="text-sm text-apple-gray-600 dark:text-apple-gray-400">
