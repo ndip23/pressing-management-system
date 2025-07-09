@@ -1,6 +1,6 @@
 // client/src/components/Orders/CreateOrderForm.js
-import React, { useState, useEffect, useCallback, useMemo} from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate,Link } from 'react-router-dom';
 import Input from '../UI/Input';
 import Select from '../UI/Select';
 import Button from '../UI/Button';
@@ -25,7 +25,7 @@ import {
   Edit2,
   CheckSquare,
   XSquare,
-  AlertTriangle
+  AlertTriangle,
 } from 'lucide-react';
 import {
   format,
@@ -85,16 +85,12 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
     useEffect(() => {
         const loadOperationalData = async () => {
             try {
-                console.log("[CreateOrderForm] Fetching operational data...");
-                const [settingsRes, pricesRes] = await Promise.all([
-                    fetchAppSettings(),
-                    fetchPrices()
-                ]);
+                const [settingsRes, pricesRes] = await Promise.all([fetchAppSettings(), fetchPrices()]);
                 setOperationalData({
                     itemTypes: settingsRes.data.itemTypes || [],
                     serviceTypes: settingsRes.data.serviceTypes || [],
                     priceList: pricesRes.data || [],
-                    currencySymbol: settingsRes.data.defaultCurrencySymbol || '$',
+                    currencySymbol: settingsRes.data.defaultCurrencySymbol || 'FCFA',
                     loading: false,
                 });
             } catch (err) {
@@ -119,16 +115,19 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
                 const initialDate = parseISO(initialOrderData.expectedPickupDate);
                 setExpectedPickupDateOnly(format(initialDate, 'yyyy-MM-dd'));
                 setExpectedPickupTime(format(initialDate, 'HH:mm'));
+            } else {
+                setExpectedPickupDateOnly(defaultPickupDateOnly);
+                setExpectedPickupTime(defaultPickupTime);
             }
             setDiscountType(initialOrderData.discountType || 'none');
             setDiscountValueState(String(initialOrderData.discountValue || 0));
             setAmountPaid(String(initialOrderData.amountPaid || 0));
             setNotes(initialOrderData.notes || '');
         }
-    }, [initialOrderData, isEditMode, getNewItem]);
+    }, [initialOrderData, isEditMode, getNewItem, defaultPickupDateOnly, defaultPickupTime]);
 
     // --- HANDLERS ---
-    const handleItemChange = (id, field, value) => setItems(items.map(item => item.id === id ? { ...item, [field]: field === 'quantity' ? parseInt(value, 10) || 1 : value } : item));
+    const handleItemChange = (id, field, value) => setItems(items.map(item => item.id === id ? { ...item, [field]: field === 'quantity' ? (parseInt(value, 10) || 1) : value } : item));
     const handleAddItem = () => setItems([...items, getNewItem()]);
     const handleRemoveItem = (id) => setItems(items.filter(item => item.id !== id));
     const handleCustomerInputChange = (e) => setCustomerInput({ ...customerInput, [e.target.name]: e.target.value });
@@ -137,9 +136,7 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
         setCustomerSearchQuery(query);
         if (query.length > 1) {
             setIsSearchingCustomers(true);
-            try { const { data } = await fetchCustomers(query); setSearchedCustomers(data?.customers || []); }
-            catch (err) { console.error("Customer search error:", err); setSearchedCustomers([]); }
-            finally { setIsSearchingCustomers(false); }
+            try { const { data } = await fetchCustomers(query); setSearchedCustomers(data?.customers || []); } catch (err) { console.error(err); setSearchedCustomers([]); } finally { setIsSearchingCustomers(false); }
         } else { setSearchedCustomers([]); }
     };
     const handleSelectCustomer = (customer) => {
@@ -193,7 +190,7 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
 
         setOrderDataForReview({
             isEditMode, customer: { ...customerInput, id: selectedCustomerId }, customerSelectionMode,
-            items: items.map(({ id, ...rest }) => ({...rest, quantity: parseInt(rest.quantity, 10) || 1})),
+            items: items.map(({ id, ...rest }) => ({...rest, quantity: parseInt(rest.quantity, 10) || 1, serviceType: rest.serviceType.toLowerCase()})), // Ensure lowercase on review
             expectedPickupDate: combinedDateTime.toISOString(), subTotalAmount: subTotal,
             discountType, discountValue: parseFloat(discountValueState) || 0,
             calculatedDiscountAmount, finalTotalAmount, amountPaid: parseFloat(amountPaid) || 0, notes, balanceDue
@@ -205,7 +202,8 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
         if (!orderDataForReview) { setError("Internal Error: No order data for submission."); setShowConfirmationModal(false); return; }
         setIsLoading(true); setError(''); setShowConfirmationModal(false);
         const payload = {
-            items: orderDataForReview.items, expectedPickupDate: orderDataForReview.expectedPickupDate,
+            items: orderDataForReview.items, // This already has lowercase serviceType
+            expectedPickupDate: orderDataForReview.expectedPickupDate,
             subTotalAmount: orderDataForReview.subTotalAmount, discountType: orderDataForReview.discountType,
             discountValue: orderDataForReview.discountValue, amountPaid: orderDataForReview.amountPaid, notes: orderDataForReview.notes,
         };
@@ -220,11 +218,9 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
             const response = isEditMode && initialOrderData?._id ? await updateExistingOrder(initialOrderData._id, payload) : await createNewOrder(payload);
             alert(`Order ${isEditMode ? 'updated' : 'created'}! Receipt: ${response.data.receiptNumber}`);
             navigate(isEditMode ? `/app/orders/${response.data._id}` : '/app/dashboard');
-        } catch (err) {
-            setError(err.response?.data?.message || `Failed to ${isEditMode ? 'save' : 'create'} order.`);
+        } catch (err) { setError(err.response?.data?.message || `Failed to ${isEditMode ? 'save' : 'create'} order.`);
         } finally { setIsLoading(false); }
     };
-
     if (operationalData.loading) {
         return <div className="p-8 text-center"><Spinner size="lg" /><p className="mt-2 text-sm text-apple-gray-500">Loading Pricing & Services...</p></div>;
     }
@@ -235,9 +231,7 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
                 <div className="p-6 text-center">
                     <AlertTriangle size={32} className="mx-auto text-orange-500 mb-4" />
                     <h3 className="font-semibold text-lg">Setup Required</h3>
-                    <p className="text-sm text-apple-gray-600 dark:text-apple-gray-400 mt-2">
-                        No item types or services are configured for your business.
-                    </p>
+                    <p className="text-sm text-apple-gray-600 dark:text-apple-gray-400 mt-2">No item types or services are configured for your business.</p>
                     <Link to="/app/admin/settings">
                         <Button className="mt-4">Go to Settings to add services</Button>
                     </Link>
@@ -268,7 +262,22 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
                         {items.map((item, index) => {
                             const pricePerUnit = getItemPrice(item.itemType, item.serviceType);
                             const itemPrice = pricePerUnit * (parseInt(item.quantity, 10) || 0);
-                            return ( <OrderItemRow key={item.id} item={item} index={index} onRemove={() => handleRemoveItem(item.id)} onChange={handleItemChange} itemTypes={operationalData.itemTypes} serviceTypes={operationalData.serviceTypes.map(s => ({ value: s, label: s }))} calculatedPrice={itemPrice} currencySymbol={operationalData.currencySymbol} /> );
+                            return (
+                                <OrderItemRow
+                                    key={item.id}
+                                    item={item}
+                                    index={index}
+                                    onRemove={() => handleRemoveItem(item.id)}
+                                    onChange={handleItemChange}
+                                    itemTypes={operationalData.itemTypes}
+                                    serviceTypes={operationalData.serviceTypes.map(s => ({
+                                        value: s.toLowerCase().trim(), // The value to be sent to backend
+                                        label: s                       // The text to be shown to the user
+                                    }))}
+                                    calculatedPrice={itemPrice}
+                                    currencySymbol={operationalData.currencySymbol}
+                                />
+                            );
                         })}
                         <Button type="button" onClick={handleAddItem} variant="secondary" iconLeft={<Plus size={16}/>}>Add Item</Button>
                     </div>
@@ -302,22 +311,15 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
                 <Modal isOpen={showConfirmationModal} onClose={() => { if (!isLoading) setShowConfirmationModal(false); }} title={isEditMode ? "Confirm Order Changes" : "Confirm New Order"} size="2xl">
                     <div className="space-y-4 text-sm max-h-[70vh] overflow-y-auto p-1 custom-scrollbar">
                         <h3 className="text-lg font-semibold text-apple-gray-800 dark:text-apple-gray-100">Please review all details:</h3>
-                        <div className="p-3 border rounded-apple-md dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-800/30"> <h4 className="font-medium mb-1">Customer:</h4> <p><strong>Name:</strong> {orderDataForReview.customer.name || <span className="italic text-apple-red">Missing</span>}</p> <p><strong>Phone:</strong> {orderDataForReview.customer.phone || <span className="italic text-apple-red">Missing</span>}</p> {orderDataForReview.customer.email && <p><strong>Email:</strong> {orderDataForReview.customer.email}</p>} {orderDataForReview.customer.address && <p><strong>Address:</strong> {orderDataForReview.customer.address}</p>} </div>
-                        <div className="p-3 border rounded-apple-md dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-800/30"> <h4 className="font-medium mb-2">Items:</h4> {orderDataForReview.items.length > 0 ? orderDataForReview.items.map((item, index) => { const itemPriceInReview = getItemPrice(item.itemType, item.serviceType) * (parseInt(item.quantity, 10) || 0); return ( <div key={index} className={`mb-2 pb-2 ${index < orderDataForReview.items.length - 1 ? 'border-b dark:border-apple-gray-700/50' : ''}`}> <div className="flex justify-between"> <span><strong>{item.quantity || 0}x {item.itemType || <span className="italic text-apple-red">Item type missing</span>}</strong> - Service: {item.serviceType || <span className="italic text-apple-red">Service missing</span>}</span> <span className="font-medium">{operationalData.currencySymbol}{itemPriceInReview.toFixed(2)}</span> </div> {item.specialInstructions && <p className="text-xs italic">Instructions: {item.specialInstructions}</p>} </div> ); }) : <p className="italic">No items added.</p>} </div>
-                        <div className="p-3 border rounded-apple-md dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-800/30"> <h4 className="font-medium mb-1">Summary:</h4> <p><strong>Subtotal:</strong> {operationalData.currencySymbol}{orderDataForReview.subTotalAmount.toFixed(2)}</p> {orderDataForReview.discountType !== 'none' && orderDataForReview.calculatedDiscountAmount > 0 && ( <p><strong>Discount ({orderDataForReview.discountType === 'percentage' ? `${orderDataForReview.discountValue}%` : `${operationalData.currencySymbol}${orderDataForReview.discountValue.toFixed(2)}`}):</strong> -{operationalData.currencySymbol}{orderDataForReview.calculatedDiscountAmount.toFixed(2)}</p> )} <p className="text-base font-semibold"><strong>Final Total:</strong> {operationalData.currencySymbol}{orderDataForReview.finalTotalAmount.toFixed(2)}</p> <p><strong>Advance Paid:</strong> {operationalData.currencySymbol}{orderDataForReview.amountPaid.toFixed(2)}</p> <p className={`font-semibold ${orderDataForReview.balanceDue > 0 ? 'text-apple-red' : 'text-apple-green'}`}> <strong>Balance Due:</strong> {operationalData.currencySymbol}{orderDataForReview.balanceDue.toFixed(2)} </p> <p><strong>Expected Pickup:</strong> {orderDataForReview.expectedPickupDate ? format(parseISO(orderDataForReview.expectedPickupDate), 'MMM d, yyyy, h:mm a') : <span className="italic text-apple-red">Missing</span>}</p> {orderDataForReview.notes && <p className="mt-1"><strong>Notes:</strong> <span className="block whitespace-pre-wrap">{orderDataForReview.notes}</span></p>} </div>
-                        <p className="pt-2 text-center font-semibold">Is all information correct?</p>
+                        <div className="p-3 border rounded-apple-md dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-800/30"> <h4 className="font-medium mb-1 text-apple-gray-700 dark:text-apple-gray-200">Customer:</h4> <p><strong>Name:</strong> {orderDataForReview.customer.name || <span className="italic text-apple-red">Missing</span>}</p> <p><strong>Phone:</strong> {orderDataForReview.customer.phone || <span className="italic text-apple-red">Missing</span>}</p> {orderDataForReview.customer.email && <p><strong>Email:</strong> {orderDataForReview.customer.email}</p>} {orderDataForReview.customer.address && <p><strong>Address:</strong> {orderDataForReview.customer.address}</p>} </div>
+                        <div className="p-3 border rounded-apple-md dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-800/30"> <h4 className="font-medium mb-2 text-apple-gray-700 dark:text-apple-gray-200">Items:</h4> {orderDataForReview.items.length > 0 ? orderDataForReview.items.map((item, index) => { const itemPriceInReview = getItemPrice(item.itemType, item.serviceType) * (parseInt(item.quantity, 10) || 0); return ( <div key={index} className={`mb-2 pb-2 ${index < orderDataForReview.items.length - 1 ? 'border-b dark:border-apple-gray-700/50' : ''}`}> <div className="flex justify-between"> <span><strong>{item.quantity || 0}x {item.itemType || <span className="italic text-apple-red">Item type missing</span>}</strong> - Service: {item.serviceType || <span className="italic text-apple-red">Service missing</span>}</span> <span className="font-medium">{operationalData.currencySymbol}{itemPriceInReview.toFixed(2)}</span> </div> {item.specialInstructions && <p className="text-xs italic text-apple-gray-600 dark:text-apple-gray-400">Instructions: {item.specialInstructions}</p>} </div> ); }) : <p className="italic text-apple-gray-500">No items added.</p>} </div>
+                        <div className="p-3 border rounded-apple-md dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-800/30"> <h4 className="font-medium mb-1 text-apple-gray-700 dark:text-apple-gray-200">Summary:</h4> <p><strong>Subtotal:</strong> {operationalData.currencySymbol}{orderDataForReview.subTotalAmount.toFixed(2)}</p> {orderDataForReview.discountType !== 'none' && orderDataForReview.calculatedDiscountAmount > 0 && ( <p><strong>Discount ({orderDataForReview.discountType === 'percentage' ? `${orderDataForReview.discountValue}%` : `${operationalData.currencySymbol}${orderDataForReview.discountValue.toFixed(2)}`}):</strong> -{operationalData.currencySymbol}{orderDataForReview.calculatedDiscountAmount.toFixed(2)}</p> )} <p className="text-base font-semibold"><strong>Final Total:</strong> {operationalData.currencySymbol}{orderDataForReview.finalTotalAmount.toFixed(2)}</p> <p><strong>Advance Paid:</strong> {operationalData.currencySymbol}{orderDataForReview.amountPaid.toFixed(2)}</p> <p className={`font-semibold ${orderDataForReview.balanceDue > 0 ? 'text-apple-red' : 'text-apple-green'}`}> <strong>Balance Due:</strong> {operationalData.currencySymbol}{orderDataForReview.balanceDue.toFixed(2)} </p> <p><strong>Expected Pickup:</strong> {orderDataForReview.expectedPickupDate ? format(parseISO(orderDataForReview.expectedPickupDate), 'MMM d, yyyy, h:mm a') : <span className="italic text-apple-red">Missing</span>}</p> {orderDataForReview.notes && <p className="mt-1"><strong>Notes:</strong> <span className="block whitespace-pre-wrap">{orderDataForReview.notes}</span></p>} </div>
+                        <p className="pt-2 text-center font-semibold text-apple-gray-700 dark:text-apple-gray-200">Is all information correct?</p>
                     </div>
-                    <div className="mt-6 pt-4 border-t dark:border-apple-gray-700 flex flex-wrap justify-end gap-3">
-                        <Button variant="secondary" onClick={handleEditFromReview} iconLeft={<Edit2 size={16}/>} disabled={isLoading}>Edit</Button>
-                        <Button variant="ghost" onClick={() => setShowConfirmationModal(false)} disabled={isLoading} className="text-apple-red" iconLeft={<XSquare size={16}/>}>Cancel</Button>
-                        <Button variant="primary" onClick={handleConfirmAndCreateOrder} isLoading={isLoading} iconLeft={<Save size={16}/>}>
-                            {isEditMode ? "Confirm & Save Changes" : "Confirm & Create Order"}
-                        </Button>
-                    </div>
+                    <div className="mt-6 pt-4 border-t dark:border-apple-gray-700 flex flex-wrap justify-end gap-3"> <Button variant="secondary" onClick={handleEditFromReview} iconLeft={<Edit2 size={16}/>} disabled={isLoading}>Edit</Button> <Button variant="ghost" onClick={() => setShowConfirmationModal(false)} disabled={isLoading} className="text-apple-red" iconLeft={<XSquare size={16}/>}>Cancel</Button> <Button variant="primary" onClick={handleConfirmAndCreateOrder} isLoading={isLoading} iconLeft={<Save size={16}/>}> {isEditMode ? "Confirm & Save Changes" : "Confirm & Create Order"} </Button> </div>
                 </Modal>
             )}
         </>
     );
 };
-
 export default CreateOrderForm;
