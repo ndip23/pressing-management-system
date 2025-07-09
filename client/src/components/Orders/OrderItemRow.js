@@ -20,7 +20,7 @@ const OrderItemRow = ({
         onChange(item.id, field, value);
     };
 
-    const currencySymbol = 'FCFA'; // Or from context
+    const currencySymbol = 'FCFA'; 
 
     return (
         <div className="p-4 border border-apple-gray-200 dark:border-apple-gray-700 rounded-apple-md shadow-apple-sm bg-apple-gray-50 dark:bg-apple-gray-800/30">

@@ -54,7 +54,7 @@ const OrderTable = ({ orders }) => {
                         return (
                             <tr key={order._id} className={`${isOrderOverdue ? 'bg-red-50/50 dark:bg-red-900/20' : ''} hover:bg-apple-gray-50/70 dark:hover:bg-apple-gray-800/60 transition-colors duration-150`}>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                                    <Link to={`/orders/${order._id}`} className="text-apple-blue hover:text-apple-blue-dark dark:text-apple-blue-light dark:hover:text-apple-blue hover:underline">
+                                    <Link to={`/app/orders/${order._id}`} className="text-apple-blue hover:text-apple-blue-dark dark:text-apple-blue-light dark:hover:text-apple-blue hover:underline">
                                         {order.receiptNumber}
                                     </Link>
                                     {isOrderOverdue && <AlertTriangle size={14} className="inline ml-1.5 text-apple-red" title="Overdue"/>}
