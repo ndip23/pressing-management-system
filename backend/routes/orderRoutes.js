@@ -8,6 +8,7 @@ import {
     deleteOrder,
     manuallyNotifyCustomer,
     markOrderAsFullyPaid,
+    markOrderAsPaid
 } from '../controllers/orderController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import { body, validationResult } from 'express-validator';
