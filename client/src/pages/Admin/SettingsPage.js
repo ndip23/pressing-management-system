@@ -1,3 +1,4 @@
+// client/src/pages/Admin/SettingsPage.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { fetchAppSettings, updateAppSettingsApi } from '../../services/api';
 import Card from '../../components/UI/Card';
@@ -15,8 +16,8 @@ const SettingsPage = () => {
             readyForPickupBody: '',
             manualReminderSubject: '',
             manualReminderBody: '',
-            whatsappOrderReadySid: '',
-            whatsappManualReminderSid: ''
+            whatsappOrderReadySid: '', // Added for form binding
+            whatsappManualReminderSid: '' // Added for form binding
         },
         defaultCurrencySymbol: 'FCFA',
         preferredNotificationChannel: 'whatsapp',
@@ -34,8 +35,8 @@ const SettingsPage = () => {
             setSettings(prev => ({
                 companyInfo: { ...(prev.companyInfo || {}), ...(data.companyInfo || {}) },
                 notificationTemplates: { ...(prev.notificationTemplates || {}), ...(data.notificationTemplates || {}) },
-                defaultCurrencySymbol: data.defaultCurrencySymbol || prev.defaultCurrencySymbol || 'FCFA',
-                preferredNotificationChannel: data.preferredNotificationChannel || prev.preferredNotificationChannel || 'whatsapp',
+                defaultCurrencySymbol: data.defaultCurrencySymbol || prev.defaultCurrencySymbol,
+                preferredNotificationChannel: data.preferredNotificationChannel || prev.preferredNotificationChannel,
             }));
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to load settings. Please try again.');
@@ -68,19 +69,20 @@ const SettingsPage = () => {
         setError('');
         setSuccessMessage('');
 
+        // Prepare payload, removing any internal fields from the object
         const payload = { ...settings };
         ['singletonKey', '_id', '__v', 'createdAt', 'updatedAt'].forEach(key => delete payload[key]);
 
         try {
             const response = await updateAppSettingsApi(payload);
-
             if (response && response.data) {
                 const updatedSettingsResponse = response.data;
+                // Re-sync state with what backend confirmed was saved
                 setSettings(prev => ({
                     companyInfo: { ...(prev.companyInfo || {}), ...(updatedSettingsResponse.companyInfo || {}) },
                     notificationTemplates: { ...(prev.notificationTemplates || {}), ...(updatedSettingsResponse.notificationTemplates || {}) },
-                    defaultCurrencySymbol: updatedSettingsResponse.defaultCurrencySymbol || prev.defaultCurrencySymbol || 'FCFA',
-                    preferredNotificationChannel: updatedSettingsResponse.preferredNotificationChannel || prev.preferredNotificationChannel || 'whatsapp',
+                    defaultCurrencySymbol: updatedSettingsResponse.defaultCurrencySymbol || prev.defaultCurrencySymbol,
+                    preferredNotificationChannel: updatedSettingsResponse.preferredNotificationChannel || prev.preferredNotificationChannel,
                 }));
                 setSuccessMessage('Settings saved successfully!');
             } else {
@@ -95,35 +97,15 @@ const SettingsPage = () => {
         }
     };
 
-    // Handle success and error message clearing
     useEffect(() => {
-        let successTimerId;
-        let errorTimerId;
-
-        if (successMessage) {
-            successTimerId = setTimeout(() => setSuccessMessage(''), 4000);
+        let timer;
+        if (successMessage || error) {
+            timer = setTimeout(() => { setSuccessMessage(''); setError(''); }, 5000);
         }
-
-        if (error) {
-            if (!successMessage) {
-                errorTimerId = setTimeout(() => setError(''), 7000);
-            }
-        }
-
-        return () => {
-            clearTimeout(successTimerId);
-            clearTimeout(errorTimerId);
-        };
+        return () => clearTimeout(timer);
     }, [successMessage, error]);
 
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center h-64">
-                <Spinner size="lg" />
-            </div>
-        );
-    }
-
+    if (loading) { return ( <div className="flex justify-center items-center h-64"><Spinner size="lg" /></div> ); }
     if (error && (!settings || !settings.companyInfo)) {
         return (
             <div className="space-y-6">
@@ -141,7 +123,6 @@ const SettingsPage = () => {
             </div>
         );
     }
-    
     return (
         <div className="space-y-6">
             <div className="flex items-center space-x-3 mb-6">
@@ -151,112 +132,49 @@ const SettingsPage = () => {
                 </h1>
             </div>
 
-            {successMessage && (
-                <div className="p-3 mb-4 bg-green-100 text-apple-green rounded-apple border border-green-300 dark:border-green-700 dark:text-green-300 dark:bg-green-900/30">
-                    <div className="flex items-center">
-                        <CheckCircle2 size={20} className="mr-2 flex-shrink-0" />
-                        <span>{successMessage}</span>
-                    </div>
-                </div>
-            )}
-            {error && !successMessage && (
-                <div className="p-3 mb-4 bg-red-100 text-apple-red rounded-apple border border-red-300 dark:border-red-700 dark:text-red-300 dark:bg-red-900/30">
-                    <div className="flex items-center">
-                        <AlertTriangle size={20} className="mr-2 flex-shrink-0" />
-                        <span>{error}</span>
-                    </div>
-                </div>
-            )}
+            {successMessage && ( <div className="p-3 mb-4 bg-green-100 text-apple-green rounded-apple border border-green-300 dark:border-green-700 dark:text-green-300 dark:bg-green-900/30"> <div className="flex items-center"><CheckCircle2 size={20} className="mr-2 flex-shrink-0" /><span>{successMessage}</span></div> </div> )}
+            {error && !successMessage && ( <div className="p-3 mb-4 bg-red-100 text-apple-red rounded-apple border border-red-300 dark:border-red-700 dark:text-red-300 dark:bg-red-900/30"> <div className="flex items-center"><AlertTriangle size={20} className="mr-2 flex-shrink-0" /><span>{error}</span></div> </div> )}
 
             <form onSubmit={handleSubmit}>
                 <Card title="Company Information" className="mb-8 shadow-apple-md">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
                         <Input label="Company Name" id="companyName" value={settings.companyInfo?.name || ''} onChange={(e) => handleDeepChange(['companyInfo', 'name'], e.target.value)} />
                         <Input label="Company Phone" id="companyPhone" value={settings.companyInfo?.phone || ''} onChange={(e) => handleDeepChange(['companyInfo', 'phone'], e.target.value)} />
-                        <div className="md:col-span-2">
-                            <Input label="Company Address" id="companyAddress" value={settings.companyInfo?.address || ''} onChange={(e) => handleDeepChange(['companyInfo', 'address'], e.target.value)} />
-                        </div>
-                        <div className="md:col-span-2">
-                            <Input label="Logo URL (for receipts/emails)" id="companyLogoUrl" value={settings.companyInfo?.logoUrl || ''} onChange={(e) => handleDeepChange(['companyInfo', 'logoUrl'], e.target.value)} />
-                        </div>
+                        <div className="md:col-span-2"> <Input label="Company Address" id="companyAddress" value={settings.companyInfo?.address || ''} onChange={(e) => handleDeepChange(['companyInfo', 'address'], e.target.value)} /> </div>
+                        <div className="md:col-span-2"> <Input label="Logo URL (for receipts/emails)" id="companyLogoUrl" value={settings.companyInfo?.logoUrl || ''} onChange={(e) => handleDeepChange(['companyInfo', 'logoUrl'], e.target.value)} /> </div>
                     </div>
                 </Card>
 
                 <Card title="Notification Templates" className="mb-8 shadow-apple-md">
-                    <Input
-                        label="Default Email Subject (General)"
-                        id="defaultSubject"
-                        value={settings.notificationTemplates?.subject || ''}
-                        onChange={(e) => handleDeepChange(['notificationTemplates', 'subject'], e.target.value)}
-                        className="mb-6"
-                        helperText={`Available placeholders: {{customerName}}, {{receiptNumber}}, {{companyName}}`}
-                    />
+                    <Input label="Default Email Subject (General)" id="defaultSubject" value={settings.notificationTemplates?.subject || ''} onChange={(e) => handleDeepChange(['notificationTemplates', 'subject'], e.target.value)} className="mb-6" helperText={`Placeholders: {{customerName}}, {{receiptNumber}}, {{companyName}}`} />
                     <div className="mb-6">
-                        <label htmlFor="readyForPickupBody" className="block text-sm font-medium text-apple-gray-700 dark:text-apple-gray-300 mb-1">
-                            'Ready for Pickup' Email Body
-                        </label>
-                        <textarea
-                            id="readyForPickupBody"
-                            rows="6"
-                            className="form-textarea block w-full sm:text-sm border-apple-gray-300 focus:border-apple-blue focus:ring-apple-blue dark:bg-apple-gray-800 dark:border-apple-gray-700 dark:text-apple-gray-100 dark:focus:border-apple-blue rounded-apple shadow-apple-sm"
-                            value={settings.notificationTemplates?.readyForPickupBody || ''}
-                            onChange={(e) => handleDeepChange(['notificationTemplates', 'readyForPickupBody'], e.target.value)}
-                        />
-                        <p className="mt-1 text-xs text-apple-gray-500 dark:text-apple-gray-400">
-                            Available placeholders: {`{{customerName}}`}, {`{{receiptNumber}}`}, {`{{companyName}}`}. Use `\n` for new lines.
-                        </p>
+                        <label htmlFor="readyForPickupBody" className="block text-sm font-medium mb-1">'Ready for Pickup' Email/SMS Body</label>
+                        <textarea id="readyForPickupBody" rows="6" className="form-textarea block w-full sm:text-sm" value={settings.notificationTemplates?.readyForPickupBody || ''} onChange={(e) => handleDeepChange(['notificationTemplates', 'readyForPickupBody'], e.target.value)} />
+                        <p className="mt-1 text-xs text-apple-gray-500">Placeholders: {`{{customerName}}`}, {`{{receiptNumber}}`}, {`{{companyName}}`}. Use `\n` for new lines.</p>
                     </div>
-                    <div className="mb-6">
-                        <label htmlFor="manualReminderSubject" className="block text-sm font-medium text-apple-gray-700 dark:text-apple-gray-300 mb-1">
-                            Manual Reminder Email Subject
-                        </label>
-                        <Input
-                            id="manualReminderSubject"
-                            value={settings.notificationTemplates?.manualReminderSubject || ''}
-                            onChange={(e) => handleDeepChange(['notificationTemplates', 'manualReminderSubject'], e.target.value)}
-                            helperText={`Available placeholders: {{customerName}}, {{receiptNumber}}, {{companyName}}. Used for manual 'Resend Notification'.`}
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="manualReminderBody" className="block text-sm font-medium text-apple-gray-700 dark:text-apple-gray-300 mb-1">
-                            Manual Reminder Email Body
-                        </label>
-                        <textarea
-                            id="manualReminderBody"
-                            rows="6"
-                            className="form-textarea block w-full sm:text-sm border-apple-gray-300 focus:border-apple-blue focus:ring-apple-blue dark:bg-apple-gray-800 dark:border-apple-gray-700 dark:text-apple-gray-100 dark:focus:border-apple-blue rounded-apple shadow-apple-sm"
-                            value={settings.notificationTemplates?.manualReminderBody || ''}
-                            onChange={(e) => handleDeepChange(['notificationTemplates', 'manualReminderBody'], e.target.value)}
-                        />
-                        <p className="mt-1 text-xs text-apple-gray-500 dark:text-apple-gray-400">
-                            Available placeholders like above.
-                        </p>
-                    </div>
+                    {/* Add more template fields as needed */}
+
+                    <h4 className="text-md font-semibold mt-6 mb-2 border-t pt-4">WhatsApp Template SIDs (Optional)</h4>
+                    <p className="text-xs text-apple-gray-500 mb-4">For production WhatsApp notifications, you must use pre-approved templates from Twilio. Enter the Template SIDs here.</p>
+                    <Input label="'Order Ready' Template SID" id="whatsappOrderReadySid" value={settings.notificationTemplates?.whatsappOrderReadySid || ''} onChange={(e) => handleDeepChange(['notificationTemplates', 'whatsappOrderReadySid'], e.target.value)} className="mb-4" helperText="e.g., HX..." />
+                    <Input label="'Manual Reminder' Template SID" id="whatsappManualReminderSid" value={settings.notificationTemplates?.whatsappManualReminderSid || ''} onChange={(e) => handleDeepChange(['notificationTemplates', 'whatsappManualReminderSid'], e.target.value)} helperText="e.g., HX..." />
                 </Card>
 
                 <Card title="General Settings" className="mb-8 shadow-apple-md">
-                    <Input
-                        label="Default Currency Symbol"
-                        id="defaultCurrencySymbol"
-                        value={settings.defaultCurrencySymbol || ''}
-                        onChange={(e) => handleDeepChange(['defaultCurrencySymbol'], e.target.value)}
-                        className="max-w-xs"
-                    />
+                    <Input label="Default Currency Symbol" id="defaultCurrencySymbol" value={settings.defaultCurrencySymbol || ''} onChange={(e) => setSettings(prev => ({...prev, defaultCurrencySymbol: e.target.value}))} className="max-w-xs" />
                     <Select
                         label="Preferred Notification Channel"
-                        value={settings.preferredNotificationChannel}
-                        onChange={(e) => handleDeepChange(['preferredNotificationChannel'], e.target.value)}
-                        options={[
-                            { value: 'whatsapp', label: 'WhatsApp' },
-                            { value: 'email', label: 'Email' },
-                        ]}
+                        id="preferredNotificationChannel"
+                        value={settings.preferredNotificationChannel || 'whatsapp'}
+                        onChange={(e) => setSettings(prev => ({...prev, preferredNotificationChannel: e.target.value}))}
+                        options={[ { value: 'whatsapp', label: 'WhatsApp / SMS First' }, { value: 'email', label: 'Email First' }, { value: 'none', label: 'Disable All Notifications' }]}
+                        className="mt-4"
+                        helperText="The system will try this channel first if contact info is available."
                     />
                 </Card>
 
                 <div className="flex justify-end pt-4">
-                    <Button type="submit" variant="primary" isLoading={saving} iconLeft={<Save size={18} />}>
-                        Save All Settings
-                    </Button>
+                    <Button type="submit" variant="primary" isLoading={saving} iconLeft={<Save size={18} />}> Save All Settings </Button>
                 </div>
             </form>
         </div>
