@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { fetchDailyPaymentsReport } from '../../services/api';
 import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
-import DatePicker from '../../components/UI/DatePicker'; // Assuming this is your date input
+import DatePicker from '../../components/UI/DatePicker'; 
 import Spinner from '../../components/UI/Spinner';
 import { CreditCard, AlertTriangle, CalendarDays } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
