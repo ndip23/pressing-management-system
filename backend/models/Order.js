@@ -80,7 +80,7 @@ orderSchema.pre('save', function (next) {
     }
     
     // 3. Validate that total paid doesn't exceed total amount
-    if (this.amountPaid > this.totalAmount + 0.01) { // Add small tolerance for float issues
+    if (this.amountPaid > this.totalAmount + 0.01) { 
         const err = new Error(`Amount paid (${this.amountPaid}) cannot exceed the total amount due (${this.totalAmount}).`);
         return next(err);
     }
