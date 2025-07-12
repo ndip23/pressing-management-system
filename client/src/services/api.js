@@ -48,11 +48,6 @@ export const requestPasswordChangeOtpApi = async (data) => {
 export const confirmPasswordChangeApi = async (data) => {
     return api.put('/auth/me/confirm-password-change', data);
 };
-export const uploadMyProfilePicture = async (formData) => { 
-    return api.post('/auth/me/profile-picture', formData, { 
-        headers: { 'Content-Type': 'multipart/form-data' },
-    });
-};
 export const initiateRegistrationApi = async (setupData) => {
     return api.post('/public/initiate-registration', setupData);
 };
@@ -125,5 +120,13 @@ export const fetchDailyPaymentsReport = async (date) => {
 export const fetchAdminNotificationsApi = async () => api.get('/admin-notifications');
 export const markAdminNotificationReadApi = async (notificationId) => api.put(`/admin-notifications/${notificationId}/read`);
 export const markAllAdminNotificationsReadApi = async () => api.put('/admin-notifications/read-all');
+export const uploadMyProfilePicture = async (formData) => {
+    // formData will contain the file under the key 'profilePicture'
+    return api.put('/auth/me/profile-picture', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data', 
+        },
+    });
+};
 
 export default api;

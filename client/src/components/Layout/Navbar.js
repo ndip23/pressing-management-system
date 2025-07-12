@@ -137,7 +137,11 @@ const Navbar = ({ toggleSidebar, sidebarOpen }) => {
 
                     <div className="relative" ref={userMenuRef}>
                          <Button variant="ghost" size="sm" onClick={handleUserMenuClick} className="p-1 flex items-center space-x-1.5" aria-label="Open User Menu" aria-expanded={showUserMenu}>
-                            <UserCircle size={24} className="text-apple-gray-500 dark:text-apple-gray-400" />
+                            {user?.profilePictureUrl ? (
+                                <img src={user.profilePictureUrl} alt="Profile" className="w-7 h-7 rounded-full object-cover" />
+                            ) : (
+                                <UserCircle size={24} className="text-apple-gray-500 dark:text-apple-gray-400" />
+                            )}
                             <span className="hidden md:inline text-sm font-medium text-apple-gray-700 dark:text-apple-gray-300">{user?.username || 'User'}</span>
                         </Button>
                         {showUserMenu && (
