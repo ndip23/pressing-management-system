@@ -217,57 +217,33 @@ const deleteUser = asyncHandler(async (req, res) => {
     res.json({ message: 'User deleted successfully.' });
 });
 const updateUserProfilePicture = asyncHandler(async (req, res) => {
-    console.log(`[AuthCtrl] PUT /api/auth/me/profile-picture for user: ${req.user.id}`);
     const user = await User.findById(req.user.id);
-
-    if (!user) {
-        console.error(`[AuthCtrl] User not found for ID: ${req.user.id}`);
-        res.status(404);
-        throw new Error('User not found');
-    }
-
-    if (!req.file) {
-        console.log("[AuthCtrl] No file uploaded in request object.");
-        res.status(400);
-        throw new Error('No image file uploaded.');
-    }
-
-    console.log("[AuthCtrl] File received from multer:", req.file);
-
+    if (!user) { res.status(404); throw new Error('User not found'); }
     
+    // req.file is populated by the 'multer' middleware
+    if (!req.file) { res.status(400); throw new Error('No image file uploaded.'); }
+
+    // If user already has a picture, delete the old one from Cloudinary to save space
     if (user.profilePictureCloudinaryId) {
         try {
-            console.log(`[AuthCtrl] Attempting to delete old Cloudinary image: ${user.profilePictureCloudinaryId}`);
-            const deletionResult = await cloudinary.uploader.destroy(user.profilePictureCloudinaryId);
-            console.log(`[AuthCtrl] Cloudinary deletion result for ${user.profilePictureCloudinaryId}:`, deletionResult.result);
+            await cloudinary.uploader.destroy(user.profilePictureCloudinaryId);
+            console.log(`[AuthCtrl] Deleted old Cloudinary image: ${user.profilePictureCloudinaryId}`);
         } catch (deleteError) {
-            console.error(`[AuthCtrl] Failed to delete old Cloudinary image ${user.profilePictureCloudinaryId}:`, deleteError.message || deleteError);
-            
+            // Log error but don't stop the update process
+            console.error(`[AuthCtrl] Failed to delete old Cloudinary image ${user.profilePictureCloudinaryId}:`, deleteError);
         }
     }
 
-    user.profilePictureUrl = req.file.path; 
-    user.profilePictureCloudinaryId = req.file.filename; 
+    // Save the new image's URL and public ID (filename) from Cloudinary
+    user.profilePictureUrl = req.file.path;
+    user.profilePictureCloudinaryId = req.file.filename; // This is the public_id from Cloudinary
 
-    try {
-        await user.save();
-        console.log(`[AuthCtrl] User profile picture updated in DB. New URL: ${user.profilePictureUrl}`);
-        res.json({
-            message: 'Profile picture updated successfully.',
-            profilePictureUrl: user.profilePictureUrl,
-        });
-    } catch (dbSaveError) {
-        console.error(`[AuthCtrl] Error saving user after picture update:`, dbSaveError);
-        // Attempt to delete the just-uploaded image from Cloudinary if DB save fails
-        try {
-            await cloudinary.uploader.destroy(req.file.filename);
-            console.log(`[AuthCtrl] Rolled back Cloudinary upload: ${req.file.filename} due to DB save error.`);
-        } catch (rollbackError) {
-            console.error(`[AuthCtrl] CRITICAL: Failed to rollback Cloudinary upload ${req.file.filename} after DB error:`, rollbackError);
-        }
-        res.status(500);
-        throw new Error('Failed to update profile picture due to a server error.');
-    }
+    const updatedUser = await user.save();
+
+    res.json({
+        message: 'Profile picture updated successfully.',
+        profilePictureUrl: updatedUser.profilePictureUrl,
+    });
 });
 
 export {

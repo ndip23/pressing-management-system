@@ -43,6 +43,8 @@ const userSchema = new mongoose.Schema({
         type: Date,
         select: false, 
     },
+    profilePictureUrl: { type: String, default: '' },
+    profilePictureCloudinaryId: { type: String },
     // Add other fields from your controller if they exist on the model
     // e.g., email, profilePictureUrl, profilePictureCloudinaryId
 }, { timestamps: true });
