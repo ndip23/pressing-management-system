@@ -19,10 +19,11 @@ import {
     confirmPasswordChange
 } from '../controllers/authController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
-import upload from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
+
+const upload = multer({ storage: cloudinaryStorage });
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 10, // Limit each IP to 10 login requests per windowMs
