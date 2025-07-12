@@ -49,7 +49,8 @@ const DashboardPage = () => {
     const [paymentError, setPaymentError] = useState('');
     const [paymentSuccess, setPaymentSuccess] = useState('');
     const [showFilters, setShowFilters] = useState(false);
-
+    const [salesData, setSalesData] = useState(null);
+    const [salesError, setSalesError] = useState('');
 
     const currencySymbol = 'FCFA'; // TODO: Get from global settings context
 
@@ -93,12 +94,17 @@ const DashboardPage = () => {
             ready: orders.filter(o => o.status === 'Ready for Pickup').length,
             overdue: orders.filter(o => o.expectedPickupDate && isPast(parseISO(o.expectedPickupDate)) && !['Completed', 'Cancelled'].includes(o.status)).length,
         });
-    }, [orders, pagination.totalOrders]); // Recalculate when orders or totalOrders change
- const loadDailyPayments = useCallback(async () => {
+    }, [orders, pagination.totalOrders]); 
+   const loadDailyPayments = useCallback(async () => {
+        if (user?.role !== 'admin') {
+            setDailyPaymentsError(''); 
+            return; 
+        }
         setLoadingDailyPayments(true);
         setDailyPaymentsError('');
         try {
             const todayStr = format(new Date(), 'yyyy-MM-dd'); 
+            // This API call now only runs for admins
             const { data } = await fetchDailyPaymentsReport(todayStr); 
             setDailyTotalPayments(data.totalAmountFromOrdersWithActivity || 0);
         } catch (err) {
@@ -107,8 +113,7 @@ const DashboardPage = () => {
         } finally {
             setLoadingDailyPayments(false);
         }
-    }, []); // Empty dependency array means this function instance is stable
-
+    }, [user]); 
     useEffect(() => {
         loadOrders();
         loadDailyPayments();
@@ -202,7 +207,7 @@ const DashboardPage = () => {
                 <h1 className="text-2xl sm:text-3xl font-semibold text-apple-gray-800 dark:text-apple-gray-100">Dashboard</h1>
                 <div className="flex items-center space-x-2">
                     <Button onClick={() => setShowFilters(prev => !prev)} variant="secondary" size="md" iconLeft={<FilterIcon size={16}/>}>Filters {showFilters ? '(Hide)' : '(Show)'}</Button>
-                    <Link to="/orders/new"><Button variant="primary" size="md" iconLeft={<PlusCircle size={18} />}>Create New Order</Button></Link>
+                    <Link to="/app/orders/new"><Button variant="primary" size="md" iconLeft={<PlusCircle size={18} />}>Create New Order</Button></Link>
                 </div>
             </div>
 
