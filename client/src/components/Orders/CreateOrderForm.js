@@ -1,6 +1,7 @@
 // client/src/components/Orders/CreateOrderForm.js
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate,Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext'; 
 import Input from '../UI/Input';
 import Select from '../UI/Select';
 import Button from '../UI/Button';
@@ -26,6 +27,7 @@ import {
   CheckSquare,
   XSquare,
   AlertTriangle,
+  Settings,
 } from 'lucide-react';
 import {
   format,
@@ -38,7 +40,7 @@ import {
 
 const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
     const navigate = useNavigate();
-
+    const { user } = useAuth();
     // --- STATE FOR DYNAMIC DATA (PRICING, SERVICES, ETC.) ---
     const [operationalData, setOperationalData] = useState({
         itemTypes: [],

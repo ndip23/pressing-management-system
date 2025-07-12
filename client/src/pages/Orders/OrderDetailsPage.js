@@ -192,7 +192,7 @@ const OrderDetailsPage = () => {
             <div className="print-hide">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div className="flex items-center space-x-2"> <Button variant="ghost" onClick={() => navigate(-1)} className="p-1.5 -ml-1.5" aria-label="Go back"><ArrowLeft size={20} /></Button> <div><h1 className="text-2xl sm:text-3xl font-semibold">Order Details</h1><p className="text-sm text-apple-gray-500 dark:text-apple-gray-400">Receipt # {order.receiptNumber}</p></div> </div>
-                    <div className="flex items-center space-x-2"> <Button variant="secondary" onClick={() => loadData(false)} iconLeft={<RefreshCw size={16}/>} isLoading={loading && !!order} disabled={loading && !!order}>Refresh</Button> <Button variant="secondary" onClick={handlePrintReceipt} iconLeft={<Printer size={16}/>}>Print Receipt</Button> <Link to={`/app/orders/${order._id}/edit`}><Button variant="primary" iconLeft={<Edit3 size={16}/>}>Edit Order</Button></Link> </div>
+                    <div className="flex items-center space-x-2"> {/*<Button variant="secondary" onClick={() => loadData(false)} iconLeft={<RefreshCw size={16}/>} isLoading={loading && !!order} disabled={loading && !!order}>Refresh</Button>*/} <Button variant="secondary" onClick={handlePrintReceipt} iconLeft={<Printer size={16}/>}>Print Receipt</Button> {/*<Link to={`/app/orders/${order._id}/edit`}><Button variant="primary" iconLeft={<Edit3 size={16}/>}>Edit Order</Button></Link>*/} </div>
                 </div>
                 {isOrderOverdue && (<Card className="bg-red-100 dark:bg-red-900/40 border-2 border-red-400 dark:border-red-600 shadow-lg animate-pulse-slow"><div className="flex items-center p-4"><AlertTriangle size={32} className="text-red-600 dark:text-red-400 mr-4 flex-shrink-0" /><div><h3 className="text-lg font-semibold text-red-700 dark:text-red-300">Order Overdue!</h3>{order.expectedPickupDate && <p className="text-sm text-red-600 dark:text-red-500">Expected: {formatDateSafe(order.expectedPickupDate)}</p>}</div></div></Card>)}
                 {actionSuccess && ( <div className="p-3 mb-4 bg-green-100 text-apple-green rounded-apple border border-green-300 dark:border-green-700 dark:text-green-300 dark:bg-green-900/30"> <div className="flex items-center"><CheckCircle2 size={20} className="mr-2 flex-shrink-0" /><span>{actionSuccess}</span></div> </div> )}
@@ -284,7 +284,7 @@ const OrderDetailsPage = () => {
                                 isLoading={isSendingNotification}>
                                 {order.notified && !order.notificationMethod?.startsWith('failed-') ? 'Resend Notification' : 'Send Notification'}
                             </Button>
-                            {user?.role === 'admin' && ( <> <hr className="my-3 border-apple-gray-200 dark:border-apple-gray-700"/> <Button variant="danger" className="w-full" iconLeft={<Trash2 size={16}/>} onClick={handleDeleteOrder} isLoading={isDeleting} disabled={isDeleting}> Delete This Order </Button> </> )}
+                           {/*{user?.role === 'admin' && ( <> <hr className="my-3 border-apple-gray-200 dark:border-apple-gray-700"/> <Button variant="danger" className="w-full" iconLeft={<Trash2 size={16}/>} onClick={handleDeleteOrder} isLoading={isDeleting} disabled={isDeleting}> Delete This Order </Button> </> )}*/}
                         </div>
                     </Card>
                 </div>
