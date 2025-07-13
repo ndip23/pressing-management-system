@@ -1,0 +1,93 @@
+{
+  "sidebar": {
+    "dashboard": "Tableau de Bord",
+    "newOrder": "Nouvelle Commande",
+    "customers": "Clients",
+    "payments": "Paiements",
+    "adminArea": "ZONE ADMIN",
+    "settings": "Paramètres"
+  },
+  "dashboard": {
+    "title": "Tableau de Bord",
+    "totalOrders": "Commandes Totales",
+    "pendingProcessing": "En Attente/Traitement",
+    "readyForPickup": "Prêtes à Récupérer",
+    "overdueOrders": "Commandes en Retard",
+    "orderList": "Liste des Commandes"
+  },
+  "login": {
+    "title": "Connexion Employé",
+    "usernameLabel": "Nom d'utilisateur",
+    "passwordLabel": "Mot de passe",
+    "loginButton": "Se Connecter"
+  },
+  "landing": {
+      "headline": "Optimisez Votre Entreprise de Pressing.",
+      "subheadline": "De la saisie des commandes au suivi des paiements et aux notifications clients, PressFlow est le système tout-en-un pour gérer vos opérations de blanchisserie et de nettoyage à sec sans effort."
+  },
+  "settings": {
+    "title": "Paramètres",
+    "generalSettings": "Paramètres Généraux",
+    "currencySymbol": "Symbole Monétaire",
+    "saveChanges": "Enregistrer les Modifications",
+    "profilePicture": "Photo de Profil",
+    "uploadNewPicture": "Télécharger une Nouvelle Photo"
+  },
+  "notifications": {
+    "newOrder": "Nouvelle Commande Reçue",
+    "orderReady": "Commande Prête à Récupérer",
+    "paymentReceived": "Paiement Reçu"
+  },
+  "auth": {
+    "loginError": "Nom d'utilisateur ou mot de passe invalide",
+    "logoutSuccess": "Vous avez été déconnecté avec succès",
+    "profileUpdated": "Profil mis à jour avec succès",
+    "passwordChanged": "Mot de passe changé avec succès"
+  },
+  "order": {
+    "newOrder": "Nouvelle Commande",
+    "customerName": "Nom du Client",
+    "orderDetails": "Détails de la Commande",
+    "totalAmount": "Montant Total",
+    "status": "Statut",
+    "actions": "Actions",
+    "markAsReady": "Marquer comme Prêt à Récupérer",
+    "viewDetails": "Voir les Détails"
+  },
+  "customer": {
+    "addCustomer": "Ajouter un Client",
+    "customerList": "Liste des Clients",
+    "customerName": "Nom du Client"
+  },
+  "payment": {
+    "paymentList": "Liste des Paiements",
+    "amount": "Montant",
+    "date": "Date",
+    "status": "Statut",
+    "actions": "Actions",
+    "markAsPaid": "Marquer comme Payé",
+    "viewDetails": "Voir les Détails"
+  },
+  "admin": {
+    "userManagement": "Gestion des Utilisateurs",
+    "roleManagement": "Gestion des Rôles",
+    "systemSettings": "Paramètres du Système"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Une erreur s'est produite",
+    "success": "Opération réussie",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier"
+  },
+  "orderList": {
+    "orderList": "Liste des Commandes"
+  },
+ "customerList": {
+        "customerList": "Liste des Clients",
+        "searchCustomers": "Rechercher des Clients"
+    }
+}

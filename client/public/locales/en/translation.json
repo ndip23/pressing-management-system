@@ -1,0 +1,88 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "newOrder": "New Order",
+    "customers": "Customers",
+    "payments": "Payments",
+    "adminArea": "ADMIN AREA",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalOrders": "Total Orders",
+    "pendingProcessing": "Pending/Processing",
+    "readyForPickup": "Ready for Pickup",
+    "overdueOrders": "Overdue Orders",
+    "orderList": "Order List"
+  },
+  "login": {
+    "title": "Staff Login",
+    "usernameLabel": "Username",
+    "passwordLabel": "Password",
+    "loginButton": "Login"
+  },
+  "landing": {
+      "headline": "Streamline Your Pressing Business.",
+      "subheadline": "From order logging and payment tracking to customer notifications, PressFlow is the all-in-one system to manage your laundry and dry cleaning operations effortlessly."
+  },
+
+  "settings": {
+    "title": "Settings",
+    "generalSettings": "General Settings",
+    "currencySymbol": "Currency Symbol",
+    "saveChanges": "Save Changes",
+    "profilePicture": "Profile Picture",
+    "uploadNewPicture": "Upload New Picture"
+  },
+  "notifications": {
+    "newOrder": "New Order Received",
+    "orderReady": "Order Ready for Pickup",
+    "paymentReceived": "Payment Received"
+  },
+  "auth": {
+    "loginError": "Invalid username or password",
+    "logoutSuccess": "You have been logged out successfully",
+    "profileUpdated": "Profile updated successfully",
+    "passwordChanged": "Password changed successfully"
+  },
+  "order": {
+    "newOrder": "New Order",
+    "customerName": "Customer Name",
+    "orderDetails": "Order Details",
+    "totalAmount": "Total Amount",
+    "status": "Status",
+    "actions": "Actions",
+    "markAsReady": "Mark as Ready for Pickup",
+    "viewDetails": "View Details"
+  },
+  "customer": {
+    "addCustomer": "Add Customer",
+    "customerList": "Customer List",
+    "searchCustomers": "Search Customers"
+  },
+  "payment": {
+    "recordPayment": "Record Payment",
+    "paymentHistory": "Payment History",
+    "amount": "Amount",
+    "date": "Date",
+    "status": "Status"
+  },
+  "admin": {
+    "userManagement": "User Management",
+    "settings": "Settings",
+    "notifications": "Notifications"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "view": "View",
+    "close": "Close"
+  }
+
+}

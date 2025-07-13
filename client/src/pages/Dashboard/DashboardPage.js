@@ -13,6 +13,7 @@ import { PlusCircle, AlertTriangle, CheckCircle2, Clock3, Shirt, TrendingUp, Fil
 import { format, isPast, parseISO } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext'; 
 import { useAppSettings } from '../../contexts/SettingsContext'; 
+import { useTranslation } from 'react-i18next';
 
 const StatCard = ({ title, value, icon, colorClass, isLoading }) => (
     <Card className={`shadow-apple-sm ${colorClass || 'bg-white dark:bg-apple-gray-800'}`}>
@@ -28,6 +29,7 @@ const StatCard = ({ title, value, icon, colorClass, isLoading }) => (
 
 
 const DashboardPage = () => {
+     const { t } = useTranslation();
     const { user } = useAuth()
     const [orders, setOrders] = useState([]);
     const [loadingOrders, setLoadingOrders] = useState(true);

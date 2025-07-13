@@ -1,6 +1,7 @@
 // client/src/components/Layout/Sidebar.js
 import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     LayoutDashboard,
     PlusCircle,
@@ -40,6 +41,7 @@ const NavItem = ({ to, icon: Icon, children, end = false, disabled = false }) =>
 );
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
+    const { t } = useTranslation();
     const { user } = useAuth(); // Get user to check for admin role
 
     return (
@@ -97,8 +99,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                             <NavItem to="/app/admin/users" icon={KeyRound}>Manage Staff</NavItem>
                             <NavItem to="/app/admin/pricing" icon={Tags}>Services & Pricing</NavItem>
                             {/*<NavItem to="/app/admin/manage-users" icon={Users}>Manage Users</NavItem> */}
-                            {/* If you want a link for admins to manage other admin/staff accounts (using API tools for now) */}
-                            {/* You could add a placeholder link or a link to documentation here: */}
                             {/* <NavItem to="/admin-guide/user-management" icon={UsersCog} disabled={true}>Manage Logins (Guide)</NavItem> */}
                         </>
                     )}
