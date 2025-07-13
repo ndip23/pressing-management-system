@@ -198,5 +198,20 @@ const sendNotification = async (customer, templateType, order, customPlaceholder
 
     return { sent: overallSentStatus, method: finalMethod, message: statusMessage };
 };
+export const sendOtpEmail = async (email, otp) => {
+    if (!transporter) {
+        console.error("[NotificationService] Email service not configured. Cannot send OTP.");
+        throw new Error('Email service is not configured.');
+    }
+    const mailOptions = {
+        from: process.env.EMAIL_FROM,
+        to: email,
+        subject: 'Your PressFlow Verification Code',
+        text: `Your verification code is: ${otp}\n\nThis code will expire in 15 minutes.`,
+        html: `<p>Your verification code is: <strong>${otp}</strong></p><p>This code will expire in 15 minutes.</p>`,
+    };
+    await transporter.sendMail(mailOptions);
+    console.log(`[NotificationService] OTP email sent to ${email}`);
+};
 
 export { sendNotification };
