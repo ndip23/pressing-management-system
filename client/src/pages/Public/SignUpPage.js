@@ -14,6 +14,7 @@ const Step1AdminAccount = ({ data, setData, onNext }) => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false); 
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const togglePasswordVisibility = () => {
             setShowPassword(!showPassword);
         };
