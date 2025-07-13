@@ -3,12 +3,12 @@ import asyncHandler from '../middleware/asyncHandler.js';
 import mongoose from 'mongoose';
 import { customAlphabet } from 'nanoid';
 import { addMinutes } from 'date-fns';
-import PendingUser from '../models/PendingUser.js'; // The temporary storage model
+import PendingUser from '../models/PendingUser.js';
 import Tenant from '../models/Tenant.js';
 import User from '../models/User.js';
 import Settings from '../models/Settings.js';
 import Price from '../models/Price.js';
-import { sendNotification } from '../services/notificationService.js';
+import { sendOtpEmail } from '../services/notificationService.js'; // Using a dedicated OTP email function
 import generateToken from '../utils/generateToken.js';
 
 // --- STEP 1: INITIATE REGISTRATION & SEND OTP ---
@@ -16,16 +16,27 @@ import generateToken from '../utils/generateToken.js';
 // @route   POST /api/public/initiate-registration
 // @access  Public
 const initiateRegistration = asyncHandler(async (req, res) => {
-    const { adminUser, companyInfo, priceList, itemTypes, serviceTypes } = req.body;
+    const registrationData = req.body;
+    const { adminUser, companyInfo } = registrationData;
 
     // --- Perform initial validation ---
-    if (!adminUser?.email) { res.status(400); throw new Error('A valid email address is required for verification.'); }
-    if (!companyInfo?.name || !adminUser?.username || !adminUser?.password) { res.status(400); throw new Error('Business name, admin username, and password are required.'); }
-    if (adminUser.password.length < 6) { res.status(400); throw new Error('Password must be at least 6 characters long.'); }
+    if (!adminUser?.email || !/^\S+@\S+\.\S+$/.test(adminUser.email)) {
+        res.status(400);
+        throw new Error('A valid email address is required for verification.');
+    }
+    if (!companyInfo?.name || !adminUser?.username || !adminUser?.password) {
+        res.status(400);
+        throw new Error('Business name, admin username, and password are required.');
+    }
+    if (adminUser.password.length < 6) {
+        res.status(400);
+        throw new Error('Password must be at least 6 characters long.');
+    }
 
-    // Check if email or username is already in the main User collection or business name in Tenant
+    // Check if email or username is already in the main User table or business name in Tenant
     const userExists = await User.findOne({ $or: [{ email: adminUser.email.toLowerCase() }, { username: adminUser.username.toLowerCase() }] });
     if (userExists) { res.status(400); throw new Error('A user with this email or username already exists.'); }
+
     const businessExists = await Tenant.findOne({ name: companyInfo.name });
     if (businessExists) { res.status(400); throw new Error('A business with this name already exists.'); }
     // --- End Validation ---
@@ -42,22 +53,17 @@ const initiateRegistration = asyncHandler(async (req, res) => {
         email: adminUser.email.toLowerCase(),
         otp: otp, // The pre-save hook in PendingUser model will hash this
         otpExpires: addMinutes(new Date(), 15), // OTP expires in 15 minutes
-        signupData: req.body, // Store the entire form payload
+        signupData: registrationData, // Store the entire form payload
     });
     await pendingUser.save();
 
     // Send the OTP email to the user
     try {
-        await sendNotification(
-            { email: adminUser.email, name: adminUser.username },
-            'signupOtp', // This is the templateType key
-            { receiptNumber: 'N/A' }, // Dummy data to satisfy placeholder logic if needed
-            { otp: otp } // Pass plaintext OTP as a custom placeholder
-        );
+        await sendOtpEmail(adminUser.email, otp);
     } catch (emailError) {
         console.error(`[PublicCtrl] FAILED to send OTP email to ${adminUser.email}:`, emailError);
-        // If email fails, we should not proceed.
-        res.status(500); throw new Error("Could not send verification email. Please check the address and try again.");
+        res.status(500);
+        throw new Error("Could not send verification email. Please check the address and try again.");
     }
 
     res.status(200).json({ message: `A verification code has been sent to ${adminUser.email}.` });
@@ -80,12 +86,12 @@ const finalizeRegistration = asyncHandler(async (req, res) => {
     if (!isMatch) { res.status(400); throw new Error('Invalid OTP provided.'); }
 
     const { signupData } = pendingUser;
-    // --- THIS IS THE LINE TO FIX ---
+    // --- CORRECTED DESTRUCTURING ---
     const { adminUser, companyInfo, currencySymbol, itemTypes, serviceTypes, priceList } = signupData;
 
     // --- SECONDARY VALIDATION ---
     if (!adminUser || !companyInfo || !currencySymbol) {
-        // This is an internal check. If this fails, something went wrong when saving the pending data.
+        console.error("Internal server error: Pending registration data was incomplete for email:", email);
         throw new Error("Internal Server Error: Pending registration data is incomplete.");
     }
 
@@ -93,9 +99,9 @@ const finalizeRegistration = asyncHandler(async (req, res) => {
     session.startTransaction();
 
     try {
-        const tenant = new Tenant({ name: companyInfo.name, /* ... other tenant fields */ });
-        await tenant.save({ session });
-        const tenantId = tenant._id;
+        const tenant = new Tenant({ name: companyInfo.name });
+        const savedTenant = await tenant.save({ session });
+        const tenantId = savedTenant._id;
 
         const user = new User({
             tenantId,
@@ -106,11 +112,11 @@ const finalizeRegistration = asyncHandler(async (req, res) => {
         });
         const savedUser = await user.save({ session });
 
-        // Now `defaultCurrencySymbol` is correctly defined and passed to create Settings
+        // --- CORRECTED VARIABLE NAME USED HERE ---
         await Settings.create([{
             tenantId,
             companyInfo,
-            defaultCurrencySymbol: currencySymbol, // Use the destructured variable
+            defaultCurrencySymbol: currencySymbol, // Use the destructured variable 'currencySymbol'
             itemTypes,
             serviceTypes
         }], { session });
@@ -119,7 +125,7 @@ const finalizeRegistration = asyncHandler(async (req, res) => {
             await Price.insertMany(priceList.map(p => ({ ...p, tenantId })), { session });
         }
 
-        await pendingUser.deleteOne({ session }); // Clean up temp document
+        await pendingUser.deleteOne({ session });
         await session.commitTransaction();
 
         const token = generateToken(savedUser._id, savedUser.username, savedUser.role, savedUser.tenantId);
@@ -142,4 +148,7 @@ const finalizeRegistration = asyncHandler(async (req, res) => {
     }
 });
 
-export { initiateRegistration, finalizeRegistration };
+// Rename functions to match what your routes and API services expect
+export {
+  initiateRegistration, finalizeRegistration
+};
