@@ -73,24 +73,29 @@ const finalizeRegistration = asyncHandler(async (req, res) => {
     if (!email || !otp) { res.status(400); throw new Error('Email and OTP are required.'); }
 
     const pendingUser = await PendingUser.findOne({ email: email.toLowerCase() });
-
     if (!pendingUser) { res.status(400); throw new Error('Invalid registration request or it has expired. Please start over.'); }
-    if (new Date() > pendingUser.otpExpires) { res.status(400); throw new Error('Your OTP has expired. Please start the registration over.'); }
+    if (new Date() > pendingUser.otpExpires) { res.status(400); throw new Error('Your OTP has expired. Please start over.'); }
 
     const isMatch = await pendingUser.matchOtp(otp);
     if (!isMatch) { res.status(400); throw new Error('Invalid OTP provided.'); }
 
-    // --- OTP is valid, proceed with creation in a transaction ---
     const { signupData } = pendingUser;
+    // --- THIS IS THE LINE TO FIX ---
     const { adminUser, companyInfo, currencySymbol, itemTypes, serviceTypes, priceList } = signupData;
+
+    // --- SECONDARY VALIDATION ---
+    if (!adminUser || !companyInfo || !currencySymbol) {
+        // This is an internal check. If this fails, something went wrong when saving the pending data.
+        throw new Error("Internal Server Error: Pending registration data is incomplete.");
+    }
 
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
         const tenant = new Tenant({ name: companyInfo.name, /* ... other tenant fields */ });
-        const savedTenant = await tenant.save({ session });
-        const tenantId = savedTenant._id;
+        await tenant.save({ session });
+        const tenantId = tenant._id;
 
         const user = new User({
             tenantId,
@@ -101,21 +106,29 @@ const finalizeRegistration = asyncHandler(async (req, res) => {
         });
         const savedUser = await user.save({ session });
 
+        // Now `defaultCurrencySymbol` is correctly defined and passed to create Settings
         await Settings.create([{
-            tenantId, companyInfo, defaultCurrencySymbol, itemTypes, serviceTypes
+            tenantId,
+            companyInfo,
+            defaultCurrencySymbol: currencySymbol, // Use the destructured variable
+            itemTypes,
+            serviceTypes
         }], { session });
 
         if (priceList && priceList.length > 0) {
             await Price.insertMany(priceList.map(p => ({ ...p, tenantId })), { session });
         }
 
+        await pendingUser.deleteOne({ session }); // Clean up temp document
         await session.commitTransaction();
-        await pendingUser.deleteOne(); // Clean up the temporary document
 
         const token = generateToken(savedUser._id, savedUser.username, savedUser.role, savedUser.tenantId);
         res.status(201).json({
-            _id: savedUser._id, username: savedUser.username, role: savedUser.role,
-            tenantId: savedUser.tenantId, token,
+            _id: savedUser._id,
+            username: savedUser.username,
+            role: savedUser.role,
+            tenantId: savedUser.tenantId,
+            token,
             message: `Account for '${tenant.name}' created successfully!`
         });
 
