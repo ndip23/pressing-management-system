@@ -13,6 +13,7 @@ const Input = ({
     className = '',
     inputClassName = '',
     disabled = false,
+    prefix,
     prefixIcon,
     suffixIcon,
     helperText, // <--- ADDED HELPER TEXT PROP

@@ -42,8 +42,20 @@ const Step1AdminAccount = ({ data, setData, onNext }) => {
             {error && <p className="text-sm text-red-500 p-2 bg-red-100 dark:bg-red-900/30 rounded-md">{error}</p>}
             <Input label="Username*" name="username" value={data.username} onChange={e => setData('adminUser', 'username', e.target.value)}  />
             <Input label="Email (for verification)*" name="email" type="email" value={data.email} onChange={e => setData('adminUser', 'email', e.target.value)} />
-            <Input label="Password*" name="password" type="password" value={password} onChange={e => setPassword(e.target.value)} suffixIcon={passwordIcon} />
-            <Input label="Confirm Password*" name="confirmPassword" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} suffixIcon={passwordIcon} />
+            <Input label="Password*" name="password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} suffixIcon={
+                    showPassword ? (
+                        <EyeOff size={18} onClick={() => setShowPassword(false)} className="cursor-pointer text-apple-gray-400 hover:text-apple-gray-600" />
+                    ) : (
+                        <Eye size={18} onClick={() => setShowPassword(true)} className="cursor-pointer text-apple-gray-400 hover:text-apple-gray-600" />
+                    )
+                } />
+            <Input label="Confirm Password*" name="confirmPassword"  type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} suffixIcon={
+                    showConfirmPassword ? (
+                        <EyeOff size={18} onClick={() => setShowConfirmPassword(false)} className="cursor-pointer text-apple-gray-400 hover:text-apple-gray-600" />
+                    ) : (
+                        <Eye size={18} onClick={() => setShowConfirmPassword(true)} className="cursor-pointer text-apple-gray-400 hover:text-apple-gray-600" />
+                    )
+                } />
             <div className="flex justify-end pt-4"><Button onClick={handleNext} iconRight={<ArrowRight size={16} />}>Next: Company Info</Button></div>
         </div>
     );
