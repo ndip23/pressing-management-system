@@ -6,13 +6,25 @@ import { initiateRegistrationApi, finalizeRegistrationApi } from '../../services
 import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
 import Input from '../../components/UI/Input';
-import { ArrowLeft, ArrowRight, PartyPopper, AlertTriangle,Plus, Trash2, User, Building, Wrench, CheckCircle2, KeyRound } from 'lucide-react';
+import { ArrowLeft, ArrowRight, PartyPopper, AlertTriangle,Plus, Trash2, User, Building, Wrench, CheckCircle2, KeyRound, Eye, EyeOff } from 'lucide-react';
 
 // --- Step Components (can be moved to separate files) ---
 const Step1AdminAccount = ({ data, setData, onNext }) => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false); 
+    const togglePasswordVisibility = () => {
+            setShowPassword(!showPassword);
+        };
+    
+        const passwordIcon = (
+            showPassword ? (
+                <EyeOff size={18} onClick={togglePasswordVisibility} className="cursor-pointer text-apple-gray-400 hover:text-apple-gray-600 dark:hover:text-apple-gray-200" />
+            ) : (
+                <Eye size={18} onClick={togglePasswordVisibility} className="cursor-pointer text-apple-gray-400 hover:text-apple-gray-600 dark:hover:text-apple-gray-200" />
+            )
+        );
 
     const handleNext = () => {
         setError('');
@@ -28,10 +40,10 @@ const Step1AdminAccount = ({ data, setData, onNext }) => {
             <div className="flex items-center space-x-3 mb-4"><div className="bg-apple-blue text-white rounded-full p-2"><User size={20} /></div><h3 className="font-semibold text-xl">Create Your Admin Account</h3></div>
             <p className="text-sm text-apple-gray-500">This will be your personal login for managing the business.</p>
             {error && <p className="text-sm text-red-500 p-2 bg-red-100 dark:bg-red-900/30 rounded-md">{error}</p>}
-            <Input label="Username*" name="username" value={data.username} onChange={e => setData('adminUser', 'username', e.target.value)} />
+            <Input label="Username*" name="username" value={data.username} onChange={e => setData('adminUser', 'username', e.target.value)}  />
             <Input label="Email (for verification)*" name="email" type="email" value={data.email} onChange={e => setData('adminUser', 'email', e.target.value)} />
-            <Input label="Password*" name="password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
-            <Input label="Confirm Password*" name="confirmPassword" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+            <Input label="Password*" name="password" type="password" value={password} onChange={e => setPassword(e.target.value)} suffixIcon={passwordIcon} />
+            <Input label="Confirm Password*" name="confirmPassword" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} suffixIcon={passwordIcon} />
             <div className="flex justify-end pt-4"><Button onClick={handleNext} iconRight={<ArrowRight size={16} />}>Next: Company Info</Button></div>
         </div>
     );
