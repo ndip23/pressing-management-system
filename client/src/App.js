@@ -22,6 +22,7 @@ const LandingPage = lazy(() => import('./pages/Public/LandingPage'));
 const FeaturesPage = lazy(() => import('./pages/Public/FeaturesPage'));
 const PricingPage = lazy(() => import('./pages/Public/PricingPage'));
 const SignUpPage = lazy(() => import('./pages/Public/SignUpPage'));
+const DirectoryPage = lazy(() => import('./pages/Public/DirectoryPage'));
 
 const CustomerListPage = lazy(() => import('./pages/Customers/CustomerListPage'));
 const CustomerFormPage = lazy(() => import('./pages/Customers/CustomerFormPage'));
@@ -53,6 +54,7 @@ function App() {
                         <Route path="/features" element={<FeaturesPage />} />
                         <Route path="/pricing" element={<PricingPage />} />
                         <Route path="/signup" element={<SignUpPage />} />
+                        <Route path="/directory" element={<DirectoryPage />} /> 
                     </Route>
 
                     {/* Standalone Login Page */}

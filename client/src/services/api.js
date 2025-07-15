@@ -128,5 +128,14 @@ export const uploadMyProfilePicture = async (formData) => {
         },
     });
 };
+export const getPublicDirectoryApi = async (filters) => {
+    return api.get('/public/directory', { params: filters });
+};
+export const getMyTenantProfileApi = async () => {
+    return api.get('/tenant-profile');
+};
 
+export const updateMyTenantProfileApi = async (profileData) => {
+    return api.put('/tenant-profile', profileData);
+};
 export default api;

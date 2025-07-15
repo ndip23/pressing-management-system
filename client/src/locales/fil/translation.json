@@ -1,0 +1,95 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "newOrder": "Bagong Order",
+    "customers": "Mga Customer",
+    "payments": "Mga Pagbabayad",
+    "adminArea": "ADMIN AREA",
+    "settings": "Mga Setting"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalOrders": "Kabuuang mga Order",
+    "pendingProcessing": "Nakabinbin/Pinoproseso",
+    "readyForPickup": "Handa na para Kunin",
+    "overdueOrders": "Mga Huling Order",
+    "orderList": "Listahan ng Order"
+  },
+  "login": {
+    "title": "Login ng Staff",
+    "usernameLabel": "Username",
+    "passwordLabel": "Password",
+    "loginButton": "Mag-login"
+  },
+  "landing": {
+      "headline": "Pasimplehin ang Iyong Negosyo sa Paglalaba.",
+      "subheadline": "Mula sa pag-log ng order at pag-track ng bayad hanggang sa mga notipikasyon sa customer, ang PressFlow ay ang all-in-one na sistema para pamahalaan ang iyong mga operasyon sa laundry at dry cleaning nang walang kahirap-hirap."
+  },
+  "settings": {
+    "title": "Mga Setting",
+    "generalSettings": "Pangkalahatang mga Setting",
+    "currencySymbol": "Simbolo ng Pera",
+    "saveChanges": "I-save ang mga Pagbabago",
+    "profilePicture": "Profile Picture",
+    "uploadNewPicture": "Mag-upload ng Bagong Litrato"
+  },
+  "notifications": {
+    "newOrder": "Nakatanggap ng Bagong Order",
+    "orderReady": "Handa na ang Order para Kunin",
+    "paymentReceived": "Nakatanggap ng Bayad"
+  },
+  "auth": {
+    "loginError": "Hindi wasto ang username o password",
+    "logoutSuccess": "Matagumpay kang naka-logout",
+    "profileUpdated": "Matagumpay na na-update ang profile",
+    "passwordChanged": "Matagumpay na napalitan ang password"
+  },
+  "order": {
+    "newOrder": "Bagong Order",
+    "customerName": "Pangalan ng Customer",
+    "orderDetails": "Mga Detalye ng Order",
+    "totalAmount": "Kabuuang Halaga",
+    "status": "Katayuan",
+    "actions": "Mga Aksyon",
+    "markAsReady": "Markahan bilang Handa na para Kunin",
+    "viewDetails": "Tingnan ang mga Detalye"
+  },
+  "customer": {
+    "addCustomer": "Magdagdag ng Customer",
+    "customerList": "Listahan ng mga Customer",
+    "searchCustomers": "Maghanap ng mga Customer"
+  },
+  "payment": {
+    "recordPayment": "Itala ang Pagbabayad",
+    "paymentHistory": "Kasaysayan ng Pagbabayad",
+    "amount": "Halaga",
+    "date": "Petsa",
+    "status": "Katayuan"
+  },
+  "admin": {
+    "userManagement": "Pamamahala ng User",
+    "settings": "Mga Setting",
+    "notifications": "Mga Notipikasyon"
+  },
+  "buttons": {
+    "save": "I-save ang mga Pagbabago",
+    "create": "Gawin",
+    "cancel": "Kanselahin",
+    "next": "Susunod",
+    "back": "Bumalik",
+    "login": "Mag-login",
+    "confirm": "Kumpirmahin"
+  },
+  "common": {
+    "loading": "Naglo-load...",
+    "error": "Nagkaroon ng error",
+    "success": "Tagumpay",
+    "cancel": "Kanselahin",
+    "confirm": "Kumpirmahin",
+    "save": "I-save",
+    "edit": "I-edit",
+    "delete": "Burahin",
+    "view": "Tingnan",
+    "close": "Isara"
+  }
+}

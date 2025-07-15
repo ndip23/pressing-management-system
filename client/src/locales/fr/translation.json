@@ -83,6 +83,15 @@
     "delete": "Supprimer",
     "edit": "Modifier"
   },
+   "buttons": {
+    "save": "Enregistrer les modifications",
+    "create": "Créer",
+    "cancel": "Annuler",
+    "next": "Suivant",
+    "back": "Retour",
+    "login": "Connexion",
+    "confirm": "Confirmer"
+  },
   "orderList": {
     "orderList": "Liste des Commandes"
   },

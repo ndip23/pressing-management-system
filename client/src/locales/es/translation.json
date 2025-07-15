@@ -1,0 +1,108 @@
+{
+  "sidebar": {
+    "dashboard": "Panel de Control",
+    "newOrder": "Nuevo Pedido",
+    "customers": "Clientes",
+    "payments": "Pagos",
+    "adminArea": "ÁREA DE ADMIN",
+    "settings": "Configuración"
+  },
+  "dashboard": {
+    "title": "Panel de Control",
+    "totalOrders": "Pedidos Totales",
+    "pendingProcessing": "Pendientes/En Proceso",
+    "readyForPickup": "Listos para Recoger",
+    "overdueOrders": "Pedidos Vencidos",
+    "orderList": "Lista de Pedidos"
+  },
+  "login": {
+    "title": "Acceso de Personal",
+    "usernameLabel": "Nombre de Usuario",
+    "passwordLabel": "Contraseña",
+    "loginButton": "Iniciar Sesión"
+  },
+  "landing": {
+      "headline": "Optimiza tu negocio de lavandería.",
+      "subheadline": "Desde el registro de pedidos y seguimiento de pagos hasta las notificaciones a clientes, PressFlow es el sistema todo en uno para gestionar tus operaciones de lavandería y tintorería sin esfuerzo."
+  },
+  "settings": {
+    "title": "Configuración",
+    "generalSettings": "Configuración General",
+    "currencySymbol": "Símbolo de Moneda",
+    "saveChanges": "Guardar Cambios",
+    "profilePicture": "Foto de Perfil",
+    "uploadNewPicture": "Subir Nueva Foto"
+  },
+  "notifications": {
+    "newOrder": "Nuevo Pedido Recibido",
+    "orderReady": "Pedido Listo para Recoger",
+    "paymentReceived": "Pago Recibido"
+  },
+  "auth": {
+    "loginError": "Nombre de usuario o contraseña no válidos",
+    "logoutSuccess": "Has cerrado sesión correctamente",
+    "profileUpdated": "Perfil actualizado correctamente",
+    "passwordChanged": "Contraseña cambiada correctamente"
+  },
+  "order": {
+    "newOrder": "Nuevo Pedido",
+    "customerName": "Nombre del Cliente",
+    "orderDetails": "Detalles del Pedido",
+    "totalAmount": "Monto Total",
+    "status": "Estado",
+    "actions": "Acciones",
+    "markAsReady": "Marcar como Listo para Recoger",
+    "viewDetails": "Ver Detalles"
+  },
+  "customer": {
+    "addCustomer": "Añadir Cliente",
+    "customerList": "Lista de Clientes",
+    "searchCustomers": "Buscar Clientes"
+  },
+  "payment": {
+    "recordPayment": "Registrar Pago",
+    "paymentHistory": "Historial de Pagos",
+    "amount": "Monto",
+    "date": "Fecha",
+    "status": "Estado"
+  },
+  "admin": {
+    "userManagement": "Gestión de Usuarios",
+    "settings": "Configuración",
+    "notifications": "Notificaciones"
+  },
+  "buttons": {
+    "save": "Guardar Cambios",
+    "create": "Crear",
+    "cancel": "Cancelar",
+    "next": "Siguiente",
+    "back": "Atrás",
+    "login": "Iniciar Sesión",
+    "confirm": "Confirmar"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Ocurrió un error",
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Guardar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "view": "Ver",
+    "close": "Cerrar"
+  },
+  "orderList": {
+    "orderList": "Lista de Pedidos"
+  },
+  "customerList": {
+    "customerList": "Lista de Clientes",
+    "searchCustomers": "Buscar Clientes"
+  },
+  "paymentList": {
+    "paymentList": "Lista de Pagos",
+    "amount": "Monto",
+    "date": "Fecha",
+    "status": "Estado"
+  }
+}

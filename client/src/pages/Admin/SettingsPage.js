@@ -1,12 +1,105 @@
 // client/src/pages/Admin/SettingsPage.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { fetchAppSettings, updateAppSettingsApi } from '../../services/api';
+import { fetchAppSettings, updateAppSettingsApi, getMyTenantProfileApi, updateMyTenantProfileApi } from '../../services/api';
 import Card from '../../components/UI/Card';
 import Input from '../../components/UI/Input';
 import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
 import Select from '../../components/UI/Select'; 
 import { Save, Settings as SettingsIcon, AlertTriangle, CheckCircle2 } from 'lucide-react';
+ const PublicProfileManager = () => {
+    const [profile, setProfile] = useState({
+        name: '', publicAddress: '', publicPhone: '', publicEmail: '',
+        city: '', country: '', description: '', logoUrl: '',
+        isListedInDirectory: true,
+    });
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+
+    useEffect(() => {
+        const loadProfile = async () => {
+            setLoading(true); setError('');
+            try {
+                const { data } = await getMyTenantProfileApi();
+                setProfile(data);
+            } catch (err) {
+                setError("Failed to load public profile data.");
+                console.error("Load Tenant Profile Error:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadProfile();
+    }, []);
+
+    const handleChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setProfile(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSaving(true); setError(''); setSuccess('');
+        try {
+            const { data } = await updateMyTenantProfileApi(profile);
+            setProfile(data); // Re-sync state with saved data from backend
+            setSuccess("Public profile updated successfully!");
+        } catch (err) {
+            setError(err.response?.data?.message || "Failed to save profile.");
+            console.error("Save Tenant Profile Error:", err);
+        } finally {
+            setSaving(false);
+            setTimeout(() => { setSuccess(''); setError(''); }, 4000);
+        }
+    };
+
+    if (loading) return <div className="p-4 text-center"><Spinner /></div>;
+    if (error && !loading) return <div className="p-3 m-4 text-sm bg-red-100 text-apple-red rounded-apple flex items-center"><AlertTriangle size={18} className="mr-2"/>{error}</div>
+
+    return (
+        <Card title="Public Directory Profile" className="mb-8 shadow-apple-md">
+            <form onSubmit={handleSubmit}>
+                {success && <p className="p-3 mb-4 text-sm bg-green-100 text-apple-green rounded-apple flex items-center"><CheckCircle2 size={18} className="mr-2"/>{success}</p>}
+                <p className="text-sm text-apple-gray-500 dark:text-apple-gray-400 mb-4">
+                    This information will be visible to the public on the PressFlow Business Directory page.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    <Input label="Public Business Name" id="name" name="name" value={profile.name || ''} onChange={handleChange} />
+                    <Input label="Public Phone" id="publicPhone" name="publicPhone" value={profile.publicPhone || ''} onChange={handleChange} />
+                    <Input label="Public Email" id="publicEmail" name="publicEmail" type="email" value={profile.publicEmail || ''} onChange={handleChange} />
+                    <Input label="City" id="city" name="city" value={profile.city || ''} onChange={handleChange} />
+                    <Input label="Country" id="country" name="country" value={profile.country || ''} onChange={handleChange} />
+                    <div className="md:col-span-2">
+                        <Input label="Public Address" id="publicAddress" name="publicAddress" value={profile.publicAddress || ''} onChange={handleChange} />
+                    </div>
+                    <div className="md:col-span-2">
+                        <Input label="Logo URL" id="logoUrl" name="logoUrl" value={profile.logoUrl || ''} onChange={handleChange} helperText="A direct link to your company logo image (e.g., from your website)." />
+                    </div>
+                     <div className="md:col-span-2">
+                        <label htmlFor="description" className="block text-sm font-medium">Short Description</label>
+                        <textarea id="description" name="description" rows="3" value={profile.description || ''} onChange={handleChange} className="form-textarea mt-1 block w-full" placeholder="A short bio about your business..." />
+                    </div>
+                    <div className="md:col-span-2 flex items-center space-x-3 mt-2">
+                        <input
+                            type="checkbox"
+                            id="isListedInDirectory"
+                            name="isListedInDirectory"
+                            checked={profile.isListedInDirectory}
+                            onChange={handleChange}
+                            className="form-checkbox h-5 w-5 text-apple-blue"
+                        />
+                        <label htmlFor="isListedInDirectory" className="text-sm font-medium">List my business in the public directory</label>
+                    </div>
+                </div>
+                <div className="flex justify-end pt-6">
+                    <Button type="submit" isLoading={saving} iconLeft={<Save size={16} />}>Save Public Profile</Button>
+                </div>
+            </form>
+        </Card>
+    );
+};
 
 const SettingsPage = () => {
     const [settings, setSettings] = useState({
@@ -131,7 +224,7 @@ const SettingsPage = () => {
                     Application Settings
                 </h1>
             </div>
-
+             <PublicProfileManager />
             {successMessage && ( <div className="p-3 mb-4 bg-green-100 text-apple-green rounded-apple border border-green-300 dark:border-green-700 dark:text-green-300 dark:bg-green-900/30"> <div className="flex items-center"><CheckCircle2 size={20} className="mr-2 flex-shrink-0" /><span>{successMessage}</span></div> </div> )}
             {error && !successMessage && ( <div className="p-3 mb-4 bg-red-100 text-apple-red rounded-apple border border-red-300 dark:border-red-700 dark:text-red-300 dark:bg-red-900/30"> <div className="flex items-center"><AlertTriangle size={20} className="mr-2 flex-shrink-0" /><span>{error}</span></div> </div> )}
 

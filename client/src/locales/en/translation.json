@@ -72,6 +72,15 @@
     "settings": "Settings",
     "notifications": "Notifications"
   },
+  "buttons": {
+    "save": "Save Changes",
+    "create": "Create",
+    "cancel": "Cancel",
+    "next": "Next",
+    "back": "Back",
+    "login": "Login",
+    "confirm": "Confirm"
+  },
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",

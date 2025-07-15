@@ -27,7 +27,7 @@ const LandingPage = () => {
                             The all-in-one management system for order tracking, customer notifications, and payment handling. Spend less time managing, more time growing.
                         </p>
                         <div className="flex justify-center space-x-4">
-                            <Link to="/signup" className="bg-apple-blue text-white px-8 py-3 rounded-apple font-semibold hover:bg-sky-600 transition-transform transform hover:scale-105 shadow-apple-lg">
+                            <Link to="/pricing" className="bg-apple-blue text-white px-8 py-3 rounded-apple font-semibold hover:bg-sky-600 transition-transform transform hover:scale-105 shadow-apple-lg">
                                 Get Started for Free
                             </Link>
                             <Link to="/features" className="bg-white dark:bg-apple-gray-800 text-apple-blue dark:text-white px-8 py-3 rounded-apple font-semibold hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700 transition-transform transform hover:scale-105 shadow-apple-lg">
@@ -87,7 +87,7 @@ const LandingPage = () => {
                     <p className="text-lg text-apple-gray-600 dark:text-apple-gray-300 mt-2 mb-8">
                         Join dozens of other laundry services simplifying their workflow with PressFlow.
                     </p>
-                    <Link to="/signup" className="bg-apple-blue text-white px-10 py-4 rounded-apple font-semibold text-lg hover:bg-sky-600 transition-transform transform hover:scale-105 shadow-apple-xl">
+                    <Link to="/pricing" className="bg-apple-blue text-white px-10 py-4 rounded-apple font-semibold text-lg hover:bg-sky-600 transition-transform transform hover:scale-105 shadow-apple-xl">
                         Start Your Free Trial
                     </Link>
                 </div>

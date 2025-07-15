@@ -1,0 +1,95 @@
+{
+  "sidebar": {
+    "dashboard": "डैशबोर्ड",
+    "newOrder": "नया ऑर्डर",
+    "customers": "ग्राहक",
+    "payments": "भुगतान",
+    "adminArea": "एडमिन क्षेत्र",
+    "settings": "सेटिंग्स"
+  },
+  "dashboard": {
+    "title": "डैशबोर्ड",
+    "totalOrders": "कुल ऑर्डर",
+    "pendingProcessing": "लंबित/प्रसंस्करण में",
+    "readyForPickup": "पिकअप के लिए तैयार",
+    "overdueOrders": "अतिदेय ऑर्डर",
+    "orderList": "ऑर्डर सूची"
+  },
+  "login": {
+    "title": "स्टाफ लॉगिन",
+    "usernameLabel": "उपयोगकर्ता नाम",
+    "passwordLabel": "पासवर्ड",
+    "loginButton": "लॉग इन करें"
+  },
+  "landing": {
+      "headline": "अपने प्रेसिंग व्यवसाय को सुव्यवस्थित करें।",
+      "subheadline": "ऑर्डर लॉगिंग और भुगतान ट्रैकिंग से लेकर ग्राहक सूचनाओं तक, प्रेसफ्लो आपके लॉन्ड्री और ड्राई क्लीनिंग संचालन को सहजता से प्रबंधित करने के लिए एक ऑल-इन-वन सिस्टम है।"
+  },
+  "settings": {
+    "title": "सेटिंग्स",
+    "generalSettings": "सामान्य सेटिंग्स",
+    "currencySymbol": "मुद्रा चिह्न",
+    "saveChanges": "बदलाव सहेजें",
+    "profilePicture": "प्रोफ़ाइल चित्र",
+    "uploadNewPicture": "नया चित्र अपलोड करें"
+  },
+  "notifications": {
+    "newOrder": "नया ऑर्डर प्राप्त हुआ",
+    "orderReady": "ऑर्डर पिकअप के लिए तैयार है",
+    "paymentReceived": "भुगतान प्राप्त हुआ"
+  },
+  "auth": {
+    "loginError": "अमान्य उपयोगकर्ता नाम या पासवर्ड",
+    "logoutSuccess": "आप सफलतापूर्वक लॉग आउट हो गए हैं",
+    "profileUpdated": "प्रोफ़ाइल सफलतापूर्वक अपडेट की गई",
+    "passwordChanged": "पासवर्ड सफलतापूर्वक बदल दिया गया"
+  },
+  "order": {
+    "newOrder": "नया ऑर्डर",
+    "customerName": "ग्राहक का नाम",
+    "orderDetails": "ऑर्डर का विवरण",
+    "totalAmount": "कुल राशि",
+    "status": "स्थिति",
+    "actions": "कार्रवाइयाँ",
+    "markAsReady": "पिकअप के लिए तैयार के रूप में चिह्नित करें",
+    "viewDetails": "विवरण देखें"
+  },
+  "customer": {
+    "addCustomer": "ग्राहक जोड़ें",
+    "customerList": "ग्राहक सूची",
+    "searchCustomers": "ग्राहक खोजें"
+  },
+  "payment": {
+    "recordPayment": "भुगतान रिकॉर्ड करें",
+    "paymentHistory": "भुगतान इतिहास",
+    "amount": "राशि",
+    "date": "तारीख",
+    "status": "स्थिति"
+  },
+  "admin": {
+    "userManagement": "उपयोगकर्ता प्रबंधन",
+    "settings": "सेटिंग्स",
+    "notifications": "सूचनाएं"
+  },
+  "buttons": {
+    "save": "बदलाव सहेजें",
+    "create": "बनाएं",
+    "cancel": "रद्द करें",
+    "next": "अगला",
+    "back": "वापस",
+    "login": "लॉग इन करें",
+    "confirm": "पुष्टि करें"
+  },
+  "common": {
+    "loading": "लोड हो रहा है...",
+    "error": "एक त्रुटि हुई",
+    "success": "सफलता",
+    "cancel": "रद्द करें",
+    "confirm": "पुष्टि करें",
+    "save": "सहेजें",
+    "edit": "संपादित करें",
+    "delete": "हटाएं",
+    "view": "देखें",
+    "close": "बंद करें"
+  }
+}
