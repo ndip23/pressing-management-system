@@ -5,6 +5,8 @@ import { useAuth } from './contexts/AuthContext';
 import MainLayout from './components/Layout/MainLayout';
 import Spinner from './components/UI/Spinner';
 import PublicLayout from './components/Layout/PublicLayout';
+import DirectoryLayout from './components/Layout/DirectoryLayout'; // Import the new layout
+
 
 
 // Page Imports (Lazy Loaded)
@@ -23,6 +25,8 @@ const FeaturesPage = lazy(() => import('./pages/Public/FeaturesPage'));
 const PricingPage = lazy(() => import('./pages/Public/PricingPage'));
 const SignUpPage = lazy(() => import('./pages/Public/SignUpPage'));
 const DirectoryPage = lazy(() => import('./pages/Public/DirectoryPage'));
+const BusinessProfilePage = lazy(() => import('./pages/Public/BusinessProfilePage'));
+
 
 const CustomerListPage = lazy(() => import('./pages/Customers/CustomerListPage'));
 const CustomerFormPage = lazy(() => import('./pages/Customers/CustomerFormPage'));
@@ -53,8 +57,11 @@ function App() {
                         <Route path="/" element={<LandingPage />} />
                         <Route path="/features" element={<FeaturesPage />} />
                         <Route path="/pricing" element={<PricingPage />} />
+                    </Route>
                         <Route path="/signup" element={<SignUpPage />} />
-                        <Route path="/directory" element={<DirectoryPage />} /> 
+                        <Route path="/directory" element={<DirectoryLayout />}>
+                        <Route index element={<DirectoryPage />} />
+                        <Route path="business/:slug" element={<BusinessProfilePage />} />
                     </Route>
 
                     {/* Standalone Login Page */}
