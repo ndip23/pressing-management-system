@@ -18,6 +18,39 @@ const tenantSchema = new mongoose.Schema({
         type: Boolean,
         default: true,
     },
+    publicAddress: { 
+        type: String, 
+        trim: true 
+    }, 
+    publicPhone: { 
+        type: String, 
+        trim: true 
+    },   
+    publicEmail: { 
+        type: String, 
+        trim: true, 
+        lowercase: true },
+    city: { 
+        type: String, 
+        trim: true, 
+        index: true 
+    }, 
+    country: { 
+        type: String, 
+        trim: true 
+    },
+    description: { 
+        type: String, 
+        trim: true 
+    }, 
+    logoUrl: { 
+        type: String 
+    }, 
+    isListedInDirectory: { 
+        type: Boolean, 
+        default: true, 
+        index: true 
+    }, 
     stripeCustomerId: {
         type: String,
     },

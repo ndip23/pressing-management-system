@@ -4,4 +4,5 @@ import {initiateRegistration, finalizeRegistration } from '../controllers/public
 const router = express.Router();
 router.post('/initiate-registration', initiateRegistration); // Step 1
 router.post('/finalize-registration', finalizeRegistration);
+router.get('/directory', getPublicDirectory);
 export default router;

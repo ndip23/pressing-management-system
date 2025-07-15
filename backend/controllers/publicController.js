@@ -147,8 +147,31 @@ const finalizeRegistration = asyncHandler(async (req, res) => {
         session.endSession();
     }
 });
+// @desc    Get a list of publicly listed businesses for the directory
+// @route   GET /api/public/directory
+// @access  Public
+const getPublicDirectory = asyncHandler(async (req, res) => {
+    const { city, search } = req.query;
+    let query = {
+        isActive: true, // Only show active businesses
+        isListedInDirectory: true // Only show businesses that opted-in
+    };
+
+    if (city) {
+        query.city = { $regex: city, $options: 'i' };
+    }
+    if (search) {
+        query.name = { $regex: search, $options: 'i' };
+    }
+
+    const tenants = await Tenant.find(query)
+        .sort({ name: 1 })
+        .select('name publicAddress publicPhone publicEmail city country description logoUrl'); // Only send public fields
+
+    res.json(tenants);
+});
 
 // Rename functions to match what your routes and API services expect
 export {
-  initiateRegistration, finalizeRegistration
+  initiateRegistration, finalizeRegistration, getPublicDirectory
 };
