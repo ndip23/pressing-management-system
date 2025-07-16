@@ -16,6 +16,8 @@ import adminNotificationRoutes from './routes/adminNotificationRoutes.js';
 import reportRoutes from './routes/reportRoutes.js'; 
 import priceRoutes from './routes/priceRoutes.js';
 import tenantProfileRoutes from './routes/tenantProfileRoutes.js';
+import webhookRoutes from './routes/webhookRoutes.js';
+import inboundMessageRoutes from './routes/inboundMessageRoutes.js';
 // Import scheduler
 import { startOrderChecks } from './schedulers/orderChecker.js'; 
 
@@ -58,6 +60,8 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/admin-notifications', adminNotificationRoutes); // MOUNTED
 app.use('/api/reports', reportRoutes);
 app.use('/api/tenant-profile', tenantProfileRoutes);
+app.use('/api/webhooks', webhookRoutes);
+app.use('/api/inbound-messages', inboundMessageRoutes);
 
 // Error handling middleware (should be last for API routes)
 app.use(notFound);
