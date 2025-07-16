@@ -139,4 +139,7 @@ export const getMyTenantProfileApi = async () => {
 export const updateMyTenantProfileApi = async (profileData) => {
     return api.put('/tenant-profile', profileData);
 };
+export const fetchInboundMessagesApi = async (page = 1, pageSize = 25) => {
+    return api.get('/inbound-messages', { params: { page, pageSize } });
+};
 export default api;

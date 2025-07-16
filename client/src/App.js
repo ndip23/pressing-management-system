@@ -33,6 +33,7 @@ const CustomerFormPage = lazy(() => import('./pages/Customers/CustomerFormPage')
 const CustomerDetailsPage = lazy(() => import('./pages/Customers/CustomerDetailsPage'));
 const DailyPaymentsPage = lazy(() => import('./pages/Reports/DailyPaymentsPage'));
 const PricingSettingsPage = lazy(() => import('./pages/Admin/PricingPage.js'));
+const InboxPage = lazy(() => import('./pages/Messaging/InboxPage'));
 // Route Protection Components
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated, loading } = useAuth();
@@ -75,6 +76,7 @@ function App() {
                         <Route path="orders/:id" element={<OrderDetailsPage />} />
                         <Route path="orders/:id/edit" element={<EditOrderPage />} />
                         <Route path="payments" element={<DailyPaymentsPage />} />
+                        <Route path="inbox" element={<InboxPage />} />
                         
                         {/* Customer Routes */}
                         <Route path="customers" element={<CustomerListPage />} />

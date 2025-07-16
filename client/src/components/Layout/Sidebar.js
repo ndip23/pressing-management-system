@@ -11,7 +11,8 @@ import {
     CreditCard, // This was for a placeholder "Payments" link, remove if not used
     X,
     KeyRound,
-    Tags           // For closing sidebar on mobile
+    Tags,
+    Inbox          // For closing sidebar on mobile
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext'; // To conditionally show Admin section
 import Button from '../UI/Button';
@@ -85,6 +86,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                     {/* MODIFIED: "Manage Users" is now "Customers" and points to /customers */}
                     <NavItem to="/app/customers" icon={Users}>Customers</NavItem>
                     <NavItem to="/app/payments" icon={CreditCard}>Payments</NavItem>
+                    <NavItem to="/app/inbox" icon={Inbox}>Inbox</NavItem>
                     {/* If you still wanted a placeholder for Payments, it would go here */}
                     {/* <NavItem to="/payments" icon={CreditCard} disabled={true}>Payments (Soon)</NavItem> */}
 
