@@ -170,8 +170,20 @@ const getPublicDirectory = asyncHandler(async (req, res) => {
 
     res.json(tenants);
 });
+const getBusinessBySlug = asyncHandler(async (req, res) => {
+    const tenant = await Tenant.findOne({
+        slug: req.params.slug,
+        isActive: true,
+        isListedInDirectory: true,
+    }).select('name publicAddress publicPhone publicEmail city country description logoUrl'); // Only public fields
+
+    if (!tenant) {
+        res.status(404); throw new Error('Business profile not found.');
+    }
+    res.json(tenant);
+});
 
 // Rename functions to match what your routes and API services expect
 export {
-  initiateRegistration, finalizeRegistration, getPublicDirectory
+  initiateRegistration, finalizeRegistration, getPublicDirectory,getBusinessBySlug
 };

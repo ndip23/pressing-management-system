@@ -9,6 +9,12 @@ const tenantSchema = new mongoose.Schema({
         trim: true,
         unique: true,
     },
+    slug: { 
+        type: String,
+        required: true,
+        unique: true,
+        index: true,
+    },
     plan: {
         type: String,
         enum: ['trial', 'basic', 'pro', 'enterprise'],
@@ -76,6 +82,12 @@ tenantSchema.post('save', async function(doc, next) {
         } catch (error) {
             console.error(`[Tenant Post-Save Hook] FAILED to create settings for tenant ${doc._id}. Error: ${error.message}`);
         }
+    }
+    next();
+});
+tenantSchema.pre('save', function(next) {
+    if (this.isModified('name') || this.isNew) {
+        this.slug = this.name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
     }
     next();
 });
