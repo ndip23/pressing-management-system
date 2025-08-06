@@ -9,4 +9,5 @@ Thumbs.db
 *.user
 *.sln
 *.ide
-.desktop-app/
+/desktop-app
+/PressFlowMobile

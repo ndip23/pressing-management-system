@@ -83,7 +83,6 @@ function App() {
                         <Route path="customers/new" element={<CustomerFormPage mode="create" />} />
                         <Route path="customers/:id/edit" element={<CustomerFormPage mode="edit" />} />
                         <Route path="customers/:id/details" element={<CustomerDetailsPage />} />
-                        
                         <Route path="profile" element={<ProfilePage />} />
 
                         {/* Admin Routes (nested under /app/admin) */}
