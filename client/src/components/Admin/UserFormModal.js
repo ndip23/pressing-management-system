@@ -10,9 +10,9 @@ const UserFormModal = ({
     isOpen,
     onClose,
     onSubmit,
-    userToEdit = null, // Pass null if creating, or a user object if editing
-    apiError, // A prop to receive submission errors from the parent component
-    isLoading // A prop to show loading state from the parent
+    userToEdit = null, // Pass null for create, user object for edit
+    apiError,          // Prop to receive submission errors from the parent
+    isLoading          // Prop to show loading state from the parent
 }) => {
     const [formData, setFormData] = useState({
         username: '',
@@ -26,13 +26,13 @@ const UserFormModal = ({
 
     // Effect to populate the form for editing or reset it for creation
     useEffect(() => {
-        if (isOpen) { // Reset/populate only when the modal is opened
-            setLocalError(''); // Clear local errors
+        if (isOpen) {
+            setLocalError('');
             if (userToEdit) {
                 setFormData({
                     username: userToEdit.username || '',
                     email: userToEdit.email || '',
-                    password: '', // Always clear password for security and to indicate change
+                    password: '', // Password is not pre-filled for security
                     role: userToEdit.role || 'staff',
                     isActive: userToEdit.isActive ?? true,
                 });
@@ -46,8 +46,7 @@ const UserFormModal = ({
                 });
             }
         }
-    }, [isOpen, userToEdit]); // Reruns when the modal is opened or the user to edit changes
-
+    }, [isOpen, userToEdit]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -59,9 +58,8 @@ const UserFormModal = ({
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLocalError(''); // Clear previous local errors
+        setLocalError('');
 
-        // Client-side validation
         if (!formData.username || !formData.email) {
             setLocalError("Username and Email are required fields.");
             return;
@@ -74,13 +72,10 @@ const UserFormModal = ({
             setLocalError("Password must be at least 6 characters long.");
             return;
         }
-
         // Call the parent component's submit handler
-        // The parent component is responsible for setting the API loading state and handling API errors
         await onSubmit(formData);
     };
 
-    // Construct the suffix icon for the password field
     const passwordSuffixIcon = (
         <button type="button" onClick={() => setShowPassword(!showPassword)} className="focus:outline-none" aria-label="Toggle password visibility">
             {showPassword ? <EyeOff size={18} className="text-apple-gray-500 dark:text-apple-gray-400" /> : <Eye size={18} className="text-apple-gray-500 dark:text-apple-gray-400" />}
@@ -108,6 +103,7 @@ const UserFormModal = ({
                     required
                 />
                 
+                {/* --- ADDED EMAIL FIELD --- */}
                 <Input
                     label="Email*"
                     id="email"
@@ -116,7 +112,9 @@ const UserFormModal = ({
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    placeholder="user@example.com"
                 />
+                {/* --- END OF ADDED FIELD --- */}
                 
                 <Input
                     label={userToEdit ? "New Password (optional)" : "Password*"}
@@ -125,8 +123,8 @@ const UserFormModal = ({
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={handleChange}
-                    required={!userToEdit} // Password is only required when creating, not editing (unless changing)
-                    suffixIcon={passwordSuffixIcon} // Pass the button element here
+                    required={!userToEdit}
+                    suffixIcon={passwordSuffixIcon}
                 />
 
                 <Select
