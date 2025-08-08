@@ -39,6 +39,14 @@ const userSchema = new mongoose.Schema({
     },
     profilePictureUrl: { type: String, default: '' },
     profilePictureCloudinaryId: { type: String },
+     email: {
+        type: String,
+        required: [true, 'Email is required'],
+        unique: true, // Email must be globally unique across all tenants
+        trim: true,
+        lowercase: true,
+        match: [/\S+@\S+\.\S+/, 'Please use a valid email address.'],
+    },
     // Add other fields from your controller if they exist on the model
     // e.g., email, profilePictureUrl, profilePictureCloudinaryId
 }, { timestamps: true });

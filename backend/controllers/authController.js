@@ -10,18 +10,52 @@ import { addMinutes } from 'date-fns';
 import { sendNotification } from '../services/notificationService.js'; 
 import { cloudinary } from '../config/cloudinaryConfig.js'; 
 
-// @desc    Register a new user (for an existing tenant, by an admin)
-// @route   POST /api/auth/register
-// @access  Private/Admin
 const registerUser = asyncHandler(async (req, res) => {
-    const { username, password, role } = req.body;
-    const { tenantId } = req; // Get tenantId from the admin's session
-    if (!username || !password) { res.status(400); throw new Error('Please provide username and password'); }
-    const userExists = await User.findOne({ username: username.toLowerCase(), tenantId });
-    if (userExists) { res.status(400); throw new Error('User already exists with that username in this organization.'); }
-    const user = await User.create({ tenantId, username: username.toLowerCase(), password, role: (role && ['admin', 'staff'].includes(role)) ? role : 'staff' });
-    if (user) { res.status(201).json({ _id: user._id, username: user.username, role: user.role, message: 'User registered successfully.' }); }
-    else { res.status(400); throw new Error('Invalid user data provided.'); }
+    const { username, email, password, role } = req.body; // Expect email now
+    const { tenantId } = req;
+
+    // --- Validation ---
+    if (!username || !email || !password) {
+        res.status(400); throw new Error('Please provide username, email, and password');
+    }
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+        res.status(400); throw new Error('Please provide a valid email address.');
+    }
+
+    // Check if email is globally unique or username is unique within the tenant
+    const userExists = await User.findOne({
+        $or: [
+            { email: email.toLowerCase() },
+            { username: username.toLowerCase(), tenantId: tenantId }
+        ]
+    });
+    if (userExists) {
+        if (userExists.email === email.toLowerCase()) {
+            throw new Error('A user with this email already exists.');
+        } else {
+            throw new Error('A user with this username already exists in your organization.');
+        }
+    }
+
+    const user = await User.create({
+        tenantId,
+        username: username.toLowerCase(),
+        email: email.toLowerCase(), // Save the email
+        password,
+        role: (role && ['admin', 'staff'].includes(role)) ? role : 'staff',
+    });
+
+    if (user) {
+        res.status(201).json({
+            _id: user._id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            message: 'User registered successfully.',
+        });
+    } else {
+        res.status(400); throw new Error('Invalid user data provided.');
+    }
 });
 
 // @desc    Auth user & get token (Login)

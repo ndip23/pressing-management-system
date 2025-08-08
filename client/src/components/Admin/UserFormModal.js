@@ -1,34 +1,53 @@
 // client/src/components/Admin/UserFormModal.js
 import React, { useState, useEffect } from 'react';
-import Modal from '../UI/Modal';
-import Input from '../UI/Input';
-import Select from '../UI/Select';
-import Button from '../UI/Button';
-import { Save } from 'lucide-react';
+import Modal from '../UI/Modal'; // Ensure this path is correct
+import Input from '../UI/Input';   // Ensure this path is correct
+import Select from '../UI/Select'; // Ensure this path is correct
+import Button from '../UI/Button'; // Ensure this path is correct
+import { Eye, EyeOff, AlertTriangle } from 'lucide-react'; // Import necessary icons
 
-const UserFormModal = ({ isOpen, onClose, onSave, existingUser, error, saving }) => {
+const UserFormModal = ({
+    isOpen,
+    onClose,
+    onSubmit,
+    userToEdit = null, // Pass null if creating, or a user object if editing
+    apiError, // A prop to receive submission errors from the parent component
+    isLoading // A prop to show loading state from the parent
+}) => {
     const [formData, setFormData] = useState({
         username: '',
+        email: '',
         password: '',
         role: 'staff',
         isActive: true,
     });
+    const [showPassword, setShowPassword] = useState(false);
+    const [localError, setLocalError] = useState(''); // For immediate client-side validation
 
-    const isEditMode = !!existingUser;
-
+    // Effect to populate the form for editing or reset it for creation
     useEffect(() => {
-        if (isEditMode && existingUser) {
-            setFormData({
-                username: existingUser.username || '',
-                password: '', // Password is not fetched, only set if changing
-                role: existingUser.role || 'staff',
-                isActive: existingUser.isActive !== undefined ? existingUser.isActive : true,
-            });
-        } else {
-            // Reset for create mode
-            setFormData({ username: '', password: '', role: 'staff', isActive: true });
+        if (isOpen) { // Reset/populate only when the modal is opened
+            setLocalError(''); // Clear local errors
+            if (userToEdit) {
+                setFormData({
+                    username: userToEdit.username || '',
+                    email: userToEdit.email || '',
+                    password: '', // Always clear password for security and to indicate change
+                    role: userToEdit.role || 'staff',
+                    isActive: userToEdit.isActive ?? true,
+                });
+            } else {
+                setFormData({
+                    username: '',
+                    email: '',
+                    password: '',
+                    role: 'staff',
+                    isActive: true,
+                });
+            }
         }
-    }, [existingUser, isEditMode, isOpen]); // Rerun effect when modal opens or user data changes
+    }, [isOpen, userToEdit]); // Reruns when the modal is opened or the user to edit changes
+
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -38,67 +57,110 @@ const UserFormModal = ({ isOpen, onClose, onSave, existingUser, error, saving })
         }));
     };
 
-    const handleSave = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        onSave(formData);
+        setLocalError(''); // Clear previous local errors
+
+        // Client-side validation
+        if (!formData.username || !formData.email) {
+            setLocalError("Username and Email are required fields.");
+            return;
+        }
+        if (!userToEdit && !formData.password) {
+            setLocalError("Password is required when creating a new user.");
+            return;
+        }
+        if (formData.password && formData.password.length < 6) {
+            setLocalError("Password must be at least 6 characters long.");
+            return;
+        }
+
+        // Call the parent component's submit handler
+        // The parent component is responsible for setting the API loading state and handling API errors
+        await onSubmit(formData);
     };
 
+    // Construct the suffix icon for the password field
+    const passwordSuffixIcon = (
+        <button type="button" onClick={() => setShowPassword(!showPassword)} className="focus:outline-none" aria-label="Toggle password visibility">
+            {showPassword ? <EyeOff size={18} className="text-apple-gray-500 dark:text-apple-gray-400" /> : <Eye size={18} className="text-apple-gray-500 dark:text-apple-gray-400" />}
+        </button>
+    );
+
     return (
-        <Modal
-            isOpen={isOpen}
-            onClose={onClose}
-            title={isEditMode ? `Edit User: ${existingUser.username}` : 'Add New User'}
-        >
-            <form onSubmit={handleSave}>
-                {error && <p className="p-3 mb-4 text-sm bg-red-100 text-apple-red rounded-apple">{error}</p>}
-                <div className="space-y-4">
-                    <Input
-                        label="Username"
-                        id="username"
-                        name="username"
-                        value={formData.username}
-                        onChange={handleChange}
-                        required
-                    />
-                    <Input
-                        label={isEditMode ? "New Password (optional)" : "Password"}
-                        id="password"
-                        name="password"
-                        type="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        required={!isEditMode} // Password is only required when creating a new user
-                        placeholder={isEditMode ? "Leave blank to keep current" : ""}
-                    />
-                    <Select
-                        label="Role"
-                        id="role"
-                        name="role"
-                        value={formData.role}
-                        onChange={handleChange}
-                        options={[
-                            { value: 'staff', label: 'Staff' },
-                            { value: 'admin', label: 'Admin' },
-                        ]}
-                    />
-                    <div className="flex items-center">
-                        <input
-                            type="checkbox"
-                            id="isActive"
-                            name="isActive"
-                            checked={formData.isActive}
-                            onChange={handleChange}
-                            className="h-4 w-4 rounded border-gray-300 text-apple-blue focus:ring-apple-blue"
-                        />
-                        <label htmlFor="isActive" className="ml-2 block text-sm text-apple-gray-700 dark:text-apple-gray-300">
-                            Account is Active
-                        </label>
+        <Modal isOpen={isOpen} onClose={onClose} title={userToEdit ? "Edit User" : "Create New User"}>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                {(apiError || localError) && (
+                    <div className="p-3 mb-4 bg-red-100 text-apple-red rounded-apple border border-red-300 dark:border-red-700 dark:text-red-300 dark:bg-red-900/30">
+                        <div className="flex items-center">
+                            <AlertTriangle size={20} className="mr-2 flex-shrink-0" />
+                            <span>{apiError || localError}</span>
+                        </div>
                     </div>
+                )}
+
+                <Input
+                    label="Username*"
+                    id="username"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    required
+                />
+                
+                <Input
+                    label="Email*"
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                />
+                
+                <Input
+                    label={userToEdit ? "New Password (optional)" : "Password*"}
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={handleChange}
+                    required={!userToEdit} // Password is only required when creating, not editing (unless changing)
+                    suffixIcon={passwordSuffixIcon} // Pass the button element here
+                />
+
+                <Select
+                    label="Role*"
+                    id="role"
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    options={[
+                        { value: 'staff', label: 'Staff' },
+                        { value: 'admin', label: 'Admin' },
+                    ]}
+                />
+
+                <div className="flex items-center pt-2">
+                    <input
+                        id="isActive"
+                        name="isActive"
+                        type="checkbox"
+                        checked={formData.isActive}
+                        onChange={handleChange}
+                        className="h-4 w-4 rounded border-gray-300 text-apple-blue focus:ring-apple-blue"
+                    />
+                    <label htmlFor="isActive" className="ml-3 block text-sm text-apple-gray-900 dark:text-apple-gray-200">
+                        User is Active
+                    </label>
                 </div>
-                <div className="mt-6 pt-4 border-t dark:border-apple-gray-700 flex justify-end space-x-3">
-                    <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>Cancel</Button>
-                    <Button type="submit" variant="primary" isLoading={saving} iconLeft={<Save size={16}/>}>
-                        {isEditMode ? 'Save Changes' : 'Create User'}
+
+                <div className="pt-4 flex justify-end space-x-3 border-t mt-4 dark:border-apple-gray-700">
+                    <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" isLoading={isLoading}>
+                        {userToEdit ? 'Save Changes' : 'Create User'}
                     </Button>
                 </div>
             </form>

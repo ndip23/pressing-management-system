@@ -7,7 +7,7 @@ import {
     updateExistingOrder,
     sendManualNotification,
     deleteOrderApi,
-    recordPartialPaymentApi,
+    recordPaymentApi,
     fetchAppSettings
 } from '../../services/api';
 import Card from '../../components/UI/Card';
@@ -19,7 +19,7 @@ import Input from '../../components/UI/Input';
 import Select from '../../components/UI/Select';
 import {
     ArrowLeft, Edit3, Printer, DollarSign, MessageSquare, AlertTriangle,
-    CheckCircle2, Clock3, RefreshCw, User, Mail, Phone, MapPin, Trash2
+    CheckCircle2, Clock3, RefreshCw, Trash2
 } from 'lucide-react';
 import { format, parseISO, isPast, isValid as isValidDate } from 'date-fns';
 
@@ -36,12 +36,13 @@ const calculateItemPriceForReceipt = (item) => {
     let pricePerUnit = 0;
     const qty = parseInt(item.quantity, 10) || 0;
     if (qty <= 0) return 0;
+    // NOTE: This pricing logic should ideally come from a shared utility that reads from your settings/pricelist
     if (item.serviceType === 'dry clean') pricePerUnit = 3000;
     else if (item.serviceType === 'wash & iron') pricePerUnit = 2000;
     else if (item.serviceType === 'iron') pricePerUnit = 500;
     else if (item.serviceType === 'wash') pricePerUnit = 1000;
     else if (item.serviceType === 'special care') pricePerUnit = 5000;
-    else pricePerUnit = 2;
+    else pricePerUnit = 2; // Default
     if (item.itemType === 'Suit') pricePerUnit *= 2;
     else if (item.itemType === 'Coat') pricePerUnit *= 1.5;
     return parseFloat((pricePerUnit * qty).toFixed(2));
@@ -62,6 +63,7 @@ const OrderDetailsPage = () => {
     const [isSendingNotification, setIsSendingNotification] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
+    // State for the Payment Modal
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [paymentAmount, setPaymentAmount] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('Cash');
@@ -111,31 +113,42 @@ const OrderDetailsPage = () => {
                 successMsg += ` Notification sent via ${updatedOrder.notificationMethod.replace('manual-', '')}.`;
             }
             setActionSuccess(successMsg);
-        } catch (err) {
-            setActionError(err.response?.data?.message || err.message || 'Error updating status.');
+        } catch (err) { setActionError(err.response?.data?.message || err.message || 'Error updating status.');
         } finally { setIsUpdatingStatus(false); }
     };
 
     const handleOpenPaymentModal = () => {
+        if (!order) return;
         const balance = (order.totalAmount || 0) - (order.amountPaid || 0);
         setPaymentAmount(balance > 0 ? balance.toFixed(2) : '');
         setPaymentMethod('Cash');
         setShowPaymentModal(true);
+        setActionError(''); // Clear any errors
     };
 
     const handleRecordPaymentSubmit = async (e) => {
         e.preventDefault();
+        const amountToPay = parseFloat(paymentAmount);
+        if (isNaN(amountToPay) || amountToPay <= 0) {
+            // This error should ideally be displayed inside the modal
+            alert("Please enter a valid, positive payment amount.");
+            return;
+        }
+
         setIsRecordingPayment(true);
         setActionError('');
         try {
-            const payload = { amount: parseFloat(paymentAmount), method: paymentMethod };
-            const { data: updatedOrder } = await recordPartialPaymentApi(order._id, payload);
-            setOrder(updatedOrder);
-            setShowPaymentModal(false);
-            setPaymentAmount('');
+            const payload = { amount: amountToPay, method: paymentMethod };
+            const { data: updatedOrder } = await recordPaymentApi(order._id, payload);
+            setOrder(updatedOrder); // Update the main order state with the response
+            setShowPaymentModal(false); // Close the modal
+            setPaymentAmount(''); // Reset form field
             setActionSuccess(`Payment of ${settings.defaultCurrencySymbol || '$'}${payload.amount.toFixed(2)} recorded successfully.`);
         } catch (err) {
+            // For now, this error appears on the main page after the modal closes.
+            // A better UX would be to have an error state for the modal itself.
             setActionError(err.response?.data?.message || "Failed to record payment.");
+            setShowPaymentModal(false); // Also close modal on error
         } finally {
             setIsRecordingPayment(false);
         }
@@ -145,15 +158,9 @@ const OrderDetailsPage = () => {
         if (!order?.customer || (!order.customer.email && !order.customer.phone)) { setActionError("Customer contact information is missing."); return; }
         if (isSendingNotification) return;
         setIsSendingNotification(true); setActionError(''); setActionSuccess('');
-        try {
-            const { data } = await sendManualNotification(order._id);
-            setOrder(data.order);
-            setActionSuccess(data.message);
-        } catch (err) {
-            setActionError(err.response?.data?.message || err.message || "Failed to send notification.");
-        } finally {
-            setIsSendingNotification(false);
-        }
+        try { const { data } = await sendManualNotification(order._id); setOrder(data.order); setActionSuccess(data.message); }
+        catch (err) { setActionError(err.response?.data?.message || err.message || "Failed to send notification."); }
+        finally { setIsSendingNotification(false); }
     };
 
     const handleDeleteOrder = async () => {
@@ -192,14 +199,13 @@ const OrderDetailsPage = () => {
             <div className="print-hide">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div className="flex items-center space-x-2"> <Button variant="ghost" onClick={() => navigate(-1)} className="p-1.5 -ml-1.5" aria-label="Go back"><ArrowLeft size={20} /></Button> <div><h1 className="text-2xl sm:text-3xl font-semibold">Order Details</h1><p className="text-sm text-apple-gray-500 dark:text-apple-gray-400">Receipt # {order.receiptNumber}</p></div> </div>
-                    <div className="flex items-center space-x-2"> {/*<Button variant="secondary" onClick={() => loadData(false)} iconLeft={<RefreshCw size={16}/>} isLoading={loading && !!order} disabled={loading && !!order}>Refresh</Button>*/} <Button variant="secondary" onClick={handlePrintReceipt} iconLeft={<Printer size={16}/>}>Print Receipt</Button> {/*<Link to={`/app/orders/${order._id}/edit`}><Button variant="primary" iconLeft={<Edit3 size={16}/>}>Edit Order</Button></Link>*/} </div>
+                    <div className="flex items-center space-x-2"> <Button variant="secondary" onClick={() => loadData(false)} iconLeft={<RefreshCw size={16}/>} isLoading={loading && !!order} disabled={loading && !!order}>Refresh</Button> <Button variant="secondary" onClick={handlePrintReceipt} iconLeft={<Printer size={16}/>}>Print Receipt</Button> <Link to={`/app/orders/${order._id}/edit`}>{/*<Button variant="primary" iconLeft={<Edit3 size={16}/>}>Edit Order</Button>*/}</Link> </div>
                 </div>
                 {isOrderOverdue && (<Card className="bg-red-100 dark:bg-red-900/40 border-2 border-red-400 dark:border-red-600 shadow-lg animate-pulse-slow"><div className="flex items-center p-4"><AlertTriangle size={32} className="text-red-600 dark:text-red-400 mr-4 flex-shrink-0" /><div><h3 className="text-lg font-semibold text-red-700 dark:text-red-300">Order Overdue!</h3>{order.expectedPickupDate && <p className="text-sm text-red-600 dark:text-red-500">Expected: {formatDateSafe(order.expectedPickupDate)}</p>}</div></div></Card>)}
                 {actionSuccess && ( <div className="p-3 mb-4 bg-green-100 text-apple-green rounded-apple border border-green-300 dark:border-green-700 dark:text-green-300 dark:bg-green-900/30"> <div className="flex items-center"><CheckCircle2 size={20} className="mr-2 flex-shrink-0" /><span>{actionSuccess}</span></div> </div> )}
                 {actionError && ( <div className="p-3 mb-4 bg-red-100 text-apple-red rounded-apple border border-red-300 dark:border-red-700 dark:text-red-300 dark:bg-red-900/30"> <div className="flex items-center"><AlertTriangle size={20} className="mr-2 flex-shrink-0" /><span>{actionError}</span></div> </div> )}
             </div>
 
-            {/* Hidden on screen, shown for printing */}
             <div id="printable-receipt-area" className="hidden print:block">
                 <div className="text-center mb-6 company-info-print"> <h2 className="text-xl font-bold text-black">{settings.companyInfo.name}</h2> <p className="text-xs text-gray-700">{settings.companyInfo.address}</p> <p className="text-xs text-gray-700">Phone: {settings.companyInfo.phone}</p> <hr className="my-3 border-dashed border-gray-400" /> </div>
                 <div className="grid grid-cols-2 gap-x-4 mb-4 text-xs"> <div><span className="font-semibold">Receipt #:</span> {order.receiptNumber}</div> <div className="text-right"><span className="font-semibold">Date:</span> {formatDateSafe(order.createdAt)}</div> <div><span className="font-semibold">Customer:</span> {order.customer?.name}</div> <div className="text-right">{order.customer?.phone && <><span className="font-semibold">Phone:</span> {order.customer.phone}</>}</div> </div>
@@ -258,12 +264,12 @@ const OrderDetailsPage = () => {
                 </div>
                 <div className="lg:col-span-1 space-y-6">
                     <Card title="Items in Order" contentClassName="p-4 sm:p-6">
-                        {order.items && order.items.length > 0 ? ( <ul className="divide-y divide-apple-gray-200 dark:divide-apple-gray-700"> {order.items.map((item, index) => ( <li key={item._id || index} className="py-3"> <div className="flex justify-between items-start"> <div> <p className="text-sm font-medium text-apple-gray-900 dark:text-apple-gray-100">{item.quantity}x {item.itemType}</p> <p className="text-xs text-apple-gray-500 dark:text-apple-gray-400">Service: {item.serviceType}</p> </div> <p className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-200">{currencySymbol}{calculateItemPriceForReceipt(item).toFixed(2)}</p> </div> {item.specialInstructions && <p className="mt-1 text-xs italic text-apple-gray-600 dark:text-apple-gray-400">Instructions: {item.specialInstructions}</p>} </li> ))} </ul>
-                        ) : <p className="text-sm text-apple-gray-500 dark:text-apple-gray-400">No items found.</p>}
+                        {order.items && order.items.length > 0 ? ( <ul className="divide-y divide-apple-gray-200 dark:divide-apple-gray-700"> {order.items.map((item, index) => ( <li key={item._id || index} className="py-3"> <div className="flex justify-between items-start"> <div> <p className="text-sm font-medium">{item.quantity}x {item.itemType}</p> <p className="text-xs text-apple-gray-500 dark:text-apple-gray-400">Service: {item.serviceType}</p> </div> <p className="text-sm font-medium">{currencySymbol}{calculateItemPriceForReceipt(item).toFixed(2)}</p> </div> {item.specialInstructions && <p className="mt-1 text-xs italic">Instructions: {item.specialInstructions}</p>} </li> ))} </ul>
+                        ) : <p className="text-sm">No items found.</p>}
                     </Card>
                     <Card title="Order Actions" contentClassName="p-4 sm:p-6">
                         <div className="space-y-3">
-                            <h4 className="text-sm font-medium mb-1 text-apple-gray-600 dark:text-apple-gray-300">Update Status:</h4>
+                            <h4 className="text-sm font-medium mb-1">Update Status:</h4>
                             <div className="grid grid-cols-2 gap-2">
                                 {['Pending', 'Processing', 'Ready for Pickup', 'Completed', 'Cancelled'].map(status => (
                                     <Button key={status} variant={order.status === status ? "primary" : "secondary"} size="sm" onClick={() => handleUpdateStatus(status)}
@@ -273,7 +279,7 @@ const OrderDetailsPage = () => {
                                     </Button>
                                 ))}
                             </div>
-                            <hr className="my-3 border-apple-gray-200 dark:border-apple-gray-700"/>
+                            <hr className="my-3"/>
                             {!order.isFullyPaid && !['Completed', 'Cancelled'].includes(order.status) && (
                                 <Button variant="secondary" className="w-full" iconLeft={<DollarSign size={16}/>} onClick={handleOpenPaymentModal}>Record Payment</Button>
                             )}
@@ -284,17 +290,17 @@ const OrderDetailsPage = () => {
                                 isLoading={isSendingNotification}>
                                 {order.notified && !order.notificationMethod?.startsWith('failed-') ? 'Resend Notification' : 'Send Notification'}
                             </Button>
-                           {/*{user?.role === 'admin' && ( <> <hr className="my-3 border-apple-gray-200 dark:border-apple-gray-700"/> <Button variant="danger" className="w-full" iconLeft={<Trash2 size={16}/>} onClick={handleDeleteOrder} isLoading={isDeleting} disabled={isDeleting}> Delete This Order </Button> </> )}*/}
+                           {user?.role === 'admin' && ( <> <hr className="my-3"/> {/*<Button variant="danger" className="w-full" iconLeft={<Trash2 size={16}/>} onClick={handleDeleteOrder} isLoading={isDeleting} disabled={isDeleting}> Delete This Order </Button>*/} </> )}
                         </div>
                     </Card>
                 </div>
             </div>
 
-            {showPaymentModal && (
+            {showPaymentModal && order && (
                 <Modal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} title={`Record Payment for Order #${order.receiptNumber}`}>
                     <form onSubmit={handleRecordPaymentSubmit}>
                         <div className="space-y-4">
-                            <div className="p-3 bg-apple-gray-100 dark:bg-apple-gray-800 rounded-md text-sm"><div className="flex justify-between"><span>Total Amount:</span><span>{currencySymbol}{(order.totalAmount || 0).toFixed(2)}</span></div><div className="flex justify-between"><span>Currently Paid:</span><span>{currencySymbol}{(order.amountPaid || 0).toFixed(2)}</span></div><div className="flex justify-between font-semibold mt-1 pt-1 border-t"><span>Balance Due:</span><span>{currencySymbol}{balanceDueOnDetails.toFixed(2)}</span></div></div>
+                            <div className="p-3 bg-apple-gray-100 dark:bg-apple-gray-800 rounded-md text-sm"><div className="flex justify-between"><span>Total Amount:</span><span>{currencySymbol}{(order.totalAmount || 0).toFixed(2)}</span></div><div className="flex justify-between"><span>Currently Paid:</span><span>{currencySymbol}{(order.amountPaid || 0).toFixed(2)}</span></div><div className="flex justify-between font-semibold mt-1 pt-1 border-t"><span>Balance Due:</span><span className="text-apple-red">{currencySymbol}{balanceDueOnDetails.toFixed(2)}</span></div></div>
                             <Input label="Payment Amount" id="paymentAmount" type="number" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} required min="0.01" step="0.01" prefix={currencySymbol}/>
                             <Select label="Payment Method" id="paymentMethod" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} options={[{ value: 'Cash', label: 'Cash' }, { value: 'Card', label: 'Credit/Debit Card' }, { value: 'Mobile Money', label: 'Mobile Money' }, { value: 'Other', label: 'Other' }]} />
                         </div>

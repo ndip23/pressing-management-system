@@ -9,7 +9,8 @@ import {
     manuallyNotifyCustomer,
     markOrderAsFullyPaid,
     markOrderAsPaid,
-    recordPartialPayment
+    recordPartialPayment,
+    recordPayment
 } from '../controllers/orderController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import { body, validationResult } from 'express-validator';
@@ -28,5 +29,7 @@ router.post('/:id/notify', protect, manuallyNotifyCustomer);
 router.put('/:id/mark-paid', protect, markOrderAsFullyPaid);
 router.put('/:id/mark-paid', protect, markOrderAsPaid); 
 router.post('/:id/payments', protect, recordPartialPayment); 
+router.post('/:id/payments', protect, recordPayment);
+
 
 export default router;

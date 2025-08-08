@@ -377,6 +377,42 @@ const recordPartialPayment = asyncHandler(async (req, res) => {
     const populatedOrder = await Order.findById(updatedOrder._id).populate('customer', 'name phone email address').populate('createdBy', 'username');
     res.json(populatedOrder);
 });
+// @desc    Record a new payment for an order
+// @route   POST /api/orders/:id/payments
+// @access  Private
+const recordPayment = asyncHandler(async (req, res) => {
+    // THIS IS WHERE THE ERROR IS HAPPENING
+    const { amount, method } = req.body; // Expecting { amount: number, method: string }
+
+    // Add validation
+    if (amount === undefined || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+        res.status(400);
+        throw new Error('A valid, positive payment amount is required.');
+    }
+
+    const order = await Order.findOne({ _id: req.params.id, tenantId: req.tenantId });
+
+    if (!order) {
+        res.status(404);
+        throw new Error('Order not found.');
+    }
+
+    // Update the amount paid
+    order.amountPaid += parseFloat(amount);
+
+    // Optional: Add a payment history record to the order if you have such a schema
+    // if (!order.paymentHistory) order.paymentHistory = [];
+    // order.paymentHistory.push({
+    //     amount: parseFloat(amount),
+    //     method: method || 'Unknown',
+    //     date: new Date()
+    // });
+
+    // The pre-save hook on the Order model will automatically update isFullyPaid
+    const updatedOrder = await order.save();
+
+    res.status(200).json(updatedOrder);
+});
 
 export {
     createOrder,
@@ -387,5 +423,6 @@ export {
     manuallyNotifyCustomer,
     markOrderAsFullyPaid,
     markOrderAsPaid,
-    recordPartialPayment
+    recordPartialPayment,
+    recordPayment
 };
