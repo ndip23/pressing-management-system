@@ -1,7 +1,7 @@
 // client/src/pages/Admin/DirectoryAdminLoginPage.js
-import React, {useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useDirectoryAuth } from '../../contexts/DirectoryAuthContext'; // Use the new context
+import { useDirectoryAuth } from '../../contexts/DirectoryAuthContext';
 import Card from '../../components/UI/Card';
 import Input from '../../components/UI/Input';
 import Button from '../../components/UI/Button';
@@ -15,9 +15,9 @@ const DirectoryAdminLoginPage = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false); // For button loading
 
-    // Redirect if already logged in
+    // This effect handles navigation AFTER authentication state is confirmed
     useEffect(() => {
         if (isDirAdminAuthenticated && !authLoading) {
             const from = location.state?.from?.pathname || "/directory-admin/dashboard";
@@ -25,22 +25,21 @@ const DirectoryAdminLoginPage = () => {
         }
     }, [isDirAdminAuthenticated, authLoading, navigate, location.state]);
 
-
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsLoading(true);
+        setIsSubmitting(true);
         setError('');
         try {
             await dirAdminLogin({ username, password });
-            // The useEffect above will handle navigation
+            // DO NOT navigate here. The useEffect will handle it.
         } catch (err) {
             setError(err.response?.data?.message || "Login failed. Please check credentials.");
         } finally {
-            setIsLoading(false);
+            setIsSubmitting(false);
         }
     };
     
-    // Show a spinner if the context is still checking auth or if already logged in and redirecting
+    // Show a spinner if the context is still doing its initial check OR if we are logged in and waiting for redirect
     if (authLoading || isDirAdminAuthenticated) {
         return <div className="flex h-screen items-center justify-center bg-apple-gray-800"><Spinner size="lg" /></div>;
     }
@@ -52,7 +51,7 @@ const DirectoryAdminLoginPage = () => {
                     {error && <p className="text-red-500 text-center">{error}</p>}
                     <Input label="Username" id="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
                     <Input label="Password" id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                    <Button type="submit" isLoading={isLoading} className="w-full">Login</Button>
+                    <Button type="submit" isLoading={isSubmitting} className="w-full">Login</Button>
                 </form>
             </Card>
         </div>
