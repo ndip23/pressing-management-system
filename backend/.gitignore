@@ -19,4 +19,5 @@ yarn-error.log*
 dist # If you use TypeScript and compile to a dist folder
 coverage
 .hashPassword.js
-.seedDirectoryAdmin.js
+seedDirectoryAdmin.js
+seedAdmin.js
