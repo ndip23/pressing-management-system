@@ -145,4 +145,34 @@ export const fetchInboundMessagesApi = async (page = 1, pageSize = 25) => {
 export const recordPaymentApi = async (orderId, paymentData) => {
     return api.post(`/orders/${orderId}/payments`, paymentData);
 };
+// Let's create a separate instance for simplicity
+const directoryAdminApi = axios.create({ baseURL: API_URL });
+directoryAdminApi.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('directoryAdminToken'); // Use the separate token
+        if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+// --- Directory Admin ---
+export const loginDirectoryAdminApi = async (credentials) => {
+    return api.post('/directory-admin/login', credentials);
+};
+
+export const getAllDirectoryListingsApi = async () => {
+    return api.get('/directory-admin/listings'); // Endpoint from directoryAdminRoutes.js
+};
+export const createDirectoryListingApi = async (listingData) => {
+    return api.post('/directory-admin/listings', listingData);
+};
+export const updateDirectoryListingApi = async (id, listingData) => {
+    return api.put(`/directory-admin/listings/${id}`, listingData);
+};
+export const deleteDirectoryListingApi = async (id) => {
+    return api.delete(`/directory-admin/listings/${id}`);
+};
 export default api;

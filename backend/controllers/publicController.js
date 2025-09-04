@@ -9,6 +9,7 @@ import Settings from '../models/Settings.js';
 import Price from '../models/Price.js';
 import { sendOtpEmail } from '../services/notificationService.js';
 import generateToken from '../utils/generateToken.js';
+import DirectoryListing from '../models/DirectoryListing.js';
 
 // --- STEP 1: INITIATE REGISTRATION & SEND OTP ---
 const initiateRegistration = asyncHandler(async (req, res) => {

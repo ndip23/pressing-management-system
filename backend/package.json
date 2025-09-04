@@ -8,7 +8,9 @@
     "start": "node server.js",
     "server": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "seed:admin": "node seedAdmin.js"
+    "seed:admin": "node seedAdmin.js",
+    "seed:dir-admin": "node seedDirectoryAdmin.js",
+    "seed:dir-admin-destroy": "node seedDirectoryAdmin.js -d" 
   },
   "keywords": [],
   "author": "",

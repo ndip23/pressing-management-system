@@ -6,8 +6,9 @@ import MainLayout from './components/Layout/MainLayout';
 import Spinner from './components/UI/Spinner';
 import PublicLayout from './components/Layout/PublicLayout';
 import DirectoryLayout from './components/Layout/DirectoryLayout'; // Import the new layout
-
-
+import DirectoryAdminLoginPage from './pages/Admin/DirectoryAdminLoginPage';
+import DirectoryAdminDashboard from './pages/Admin/DirectoryAdminDashboard';
+import DirectoryAdminRoute from './components/Auth/DirectoryAdminRoute';
 
 // Page Imports (Lazy Loaded)
 const LoginPage = lazy(() => import('./pages/Auth/LoginPage'));
@@ -19,6 +20,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const SettingsPage = lazy(() => import('./pages/Admin/SettingsPage.js'));
 const ProfilePage = lazy(() => import('./pages/User/ProfilePage'));
 const ManageUsersPage = lazy(() => import('./pages/Admin/ManageUsersPage.js'));
+const ManageDirectoryPage = lazy(() => import('./pages/Admin/ManageDirectoryPage.js'));
 
 const LandingPage = lazy(() => import('./pages/Public/LandingPage'));
 const FeaturesPage = lazy(() => import('./pages/Public/FeaturesPage'));
@@ -102,11 +104,21 @@ function App() {
                                 <PricingSettingsPage />
                              </AdminRoute>
                             } />
+                            <Route path="directory" element={
+                                <AdminRoute>
+                                    <ManageDirectoryPage />
+                                </AdminRoute>
+                            }/>
                         </Route>
                     </Route>
 
                     {/* Catch-all Not Found */}
                     <Route path="*" element={<NotFoundPage />} />
+                    {/* --- HIDDEN DIRECTORY ADMIN ROUTES --- */}
+                    <Route path="/directory-admin/login" element={<DirectoryAdminLoginPage />} />
+                    <Route element={<DirectoryAdminRoute />}>
+                        <Route path="/directory-admin/dashboard" element={<DirectoryAdminDashboard />} />
+                    </Route>
                 </Routes>
             </Suspense>
         </Router>

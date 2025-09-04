@@ -4,6 +4,7 @@
 # Environment Variables - VERY IMPORTANT
 .env
 .env.*
+
 !/.env.example # If you have an example .env file, don't ignore it
 
 # Logs
@@ -17,3 +18,5 @@ yarn-error.log*
 .DS_Store
 dist # If you use TypeScript and compile to a dist folder
 coverage
+.hashPassword.js
+.seedDirectoryAdmin.js

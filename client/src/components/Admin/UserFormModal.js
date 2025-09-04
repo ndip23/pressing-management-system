@@ -102,8 +102,6 @@ const UserFormModal = ({
                     onChange={handleChange}
                     required
                 />
-                
-                {/* --- ADDED EMAIL FIELD --- */}
                 <Input
                     label="Email*"
                     id="email"
@@ -114,7 +112,6 @@ const UserFormModal = ({
                     required
                     placeholder="user@example.com"
                 />
-                {/* --- END OF ADDED FIELD --- */}
                 
                 <Input
                     label={userToEdit ? "New Password (optional)" : "Password*"}
