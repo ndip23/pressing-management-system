@@ -10,9 +10,9 @@
   }
   .bg-gradient-hero {
     /* A nice blue-to-purple gradient inspired by modern designs */
-    background-image: linear-gradient(to right, #4f46e5, #818cf8);
+    /*background-image: linear-gradient(to right, #4f46e5, #818cf8);
     /* A different option: */
-    /* background-image: linear-gradient(to right, #007aff, #5ac8fa); */
+     background-image: linear-gradient(to right, #007aff, #5ac8fa); 
   }
   .text-shadow-sm {
     text-shadow: 0 1px 2px rgb(0 0 0 / 0.10);
