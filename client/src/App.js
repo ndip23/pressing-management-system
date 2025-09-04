@@ -1,15 +1,17 @@
 // client/src/App.js
 import React, { Suspense, lazy } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
-import { Outlet } from 'react-router-dom';
+import { DirectoryAuthProvider } from './contexts/DirectoryAuthContext'; // <-- IMPORT
 
 // --- LAYOUTS ---
 import MainLayout from './components/Layout/MainLayout';
-import PublicLayout from './pages/Public/PublicLayout'; // Changed path assuming it's a page-level layout
-import DirectoryLayout from './pages/Public/DirectoryLayout'; // Changed path assuming it's a page-level layout
+import PublicLayout from './pages/Public/PublicLayout';
+import DirectoryLayout from './pages/Public/DirectoryLayout';
 import Spinner from './components/UI/Spinner';
-import DirectoryAdminRoute from './components/Auth/DirectoryAdminRoute'; 
+
+// --- ROUTE PROTECTION ---
+import DirectoryAdminRoute from './components/Auth/DirectoryAdminRoute';
 
 // --- AUTH & STANDALONE PAGES ---
 const LoginPage = lazy(() => import('./pages/Auth/LoginPage'));
@@ -43,10 +45,7 @@ const PricingSettingsPage = lazy(() => import('./pages/Admin/PricingPage.js'));
 const ManageDirectoryPage = lazy(() => import('./pages/Admin/ManageDirectoryPage.js'));
 const DirectoryAdminDashboard = lazy(() => import('./pages/Admin/DirectoryAdminDashboard'));
 
-
-// --- ROUTE PROTECTION ---
-// Assuming this path
-
+// --- Route Protection Components ---
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated, loading } = useAuth();
     if (loading) return <div className="flex h-screen items-center justify-center"><Spinner size="lg"/></div>;
@@ -57,7 +56,7 @@ const AdminRoute = ({ children }) => {
     const { user, isAuthenticated, loading } = useAuth();
     if (loading) return <div className="flex h-screen items-center justify-center"><Spinner size="lg"/></div>;
     if (!isAuthenticated) return <Navigate to="/login" replace />;
-    return user?.role === 'admin' ? children : <Navigate to="/app/dashboard" replace />; // Redirect to app dashboard
+    return user?.role === 'admin' ? children : <Navigate to="/app/dashboard" replace />;
 };
 
 function App() {
@@ -81,7 +80,7 @@ function App() {
                     {/* --- 3. STANDALONE PUBLIC ROUTES (No standard layout) --- */}
                     <Route path="/signup" element={<SignUpPage />} />
                     <Route path="/login" element={<LoginPage />} />
-                    <Route path="/directory-admin/login" element={<DirectoryAdminLoginPage />} />
+                    {/* The Directory Admin login is now handled within its own provider group below */}
 
                     {/* --- 4. PROTECTED MAIN APPLICATION --- */}
                     <Route path="/app" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
@@ -97,10 +96,8 @@ function App() {
                         <Route path="payments" element={<DailyPaymentsPage />} />
                         <Route path="inbox" element={<InboxPage />} />
                         <Route path="profile" element={<ProfilePage />} />
-
-                        {/* --- PROTECTED ADMIN SUB-ROUTES --- */}
-                        <Route path="admin" element={<AdminRoute><Outlet /></AdminRoute>}> {/* Protects all nested routes */}
-                            <Route index element={<Navigate to="settings" replace />} /> {/* Default admin route */}
+                        <Route path="admin" element={<AdminRoute><Outlet /></AdminRoute>}>
+                            <Route index element={<Navigate to="settings" replace />} />
                             <Route path="settings" element={<SettingsPage />}/>
                             <Route path="users" element={<ManageUsersPage />}/>
                             <Route path="pricing" element={<PricingSettingsPage />}/>
@@ -108,10 +105,21 @@ function App() {
                         </Route>
                     </Route>
 
-                    {/* --- 5. HIDDEN DIRECTORY ADMIN DASHBOARD --- */}
-                    <Route element={<DirectoryAdminRoute />}>
-                        <Route path="/directory-admin/dashboard" element={<DirectoryAdminDashboard />} />
-                    </Route>
+                    {/* --- 5. HIDDEN DIRECTORY ADMIN SECTION (Wrapped in its own provider) --- */}
+                    <Route
+                        path="/directory-admin/*"
+                        element={
+                            <DirectoryAuthProvider>
+                                <Routes>
+                                    <Route path="login" element={<DirectoryAdminLoginPage />} />
+                                    <Route element={<DirectoryAdminRoute />}>
+                                        <Route path="dashboard" element={<DirectoryAdminDashboard />} />
+                                    </Route>
+                                    {/* Add other nested directory admin routes here if needed */}
+                                </Routes>
+                            </DirectoryAuthProvider>
+                        }
+                    />
 
                     {/* --- 6. CATCH-ALL NOT FOUND --- */}
                     <Route path="*" element={<NotFoundPage />} />
@@ -122,4 +130,3 @@ function App() {
 }
 
 export default App;
-
