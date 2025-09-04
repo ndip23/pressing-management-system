@@ -2,7 +2,7 @@
 import React, { Suspense, lazy } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
-import { DirectoryAuthProvider } from './contexts/DirectoryAuthContext'; // <-- IMPORT
+import { DirectoryAuthProvider } from './contexts/DirectoryAuthContext';
 
 // --- LAYOUTS ---
 import MainLayout from './components/Layout/MainLayout';
@@ -13,20 +13,16 @@ import Spinner from './components/UI/Spinner';
 // --- ROUTE PROTECTION ---
 import DirectoryAdminRoute from './components/Auth/DirectoryAdminRoute';
 
-// --- AUTH & STANDALONE PAGES ---
+// --- LAZY LOADED PAGES ---
 const LoginPage = lazy(() => import('./pages/Auth/LoginPage'));
 const SignUpPage = lazy(() => import('./pages/Public/SignUpPage'));
 const DirectoryAdminLoginPage = lazy(() => import('./pages/Admin/DirectoryAdminLoginPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
-
-// --- PUBLIC PAGES ---
 const LandingPage = lazy(() => import('./pages/Public/LandingPage'));
 const FeaturesPage = lazy(() => import('./pages/Public/FeaturesPage'));
 const PricingPage = lazy(() => import('./pages/Public/PricingPage'));
 const DirectoryPage = lazy(() => import('./pages/Public/DirectoryPage'));
 const BusinessProfilePage = lazy(() => import('./pages/Public/BusinessProfilePage'));
-
-// --- PROTECTED APP PAGES ---
 const DashboardPage = lazy(() => import('./pages/Dashboard/DashboardPage'));
 const CreateOrderPage = lazy(() => import('./pages/Orders/CreateOrderPage'));
 const OrderDetailsPage = lazy(() => import('./pages/Orders/OrderDetailsPage'));
@@ -37,52 +33,87 @@ const CustomerDetailsPage = lazy(() => import('./pages/Customers/CustomerDetails
 const ProfilePage = lazy(() => import('./pages/User/ProfilePage'));
 const DailyPaymentsPage = lazy(() => import('./pages/Reports/DailyPaymentsPage'));
 const InboxPage = lazy(() => import('./pages/Messaging/InboxPage'));
-
-// --- PROTECTED ADMIN PAGES ---
 const SettingsPage = lazy(() => import('./pages/Admin/SettingsPage.js'));
 const ManageUsersPage = lazy(() => import('./pages/Admin/ManageUsersPage.js'));
 const PricingSettingsPage = lazy(() => import('./pages/Admin/PricingPage.js'));
 const ManageDirectoryPage = lazy(() => import('./pages/Admin/ManageDirectoryPage.js'));
 const DirectoryAdminDashboard = lazy(() => import('./pages/Admin/DirectoryAdminDashboard'));
 
-// --- Route Protection Components ---
+
+// --- CORRECTED Route Protection Components ---
 const ProtectedRoute = ({ children }) => {
-    const { isAuthenticated, loading } = useAuth();
-    if (loading) return <div className="flex h-screen items-center justify-center"><Spinner size="lg"/></div>;
+    const { isAuthenticated, loading: authLoading } = useAuth();
+
+    // 1. Wait for the initial authentication check from AuthContext to finish
+    if (authLoading) {
+        return (
+            <div className="flex h-screen items-center justify-center bg-apple-gray-100 dark:bg-apple-gray-950">
+                <Spinner size="lg" />
+            </div>
+        );
+    }
+
+    // 2. After loading is finished, THEN decide to render the protected content or redirect
     return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
 const AdminRoute = ({ children }) => {
-    const { user, isAuthenticated, loading } = useAuth();
-    if (loading) return <div className="flex h-screen items-center justify-center"><Spinner size="lg"/></div>;
-    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    const { user, isAuthenticated, loading: authLoading } = useAuth();
+    
+    // 1. Wait for the initial auth check
+    if (authLoading) {
+        return (
+            <div className="flex h-screen items-center justify-center bg-apple-gray-100 dark:bg-apple-gray-950">
+                <Spinner size="lg" />
+            </div>
+        );
+    }
+
+    // 2. After loading, first check if authenticated at all
+    if (!isAuthenticated) {
+        return <Navigate to="/login" replace />;
+    }
+    
+    // 3. If authenticated, then check the role
     return user?.role === 'admin' ? children : <Navigate to="/app/dashboard" replace />;
 };
+
 
 function App() {
     return (
         <Router>
-            <Suspense fallback={<div className="flex h-screen items-center justify-center"><Spinner size="lg" /></div>}>
+            <Suspense fallback={<div className="flex h-screen items-center justify-center bg-apple-gray-100 dark:bg-apple-gray-950"><Spinner size="lg" /></div>}>
                 <Routes>
-                    {/* --- 1. SaaS MARKETING & PUBLIC ROUTES --- */}
+                    {/* --- SaaS MARKETING & PUBLIC ROUTES --- */}
                     <Route element={<PublicLayout />}>
                         <Route path="/" element={<LandingPage />} />
                         <Route path="/features" element={<FeaturesPage />} />
                         <Route path="/pricing" element={<PricingPage />} />
                     </Route>
 
-                    {/* --- 2. PUBLIC DIRECTORY ROUTES --- */}
+                    {/* --- PUBLIC DIRECTORY ROUTES --- */}
                     <Route element={<DirectoryLayout />}>
                         <Route path="/directory" element={<DirectoryPage />} />
                         <Route path="/directory/:slug" element={<BusinessProfilePage />} />
                     </Route>
                     
-                    {/* --- 3. STANDALONE PUBLIC ROUTES (No standard layout) --- */}
+                    {/* --- STANDALONE PUBLIC ROUTES (No standard layout) --- */}
                     <Route path="/signup" element={<SignUpPage />} />
                     <Route path="/login" element={<LoginPage />} />
-                    {/* The Directory Admin login is now handled within its own provider group below */}
+                    
+                    {/* --- HIDDEN DIRECTORY ADMIN SECTION (Wrapped in its own provider) --- */}
+                    <Route path="/directory-admin/*" element={
+                        <DirectoryAuthProvider>
+                            <Routes>
+                                <Route path="login" element={<DirectoryAdminLoginPage />} />
+                                <Route element={<DirectoryAdminRoute />}>
+                                    <Route path="dashboard" element={<DirectoryAdminDashboard />} />
+                                </Route>
+                            </Routes>
+                        </DirectoryAuthProvider>
+                    } />
 
-                    {/* --- 4. PROTECTED MAIN APPLICATION --- */}
+                    {/* --- PROTECTED MAIN APPLICATION --- */}
                     <Route path="/app" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
                         <Route index element={<Navigate to="dashboard" replace />} />
                         <Route path="dashboard" element={<DashboardPage />} />
@@ -96,6 +127,7 @@ function App() {
                         <Route path="payments" element={<DailyPaymentsPage />} />
                         <Route path="inbox" element={<InboxPage />} />
                         <Route path="profile" element={<ProfilePage />} />
+
                         <Route path="admin" element={<AdminRoute><Outlet /></AdminRoute>}>
                             <Route index element={<Navigate to="settings" replace />} />
                             <Route path="settings" element={<SettingsPage />}/>
@@ -105,23 +137,7 @@ function App() {
                         </Route>
                     </Route>
 
-                    {/* --- 5. HIDDEN DIRECTORY ADMIN SECTION (Wrapped in its own provider) --- */}
-                    <Route
-                        path="/directory-admin/*"
-                        element={
-                            <DirectoryAuthProvider>
-                                <Routes>
-                                    <Route path="login" element={<DirectoryAdminLoginPage />} />
-                                    <Route element={<DirectoryAdminRoute />}>
-                                        <Route path="dashboard" element={<DirectoryAdminDashboard />} />
-                                    </Route>
-                                    {/* Add other nested directory admin routes here if needed */}
-                                </Routes>
-                            </DirectoryAuthProvider>
-                        }
-                    />
-
-                    {/* --- 6. CATCH-ALL NOT FOUND --- */}
+                    {/* --- CATCH-ALL NOT FOUND --- */}
                     <Route path="*" element={<NotFoundPage />} />
                 </Routes>
             </Suspense>
