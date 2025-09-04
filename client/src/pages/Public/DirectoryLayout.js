@@ -79,7 +79,7 @@ export const DirectoryFooter = () => (
             {/* Discreet Admin Login Link */}
             <div className="mt-10 pt-6 border-t border-sky-700 text-center text-xs text-sky-300">
                 <p>&copy; {new Date().getFullYear()} PressFlow. All Rights Reserved.</p>
-                <Link to="/login" className="mt-2 inline-block hover:text-white hover:underline">
+                <Link to="/directory-admin/login" className="mt-2 inline-block hover:text-white hover:underline">
                     Admin Portal
                 </Link>
             </div>

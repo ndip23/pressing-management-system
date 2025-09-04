@@ -30,7 +30,7 @@ const DirectoryAdminLoginPage = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-apple-gray-800 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-apple-gray-700 p-4">
             <Card title="Directory Admin Login" className="w-full max-w-sm">
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {error && <p className="text-red-500">{error}</p>}
