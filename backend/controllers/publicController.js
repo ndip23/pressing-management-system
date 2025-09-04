@@ -149,7 +149,7 @@ const getPublicDirectory = asyncHandler(async (req, res) => {
 
     const tenants = await Tenant.find(query)
         .sort({ name: 1 })
-        .select('name publicAddress publicPhone publicEmail city country description logoUrl'); // Only send public fields
+        .select('name slug publicAddress publicPhone publicEmail city country description logoUrl'); // Only send public fields
 
     res.json(tenants);
 });
@@ -158,7 +158,7 @@ const getBusinessBySlug = asyncHandler(async (req, res) => {
         slug: req.params.slug,
         isActive: true,
         isListedInDirectory: true,
-    }).select('name publicAddress publicPhone publicEmail city country description logoUrl'); // Only public fields
+    }).select('name slug publicAddress publicPhone publicEmail city country description logoUrl'); // Only public fields
 
     if (!tenant) {
         res.status(404); throw new Error('Business profile not found.');
