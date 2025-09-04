@@ -4,15 +4,14 @@ dotenv.config();
 
 import mongoose from 'mongoose';
 import connectDB from './config/db.js';
-import DirectoryAdmin from './models/DirectoryAdmin.js'; // Import the new model
+import DirectoryAdmin from './models/DirectoryAdmin.js'; // Import the model
 
 // --- CONFIGURE YOUR ADMIN CREDENTIALS HERE ---
 const adminCredentials = [
     {
-        username: 'directoryadmin', // Choose your desired username
-        password: 'A_Very_Strong_Password_123!', // Choose a strong password
+        username: 'directoryadmin',
+        password: 'A_Very_Strong_Password_123!', // This will now be hashed
     },
-    // You could add more directory admins here if needed
 ];
 // --- ---
 
@@ -22,18 +21,19 @@ const importData = async () => {
 
         // Clear existing directory admins
         await DirectoryAdmin.deleteMany();
+        console.log('Previous Directory Admins cleared.');
 
-        // Create new directory admins from the array
-        await DirectoryAdmin.insertMany(adminCredentials);
+        // Use Model.create() to trigger the 'pre-save' hook for hashing
+        // This will create each user one by one, which is fine for a small seeder.
+        await DirectoryAdmin.create(adminCredentials);
 
-        console.log('✅ Directory Admin user(s) successfully imported!');
+        console.log(`✅ Directory Admin user(s) successfully imported and passwords hashed!`);
         process.exit();
     } catch (error) {
         console.error('❌ ERROR seeding directory admin:', error);
         process.exit(1);
     }
 };
-
 // This allows you to run a destroy command too, e.g., `node seedDirectoryAdmin.js -d`
 const destroyData = async () => {
     try {

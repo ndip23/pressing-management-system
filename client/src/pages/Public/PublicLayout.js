@@ -15,7 +15,6 @@ export const PublicHeader = () => (
                 <Link to="/" className="text-sm font-medium hover:text-apple-blue transition-colors">Home</Link>
                 <Link to="/features" className="text-sm font-medium hover:text-apple-blue transition-colors">Features</Link>
                 <Link to="/pricing" className="text-sm font-medium hover:text-apple-blue transition-colors">Pricing</Link>
-                <Link to="/directory" className="text-sm font-medium hover:text-apple-blue transition-colors">Directory</Link>
             </div>
             <div className="space-x-4 flex items-center">
                 <Link to="/login" className="text-sm font-medium hover:text-apple-blue transition-colors">Login</Link>
