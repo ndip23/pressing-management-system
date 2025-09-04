@@ -64,8 +64,9 @@ function App() {
                         <Route path="/signup" element={<SignUpPage />} />
                         <Route path="/directory" element={<DirectoryLayout />}>
                         <Route index element={<DirectoryPage />} />
-                        <Route path="business/:slug" element={<BusinessProfilePage />} />
+                        <Route path=":slug" element={<BusinessProfilePage />} />
                     </Route>
+                     
 
                     {/* Standalone Login Page */}
                     <Route path="/login" element={<LoginPage />} />
