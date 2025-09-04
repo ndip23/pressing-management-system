@@ -8,6 +8,15 @@
   .animate-pulse-slow {
     animation: pulse-slow 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
+  .bg-gradient-hero {
+    /* A nice blue-to-purple gradient inspired by modern designs */
+    background-image: linear-gradient(to right, #4f46e5, #818cf8);
+    /* A different option: */
+    /* background-image: linear-gradient(to right, #007aff, #5ac8fa); */
+  }
+  .text-shadow-sm {
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.10);
+  }
   @keyframes pulse-slow {
     0%, 100% { opacity: 1; }
     50% { opacity: .7; }

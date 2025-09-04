@@ -4,25 +4,22 @@ import { Link } from 'react-router-dom';
 import { getPublicDirectoryApi } from '../../services/api';
 import Spinner from '../../components/UI/Spinner';
 import Input from '../../components/UI/Input';
-import { MapPin, Search, Aperture } from 'lucide-react'; // Added Aperture for empty state
+import { MapPin, Search, Aperture } from 'lucide-react';
 
 // --- NEW, IMPROVED BusinessCard Component ---
 const BusinessCard = ({ business }) => (
-    <Link
-        to={`/directory/${business.slug}`}
-        className="block bg-white dark:bg-apple-gray-900 rounded-apple-xl shadow-apple transition-all duration-300 ease-in-out hover:shadow-apple-lg hover:-translate-y-1.5"
-    >
-        <div className="p-5">
+    <div className="bg-white dark:bg-apple-gray-900 rounded-xl shadow-lg overflow-hidden transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2">
+        <div className="p-6">
             <div className="flex items-center">
-                <div className="w-16 h-16 rounded-lg bg-apple-gray-200 dark:bg-apple-gray-700 flex-shrink-0 mr-5 flex items-center justify-center overflow-hidden">
+                <div className="w-16 h-16 rounded-lg bg-apple-gray-100 dark:bg-apple-gray-700 flex-shrink-0 mr-5 flex items-center justify-center overflow-hidden">
                     {business.logoUrl ? (
                         <img src={business.logoUrl} alt={`${business.name} logo`} className="w-full h-full object-cover" />
                     ) : (
-                        <span className="text-3xl font-light text-apple-gray-500">{business.name?.charAt(0).toUpperCase()}</span>
+                        <span className="text-3xl font-bold text-apple-blue">{business.name?.charAt(0).toUpperCase()}</span>
                     )}
                 </div>
                 <div className="flex-1 overflow-hidden">
-                    <h3 className="font-semibold text-lg text-apple-gray-900 dark:text-white truncate" title={business.name}>
+                    <h3 className="font-bold text-lg text-apple-gray-900 dark:text-white truncate" title={business.name}>
                         {business.name}
                     </h3>
                     <div className="flex items-center mt-1 text-xs text-apple-gray-500 dark:text-apple-gray-400">
@@ -35,10 +32,10 @@ const BusinessCard = ({ business }) => (
                 {business.description || 'Professional pressing, laundry, and dry cleaning services.'}
             </p>
         </div>
-        <div className="px-5 py-3 bg-apple-gray-50 dark:bg-apple-gray-800/50 border-t border-apple-gray-200 dark:border-apple-gray-700/50">
-            <span className="text-xs font-semibold text-apple-blue dark:text-sky-400">View Profile &rarr;</span>
-        </div>
-    </Link>
+        <Link to={`/directory/${business.slug}`} className="block px-6 py-3 bg-apple-gray-50 dark:bg-apple-gray-800/50 hover:bg-apple-gray-100 dark:hover:bg-apple-gray-800 transition-colors">
+            <span className="text-sm font-semibold text-apple-blue dark:text-sky-400">View Profile &rarr;</span>
+        </Link>
+    </div>
 );
 
 const DirectoryPage = () => {
@@ -49,8 +46,7 @@ const DirectoryPage = () => {
     const [cityFilter, setCityFilter] = useState('');
 
     const loadBusinesses = useCallback(async () => {
-        // Don't show the main spinner on subsequent filter changes, only on initial load
-        if (!loading) setLoading(true); // Or use a different loading state for filtering
+        if (!loading) setLoading(true); // Re-show spinner on filter change
         setError('');
         try {
             const filters = {};
@@ -60,45 +56,39 @@ const DirectoryPage = () => {
             setBusinesses(data || []);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to load directory.');
-            console.error("Load Directory Error:", err);
         } finally {
             setLoading(false);
         }
-    }, [searchTerm, cityFilter]);
+    }, [searchTerm, cityFilter]); // Removed loading from deps to control it manually
 
-    // Use useEffect with debounce for searching
     useEffect(() => {
         const handler = setTimeout(() => {
             loadBusinesses();
-        }, 400); // 400ms debounce
+        }, 400);
         return () => clearTimeout(handler);
     }, [searchTerm, cityFilter, loadBusinesses]);
 
-
     return (
         <>
-            {/* Header section */}
-            <section className="py-16 md:py-20 bg-white dark:bg-apple-gray-900 border-b border-apple-gray-200 dark:border-apple-gray-800">
+            {/* --- Vibrant Header/Search Section --- */}
+            <section className="py-16 md:py-20 bg-gradient-hero text-white">
                 <div className="container mx-auto px-6 text-center">
-                    <div className="mb-2">
-                        <span className="inline-block px-3 py-1 text-xs font-semibold text-apple-blue bg-apple-blue/10 rounded-full">
-                            Powered by PressFlow
-                        </span>
-                    </div>
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-apple-gray-900 dark:text-white">
-                        Business Directory
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-shadow-sm">
+                        Find Your Perfect Pressing Service
                     </h1>
-                    <p className="mt-4 text-lg text-apple-gray-600 dark:text-apple-gray-400 max-w-2xl mx-auto">
-                        Find a professional pressing and laundry service near you.
+                    <p className="mt-4 text-lg text-indigo-200 max-w-2xl mx-auto">
+                        Browse our directory of professional laundry and dry cleaning businesses.
                     </p>
-                    <div className="mt-8 max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="mt-8 max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white/10 backdrop-blur-sm p-4 rounded-xl">
                         <Input
                             id="search"
                             placeholder="Search by business name..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             prefixIcon={<Search size={18} />}
-                            className="mb-0" // Removes bottom margin
+                            className="mb-0"
+                            // Custom styling for dark background
+                            inputClassName="bg-white/20 text-white placeholder-gray-300 border-white/30 focus:bg-white/30 focus:border-white"
                         />
                         <Input
                             id="city"
@@ -107,13 +97,14 @@ const DirectoryPage = () => {
                             onChange={(e) => setCityFilter(e.target.value)}
                             prefixIcon={<MapPin size={18} />}
                             className="mb-0"
+                            inputClassName="bg-white/20 text-white placeholder-gray-300 border-white/30 focus:bg-white/30 focus:border-white"
                         />
                     </div>
                 </div>
             </section>
 
-            {/* Business listing section */}
-            <section className="py-12 md:py-16">
+            {/* --- Business Listing Section --- */}
+            <section className="py-12 md:py-16 bg-apple-gray-100 dark:bg-apple-gray-950">
                 <div className="container mx-auto px-6">
                     {loading ? (
                         <div className="flex justify-center items-center h-40"><Spinner size="lg" /></div>
