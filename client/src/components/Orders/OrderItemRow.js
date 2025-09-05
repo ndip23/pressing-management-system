@@ -4,7 +4,7 @@ import Input from '../UI/Input';
 import Select from '../UI/Select';
 import Button from '../UI/Button';
 import { X } from 'lucide-react';
-
+import { useAppSettings } from '../../contexts/SettingsContext';
 const OrderItemRow = ({
     item,
     index,
@@ -19,8 +19,8 @@ const OrderItemRow = ({
     const handleFieldChange = (field, value) => {
         onChange(item.id, field, value);
     };
-
-    const currencySymbol = 'FCFA'; 
+     const { settings, loadingSettings } = useAppSettings();
+    const currencySymbol = settings.defaultCurrencySymbol;
 
     return (
         <div className="p-4 border border-apple-gray-200 dark:border-apple-gray-700 rounded-apple-md shadow-apple-sm bg-apple-gray-50 dark:bg-apple-gray-800/30">

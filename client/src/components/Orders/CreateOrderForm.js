@@ -37,9 +37,10 @@ import {
   setMinutes,
   setSeconds,
 } from 'date-fns';
-
+import { useAppSettings } from '../../contexts/SettingsContext';
 const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
     const navigate = useNavigate();
+      const { settings, loadingSettings } = useAppSettings();
     const { user } = useAuth();
     // --- STATE FOR DYNAMIC DATA (PRICING, SERVICES, ETC.) ---
     const [operationalData, setOperationalData] = useState({
@@ -103,7 +104,7 @@ const CreateOrderForm = ({ initialOrderData, isEditMode = false }) => {
         };
         loadOperationalData();
     }, []);
-
+const currencySymbol = settings.defaultCurrencySymbol;
     // --- FORM POPULATION FOR EDIT MODE ---
     useEffect(() => {
         if (isEditMode && initialOrderData) {

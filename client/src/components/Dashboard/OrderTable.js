@@ -2,6 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { format, parseISO, isPast } from 'date-fns';
+import { useAppSettings } from '../../contexts/SettingsContext'; 
 import {
     Edit3,
     Eye,
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react';
 import OrderStatusBadge from './OrderStatusBadge'; 
 const OrderTable = ({ orders }) => {
+    const { settings } = useAppSettings(); 
     if (!orders || orders.length === 0) {
         return (
             <div className="text-center py-10">
@@ -28,7 +30,7 @@ const OrderTable = ({ orders }) => {
     }
 
 
-    const currencySymbol = 'FCFA'; 
+    const currencySymbol = settings.defaultCurrencySymbol;
 
     return (
         <div className="overflow-x-auto shadow-apple-md rounded-apple-lg">

@@ -1,21 +1,29 @@
 // server/routes/uploadRoutes.js
 import express from 'express';
 import { uploadImage } from '../controllers/uploadController.js';
-import { uploadLogo } from '../middleware/uploadMiddleware.js'; // Your existing multer config
-import { protect } from '../middleware/authMiddleware.js'; // For tenant admins
-import { protectDirectoryAdmin } from '../middleware/directoryAdminMiddleware.js'; // For super admin
+// --- THIS IS THE FIX ---
+// Import the default export from uploadMiddleware.js and rename it to uploadLogo
+import uploadLogo from '../middleware/uploadMiddleware.js';
+// --- END OF FIX ---
+import { protect } from '../middleware/authMiddleware.js';
+import { protectDirectoryAdmin } from '../middleware/directoryAdminMiddleware.js';
 
 const router = express.Router();
 
-// A general image upload route. We protect it based on who is calling it.
-// For now, let's create two separate, clearly named routes.
-
-// Route for a logged-in Tenant Admin to upload their own business logo
-// The `protect` middleware identifies the tenant user.
-router.post('/tenant-logo', protect, uploadLogo.single('logoImage'), uploadImage);
+// Route for a logged-in Tenant Admin to upload THEIR OWN business logo
+router.post(
+    '/tenant-logo',
+    protect, // First, check if it's a valid tenant user
+    uploadLogo.single('logoImage'), // Then, use multer to handle the file upload
+    uploadImage // Finally, run the controller to send the response
+);
 
 // Route for the Directory Super Admin to upload logos for manual listings
-// The `protectDirectoryAdmin` middleware identifies the super admin.
-router.post('/listing-logo', protectDirectoryAdmin, uploadLogo.single('logoImage'), uploadImage);
+router.post(
+    '/listing-logo',
+    protectDirectoryAdmin, // First, check if it's the directory admin
+    uploadLogo.single('logoImage'),
+    uploadImage
+);
 
 export default router;
