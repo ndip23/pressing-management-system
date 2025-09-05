@@ -145,6 +145,8 @@ export const fetchInboundMessagesApi = async (page = 1, pageSize = 25) => {
 export const recordPaymentApi = async (orderId, paymentData) => {
     return api.post(`/orders/${orderId}/payments`, paymentData);
 };
+
+// --- DIRECTORY ADMIN API ---
 // Let's create a separate instance for simplicity
 const directoryAdminApi = axios.create({ baseURL: API_URL });
 
@@ -191,5 +193,12 @@ export const updateDirectoryListingApi = async (id, listingData) => {
 };
 export const deleteDirectoryListingApi = async (id) => {
     return directoryAdminApi.delete(`/directory-admin/listings/${id}`);
+};
+export const getAllTenantsApi = async () => {
+    return api.get('/directory-admin/tenants');
+};
+
+export const updateTenantApi = async (id, tenantData) => {
+    return api.put(`/directory-admin/tenants/${id}`, tenantData);
 };
 export default api;
