@@ -128,42 +128,73 @@ const finalizeRegistration = asyncHandler(async (req, res) => {
         session.endSession();
     }
 });
-
-
 // @desc    Get a list of publicly listed businesses for the directory
 // @route   GET /api/public/directory
 // @access  Public
 const getPublicDirectory = asyncHandler(async (req, res) => {
     const { city, search } = req.query;
-    let query = {
-        isActive: true, // Only show active businesses
-        isListedInDirectory: true // Only show businesses that opted-in
-    };
 
+    // --- THIS IS THE FIX ---
+    // Create a base query that will be used for BOTH collections
+    let baseQuery = {};
     if (city) {
-        query.city = { $regex: city, $options: 'i' };
+        baseQuery.city = { $regex: city, $options: 'i' };
     }
     if (search) {
-        query.name = { $regex: search, $options: 'i' };
+        baseQuery.name = { $regex: search, $options: 'i' };
     }
 
-    const tenants = await Tenant.find(query)
-        .sort({ name: 1 })
-        .select('name slug publicAddress publicPhone publicEmail city country description logoUrl'); // Only send public fields
-
-    res.json(tenants);
-});
-const getBusinessBySlug = asyncHandler(async (req, res) => {
-    const tenant = await Tenant.findOne({
-        slug: req.params.slug,
+    // Create specific queries by extending the base query
+    const tenantQuery = {
+        ...baseQuery,
         isActive: true,
         isListedInDirectory: true,
-    }).select('name slug publicAddress publicPhone publicEmail city country description logoUrl'); // Only public fields
+    };
 
-    if (!tenant) {
-        res.status(404); throw new Error('Business profile not found.');
+    const listingQuery = {
+        ...baseQuery,
+        isActive: true,
+    };
+    // --- END OF FIX ---
+
+
+    const publicFields = 'name slug description publicAddress publicPhone publicEmail city country logoUrl';
+
+    console.log("[Public Directory] Querying Tenants with:", tenantQuery);
+    console.log("[Public Directory] Querying Manual Listings with:", listingQuery);
+
+    // Run queries for both collections in parallel with the correct filters
+    const [softwareCustomers, manualListings] = await Promise.all([
+        Tenant.find(tenantQuery).select(publicFields).lean(),
+        DirectoryListing.find(listingQuery).select(publicFields).lean()
+    ]);
+    
+    // Combine, sort, and send the results
+    const combinedResults = [...softwareCustomers, ...manualListings]
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+    console.log(`[Public Directory] Found ${softwareCustomers.length} software customers and ${manualListings.length} manual listings. Total: ${combinedResults.length}`);
+
+    res.json(combinedResults);
+});
+
+// @desc    Get a single business profile by slug (checking both collections)
+// @route   GET /api/public/directory/:slug
+// @access  Public
+const getBusinessBySlug = asyncHandler(async (req, res) => {
+    const slug = req.params.slug;
+    const publicFields = 'name slug description publicAddress publicPhone publicEmail city country logoUrl';
+
+    let business = await Tenant.findOne({ slug, isActive: true, isListedInDirectory: true }).select(publicFields).lean();
+    if (!business) {
+        business = await DirectoryListing.findOne({ slug, isActive: true }).select(publicFields).lean();
     }
-    res.json(tenant);
+
+    if (!business) {
+        res.status(404);
+        throw new Error('Business profile not found.');
+    }
+    res.json(business);
 });
 
 export {

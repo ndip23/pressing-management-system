@@ -79,7 +79,7 @@ import { Save, Settings as SettingsIcon, AlertTriangle, CheckCircle2 } from 'luc
                     </div>
                      <div className="md:col-span-2">
                         <label htmlFor="description" className="block text-sm font-medium">Short Description</label>
-                        <textarea id="description" name="description" rows="3" value={profile.description || ''} onChange={handleChange} className="form-textarea mt-1 block w-full" placeholder="A short bio about your business..." />
+                        <textarea id="description" name="description" rows="3" value={profile.description || ''} onChange={handleChange} className="form-textarea mt-1 block w-full text-black" placeholder="A short bio about your business..." />
                     </div>
                     <div className="md:col-span-2 flex items-center space-x-3 mt-2">
                         <input

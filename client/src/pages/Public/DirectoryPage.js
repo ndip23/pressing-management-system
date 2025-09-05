@@ -59,7 +59,7 @@ const DirectoryPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [searchTerm, cityFilter]); // Removed loading from deps to control it manually
+    }, [searchTerm, cityFilter, loading]); // Removed loading from deps to control it manually
 
     useEffect(() => {
         const handler = setTimeout(() => {

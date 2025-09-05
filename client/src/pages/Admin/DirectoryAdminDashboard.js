@@ -110,7 +110,7 @@ const DirectoryAdminDashboard = () => {
                     <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
                         <div className="flex items-center space-x-3">
                             <List size={32} className="text-apple-blue" />
-                            <h1 className="text-3xl font-bold">Platform Admin Dashboard</h1>
+                            <h1 className="text-3xl font-bold">Directory Admin Dashboard</h1>
                         </div>
                         <Button onClick={handleLogout} variant="secondary">Logout</Button>
                     </div>
