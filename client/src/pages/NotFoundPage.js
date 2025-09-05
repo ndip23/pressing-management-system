@@ -11,7 +11,7 @@ const NotFoundPage = () => {
             <p className="text-xl text-apple-gray-600 dark:text-apple-gray-300 mb-6">
                 Oops! The page you're looking for doesn't exist.
             </p>
-            <Link to="/app/">
+            <Link to="/">
                 <Button variant="primary" size="lg">
                     Go Back to Dashboard
                 </Button>

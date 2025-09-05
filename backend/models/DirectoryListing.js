@@ -43,6 +43,9 @@ const directoryListingSchema = new mongoose.Schema({
     logoUrl: {
         type: String
     },
+    logoCloudinaryId: { 
+        type: String 
+    },
     isActive: { // So you can enable/disable the listing
         type: Boolean,
         default: true

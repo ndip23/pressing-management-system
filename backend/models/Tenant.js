@@ -53,6 +53,9 @@ const tenantSchema = new mongoose.Schema({
     logoUrl: { 
         type: String 
     },
+    logoCloudinaryId: { 
+        type: String
+     },
     isListedInDirectory: { 
         type: Boolean, 
         default: true, 

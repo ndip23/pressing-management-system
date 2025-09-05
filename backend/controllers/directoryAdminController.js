@@ -27,8 +27,8 @@ const loginDirectoryAdmin = asyncHandler(async (req, res) => {
 // @route   POST /api/admin/directory-listings
 // @access  Private/Admin
 const createDirectoryListing = asyncHandler(async (req, res) => {
-    const { name, publicAddress, publicPhone, publicEmail, city, country, description, logoUrl } = req.body;
-
+    const { name, publicAddress, publicPhone, publicEmail, city, country, description, logoUrl, logoCloudinaryId } = req.body;
+    
     if (!name) {
         res.status(400);
         throw new Error('Business name is required.');
@@ -42,7 +42,7 @@ const createDirectoryListing = asyncHandler(async (req, res) => {
 
     const listing = await DirectoryListing.create({
         name, publicAddress, publicPhone, publicEmail,
-        city, country, description, logoUrl
+        city, country, description, logoUrl, logoCloudinaryId
     });
     res.status(201).json(listing);
 });
@@ -66,7 +66,7 @@ const updateDirectoryListing = asyncHandler(async (req, res) => {
     }
     
     // Update fields from request body
-    const { name, publicAddress, publicPhone, publicEmail, city, country, description, logoUrl, isActive } = req.body;
+    const { name, publicAddress, publicPhone, publicEmail, city, country, description, logoUrl, logoCloudinaryId, isActive } = req.body;
     
     if (name) listing.name = name;
     if (publicAddress !== undefined) listing.publicAddress = publicAddress;
@@ -77,6 +77,8 @@ const updateDirectoryListing = asyncHandler(async (req, res) => {
     if (description !== undefined) listing.description = description;
     if (logoUrl !== undefined) listing.logoUrl = logoUrl;
     if (isActive !== undefined) listing.isActive = isActive;
+    if (logoUrl !== undefined) listing.logoUrl = logoUrl;
+    if (logoCloudinaryId !== undefined) listing.logoCloudinaryId = logoCloudinaryId;
 
     const updatedListing = await listing.save();
     res.json(updatedListing);

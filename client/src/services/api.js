@@ -201,4 +201,17 @@ export const getAllTenantsApi = async () => {
 export const updateTenantApi = async (id, tenantData) => {
     return api.put(`/directory-admin/tenants/${id}`, tenantData);
 };
+export const uploadTenantLogoApi = async (formData) => {
+    // This uses the main `api` instance which sends the tenant user's token
+    return api.post('/uploads/tenant-logo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+};
+
+export const uploadListingLogoApi = async (formData) => {
+    // This uses the `directoryAdminApi` instance which sends the super admin's token
+    return directoryAdminApi.post('/uploads/listing-logo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+};
 export default api;

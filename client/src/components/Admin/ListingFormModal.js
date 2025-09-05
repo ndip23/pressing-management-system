@@ -1,16 +1,21 @@
 // client/src/components/Admin/ListingFormModal.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Modal from '../UI/Modal';
 import Input from '../UI/Input';
 import Button from '../UI/Button';
-import { AlertTriangle } from 'lucide-react';
+import Spinner from '../UI/Spinner';
+import { uploadListingLogoApi } from '../../services/api'; // Super admin's upload function
+import { AlertTriangle, UploadCloud } from 'lucide-react';
 
 const ListingFormModal = ({ isOpen, onClose, onSubmit, listingToEdit = null, apiError, isLoading }) => {
     const [formData, setFormData] = useState({
         name: '', description: '', publicAddress: '', publicPhone: '',
-        publicEmail: '', city: '', country: '', logoUrl: '', isActive: true
+        publicEmail: '', city: '', country: '', logoUrl: '', logoCloudinaryId: '', isActive: true
     });
+    const [logoPreview, setLogoPreview] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
     const [localError, setLocalError] = useState('');
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -25,10 +30,13 @@ const ListingFormModal = ({ isOpen, onClose, onSubmit, listingToEdit = null, api
                     city: listingToEdit.city || '',
                     country: listingToEdit.country || '',
                     logoUrl: listingToEdit.logoUrl || '',
+                    logoCloudinaryId: listingToEdit.logoCloudinaryId || '',
                     isActive: listingToEdit.isActive ?? true,
                 });
+                setLogoPreview(listingToEdit.logoUrl || '');
             } else { // Reset for new listing
-                setFormData({ name: '', description: '', publicAddress: '', publicPhone: '', publicEmail: '', city: '', country: '', logoUrl: '', isActive: true });
+                setFormData({ name: '', description: '', publicAddress: '', publicPhone: '', publicEmail: '', city: '', country: '', logoUrl: '', logoCloudinaryId: '', isActive: true });
+                setLogoPreview('');
             }
         }
     }, [isOpen, listingToEdit]);
@@ -38,6 +46,33 @@ const ListingFormModal = ({ isOpen, onClose, onSubmit, listingToEdit = null, api
         setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     };
 
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit
+            setLocalError("File is too large. Please select an image under 2MB.");
+            return;
+        }
+
+        setLogoPreview(URL.createObjectURL(file));
+        setIsUploading(true);
+        setLocalError('');
+        const uploadFormData = new FormData();
+        uploadFormData.append('logoImage', file);
+
+        try {
+            const { data } = await uploadListingLogoApi(uploadFormData);
+            setFormData(prev => ({ ...prev, logoUrl: data.imageUrl, logoCloudinaryId: data.cloudinaryId }));
+        } catch (err) {
+            console.error("Logo upload failed:", err);
+            setLocalError(err.response?.data?.message || "Logo upload failed. Please try again.");
+            setLogoPreview(listingToEdit?.logoUrl || ''); // Revert to old logo on failure
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLocalError('');
@@ -45,7 +80,6 @@ const ListingFormModal = ({ isOpen, onClose, onSubmit, listingToEdit = null, api
             setLocalError("Business Name is a required field.");
             return;
         }
-        // Pass the form data up to the parent page to handle the API call
         await onSubmit(formData);
     };
 
@@ -66,10 +100,27 @@ const ListingFormModal = ({ isOpen, onClose, onSubmit, listingToEdit = null, api
                     <Input label="City" name="city" value={formData.city} onChange={handleChange} />
                     <Input label="Country" name="country" value={formData.country} onChange={handleChange} />
                 </div>
-                <Input label="Logo URL" name="logoUrl" value={formData.logoUrl} onChange={handleChange} />
+                
+                <div>
+                    <label className="block text-sm font-medium mb-1">Business Logo</label>
+                    <div className="mt-1 flex items-center gap-4">
+                        <div className="w-20 h-20 rounded-lg bg-apple-gray-100 dark:bg-apple-gray-800 flex items-center justify-center overflow-hidden">
+                            {isUploading ? <Spinner /> : logoPreview ? (
+                                <img src={logoPreview} alt="Logo Preview" className="w-full h-full object-cover" />
+                            ) : (
+                                <UploadCloud size={24} className="text-apple-gray-400" />
+                            )}
+                        </div>
+                        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/png, image/jpeg, image/webp" />
+                        <Button type="button" variant="secondary" onClick={() => fileInputRef.current.click()} disabled={isUploading}>
+                            {isUploading ? 'Uploading...' : 'Upload Image'}
+                        </Button>
+                    </div>
+                </div>
+
                 <div className="flex items-center pt-2">
                     <input id="isActive" name="isActive" type="checkbox" checked={formData.isActive} onChange={handleChange} className="h-4 w-4 rounded border-gray-300 text-apple-blue focus:ring-apple-blue" />
-                    <label htmlFor="isActive" className="ml-3 block text-sm">Listing is Active</label>
+                    <label htmlFor="isActive" className="ml-3 block text-sm">List this business in the public directory</label>
                 </div>
                 <div className="pt-4 flex justify-end space-x-3 border-t mt-4 dark:border-apple-gray-700">
                     <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>Cancel</Button>
