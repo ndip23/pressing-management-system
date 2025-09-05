@@ -2,16 +2,15 @@
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { loginDirectoryAdminApi } from '../services/api';
-// Spinner import is not needed here, but in the components that use the loading state
 
 const DirectoryAuthContext = createContext(null);
 
 export const DirectoryAuthProvider = ({ children }) => {
     const [dirAdminToken, setDirAdminToken] = useState(null);
     const [isDirAdminAuthenticated, setIsDirAdminAuthenticated] = useState(false);
-    const [loading, setLoading] = useState(true); // <<<<<< ADD THIS STATE
+    const [loading, setLoading] = useState(true); // <-- STARTS TRUE
 
-    // Effect to check token on initial load
+    // Effect to check token on initial app load
     useEffect(() => {
         const checkToken = async () => {
             const token = localStorage.getItem('directoryAdminToken');
@@ -19,11 +18,9 @@ export const DirectoryAuthProvider = ({ children }) => {
                 try {
                     const decoded = jwtDecode(token);
                     if (decoded.exp * 1000 > Date.now()) {
-                        // Token is valid and not expired
                         setIsDirAdminAuthenticated(true);
                         setDirAdminToken(token);
                     } else {
-                        // Token expired
                         localStorage.removeItem('directoryAdminToken');
                     }
                 } catch (error) {
@@ -31,8 +28,7 @@ export const DirectoryAuthProvider = ({ children }) => {
                     localStorage.removeItem('directoryAdminToken');
                 }
             }
-            // Finished checking, set loading to false
-            setLoading(false);
+            setLoading(false); // <-- SETS TO FALSE AFTER CHECK IS DONE
         };
         checkToken();
     }, []);
@@ -42,14 +38,12 @@ export const DirectoryAuthProvider = ({ children }) => {
             const { data } = await loginDirectoryAdminApi(credentials);
             localStorage.setItem('directoryAdminToken', data.token);
             setDirAdminToken(data.token);
-            setIsDirAdminAuthenticated(true); // This state update triggers navigation
+            setIsDirAdminAuthenticated(true);
         } catch (error) {
-            // Clear any partial state on failure
             localStorage.removeItem('directoryAdminToken');
             setDirAdminToken(null);
             setIsDirAdminAuthenticated(false);
-            // Re-throw so the login page can catch it and display an error message
-            throw error;
+            throw error; // Re-throw so the login page can catch it
         }
     };
 
@@ -62,7 +56,7 @@ export const DirectoryAuthProvider = ({ children }) => {
     const value = {
         dirAdminToken,
         isDirAdminAuthenticated,
-        loading, // <<<<<< EXPORT THIS STATE
+        loading, // <-- EXPORT LOADING STATE
         dirAdminLogin,
         dirAdminLogout,
     };

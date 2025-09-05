@@ -15,9 +15,9 @@ const DirectoryAdminLoginPage = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false); // For button loading
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // This effect handles navigation AFTER authentication state is confirmed
+    // This effect handles navigation AFTER the authentication state is confirmed to be true
     useEffect(() => {
         if (isDirAdminAuthenticated && !authLoading) {
             const from = location.state?.from?.pathname || "/directory-admin/dashboard";
@@ -25,21 +25,23 @@ const DirectoryAdminLoginPage = () => {
         }
     }, [isDirAdminAuthenticated, authLoading, navigate, location.state]);
 
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
         setError('');
         try {
             await dirAdminLogin({ username, password });
-            // DO NOT navigate here. The useEffect will handle it.
+            // DO NOT navigate here. The useEffect above will handle it.
         } catch (err) {
             setError(err.response?.data?.message || "Login failed. Please check credentials.");
         } finally {
             setIsSubmitting(false);
         }
     };
-    
-    // Show a spinner if the context is still doing its initial check OR if we are logged in and waiting for redirect
+
+    // Show a spinner if the context is still doing its initial check OR if we are already logged in
+    // and waiting for the useEffect to navigate.
     if (authLoading || isDirAdminAuthenticated) {
         return <div className="flex h-screen items-center justify-center bg-apple-gray-800"><Spinner size="lg" /></div>;
     }

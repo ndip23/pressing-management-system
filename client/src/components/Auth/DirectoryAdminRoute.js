@@ -7,7 +7,8 @@ import Spinner from '../UI/Spinner';
 const DirectoryAdminRoute = () => {
     const { isDirAdminAuthenticated, loading } = useDirectoryAuth();
 
-    // 1. While the context is doing its initial check, show a loading spinner
+    // While the context is doing its initial check, show a full-page loading spinner.
+    // This PREVENTS the redirect logic from running prematurely.
     if (loading) {
         return (
             <div className="flex h-screen items-center justify-center bg-apple-gray-800">
@@ -16,7 +17,7 @@ const DirectoryAdminRoute = () => {
         );
     }
 
-    // 2. After the check is complete, THEN decide where to go
+    // Only after loading is false, make the decision to render content or redirect.
     return isDirAdminAuthenticated ? <Outlet /> : <Navigate to="/directory-admin/login" replace />;
 };
 
