@@ -1,7 +1,7 @@
 // server/middleware/uploadMiddleware.js
 import multer from 'multer';
-import { storage } from '../config/cloudinaryConfig.js';
+import { storage, logoStorage } from '../config/cloudinaryConfig.js';
 
-const upload = multer({ storage });
+const upload = multer({ storage, logoStorage });
 
 export default upload;

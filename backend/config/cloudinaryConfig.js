@@ -20,5 +20,14 @@ const storage = new CloudinaryStorage({
         public_id: (req, file) => `user_${req.user.id}_${Date.now()}`, 
     },
 });
+const logoStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'pressflow_logos',
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+        transformation: [{ width: 300, height: 300, crop: 'limit' }],
+        // Cloudinary will auto-generate a unique public_id (filename)
+    },
+});
 
-export { cloudinary, storage };
+export { cloudinary, storage, logoStorage };
