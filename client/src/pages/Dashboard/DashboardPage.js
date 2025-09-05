@@ -29,6 +29,7 @@ const StatCard = ({ title, value, icon, colorClass, isLoading }) => (
 
 
 const DashboardPage = () => {
+    const { settings, loadingSettings } = useAppSettings();
      const { t } = useTranslation();
     const { user } = useAuth()
     const [orders, setOrders] = useState([]);
@@ -55,7 +56,8 @@ const DashboardPage = () => {
     const [salesData, setSalesData] = useState(null);
     const [salesError, setSalesError] = useState('');
 
-    const currencySymbol = 'FCFA'; // TODO: Get from global settings context
+    const currencySymbol = settings.defaultCurrencySymbol;
+    // TODO: Get from global settings context
 
     const loadOrders = useCallback(async () => {
         console.log("[DashboardPage] --- Initiating loadOrders ---");

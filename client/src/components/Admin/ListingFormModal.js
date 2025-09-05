@@ -4,7 +4,7 @@ import Modal from '../UI/Modal';
 import Input from '../UI/Input';
 import Button from '../UI/Button';
 import Spinner from '../UI/Spinner';
-import { uploadListingLogoApi } from '../../services/api'; // Super admin's upload function
+import { uploadListingLogoApi } from '../../services/api';
 import { AlertTriangle, UploadCloud } from 'lucide-react';
 
 const ListingFormModal = ({ isOpen, onClose, onSubmit, listingToEdit = null, apiError, isLoading }) => {
@@ -17,11 +17,12 @@ const ListingFormModal = ({ isOpen, onClose, onSubmit, listingToEdit = null, api
     const [localError, setLocalError] = useState('');
     const fileInputRef = useRef(null);
 
+    // Effect to populate the form for editing or reset it for creation
     useEffect(() => {
         if (isOpen) {
             setLocalError('');
             if (listingToEdit) {
-                setFormData({
+                const initialData = {
                     name: listingToEdit.name || '',
                     description: listingToEdit.description || '',
                     publicAddress: listingToEdit.publicAddress || '',
@@ -32,14 +33,16 @@ const ListingFormModal = ({ isOpen, onClose, onSubmit, listingToEdit = null, api
                     logoUrl: listingToEdit.logoUrl || '',
                     logoCloudinaryId: listingToEdit.logoCloudinaryId || '',
                     isActive: listingToEdit.isActive ?? true,
-                });
-                setLogoPreview(listingToEdit.logoUrl || '');
+                };
+                setFormData(initialData);
+                // --- THIS IS THE FIX ---
+                setLogoPreview(initialData.logoUrl); // Sync the preview with the data
             } else { // Reset for new listing
                 setFormData({ name: '', description: '', publicAddress: '', publicPhone: '', publicEmail: '', city: '', country: '', logoUrl: '', logoCloudinaryId: '', isActive: true });
-                setLogoPreview('');
+                setLogoPreview(''); // Reset the preview
             }
         }
-    }, [isOpen, listingToEdit]);
+    }, [isOpen, listingToEdit]); // Reruns when the modal is opened or the user to edit changes
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -55,14 +58,15 @@ const ListingFormModal = ({ isOpen, onClose, onSubmit, listingToEdit = null, api
             return;
         }
 
-        setLogoPreview(URL.createObjectURL(file));
+        setLogoPreview(URL.createObjectURL(file)); // Show instant local preview
         setIsUploading(true);
         setLocalError('');
         const uploadFormData = new FormData();
-        uploadFormData.append('logoImage', file);
+        uploadFormData.append('logoImage', file); // 'logoImage' must match backend middleware
 
         try {
             const { data } = await uploadListingLogoApi(uploadFormData);
+            // Update form state with the returned URL from Cloudinary
             setFormData(prev => ({ ...prev, logoUrl: data.imageUrl, logoCloudinaryId: data.cloudinaryId }));
         } catch (err) {
             console.error("Logo upload failed:", err);
@@ -80,6 +84,7 @@ const ListingFormModal = ({ isOpen, onClose, onSubmit, listingToEdit = null, api
             setLocalError("Business Name is a required field.");
             return;
         }
+        // Pass the form data up to the parent page to handle the API call
         await onSubmit(formData);
     };
 
