@@ -147,6 +147,8 @@ export const recordPaymentApi = async (orderId, paymentData) => {
 };
 // Let's create a separate instance for simplicity
 const directoryAdminApi = axios.create({ baseURL: API_URL });
+
+// Interceptor to add the DIRECTORY ADMIN token
 directoryAdminApi.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('directoryAdminToken'); // Use the separate token
@@ -158,21 +160,36 @@ directoryAdminApi.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// --- Directory Admin ---
+directoryAdminApi.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        // Handle 401 specifically for the directory admin
+        if (error.response && error.response.status === 401 && window.location.pathname.includes('/directory-admin')) {
+             console.warn('[api.js] Directory Admin Unauthorized (401). Redirecting to dir-admin login.');
+             localStorage.removeItem('directoryAdminToken');
+             window.location.href = '/#/directory-admin/login'; // Use hash if you are using HashRouter
+        }
+        return Promise.reject(error);
+    }
+);
+
+
 export const loginDirectoryAdminApi = async (credentials) => {
+    // Login doesn't need a token, so we can use the main `api` instance
     return api.post('/directory-admin/login', credentials);
 };
 
+// --- CORRECTED: These functions MUST use the `directoryAdminApi` instance ---
 export const getAllDirectoryListingsApi = async () => {
-    return api.get('/directory-admin/listings'); // Endpoint from directoryAdminRoutes.js
+    return directoryAdminApi.get('/directory-admin/listings');
 };
 export const createDirectoryListingApi = async (listingData) => {
-    return api.post('/directory-admin/listings', listingData);
+    return directoryAdminApi.post('/directory-admin/listings', listingData);
 };
 export const updateDirectoryListingApi = async (id, listingData) => {
-    return api.put(`/directory-admin/listings/${id}`, listingData);
+    return directoryAdminApi.put(`/directory-admin/listings/${id}`, listingData);
 };
 export const deleteDirectoryListingApi = async (id) => {
-    return api.delete(`/directory-admin/listings/${id}`);
+    return directoryAdminApi.delete(`/directory-admin/listings/${id}`);
 };
 export default api;

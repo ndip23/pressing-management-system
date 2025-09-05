@@ -1,31 +1,27 @@
 // server/controllers/directoryAdminController.js
 import asyncHandler from '../middleware/asyncHandler.js';
-import DirectoryAdmin from '../models/DirectoryAdmin.js'; // Import the new model
+import DirectoryListing from '../models/DirectoryListing.js';
 import jwt from 'jsonwebtoken';
-// Removed bcrypt, as the model's matchPassword method will handle it
+import bcrypt from 'bcryptjs';
+import DirectoryAdmin from '../models/DirectoryAdmin.js'; // Use the correct model for login
 
 // @desc    Login as Directory Admin
 // @route   POST /api/directory-admin/login
 // @access  Public
 const loginDirectoryAdmin = asyncHandler(async (req, res) => {
     const { username, password } = req.body;
-
-    if (!username || !password) {
-        res.status(401); throw new Error('Please provide username and password');
-    }
+    if (!username || !password) { res.status(401); throw new Error('Please provide credentials'); }
 
     const admin = await DirectoryAdmin.findOne({ username: username.toLowerCase() });
 
     if (admin && (await admin.matchPassword(password))) {
-        const token = jwt.sign({ id: admin._id, role: 'directory_admin' }, process.env.DIRECTORY_ADMIN_JWT_SECRET, {
-            expiresIn: '8h',
-        });
+        const token = jwt.sign({ id: admin._id, role: 'directory_admin' }, process.env.DIRECTORY_ADMIN_JWT_SECRET, { expiresIn: '8h' });
         res.json({ token });
     } else {
-        res.status(401);
-        throw new Error('Invalid credentials');
+        res.status(401); throw new Error('Invalid credentials');
     }
 });
+
 // @desc    Admin creates a new manual directory listing
 // @route   POST /api/admin/directory-listings
 // @access  Private/Admin

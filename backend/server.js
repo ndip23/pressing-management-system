@@ -18,7 +18,6 @@ import priceRoutes from './routes/priceRoutes.js';
 import tenantProfileRoutes from './routes/tenantProfileRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import inboundMessageRoutes from './routes/inboundMessageRoutes.js';
-import adminRoutes from './routes/adminRoutes.js';
 import directoryAdminRoutes from './routes/directoryAdminRoutes.js'; // <-- IMPORT
 
 // Import scheduler
@@ -51,7 +50,6 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/api/public', publicRoutes); 
-app.use('/api/admin', adminRoutes);
 app.use('/api/directory-admin', directoryAdminRoutes); // <-- MOUNT
 app.use('/api/auth', authRoutes)
 app.use('/api/prices', priceRoutes);

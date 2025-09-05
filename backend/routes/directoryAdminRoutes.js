@@ -13,7 +13,6 @@ const router = express.Router();
 
 router.post('/login', loginDirectoryAdmin); // Public login endpoint
 
-// All routes below are protected
 router.route('/listings')
     .get(protectDirectoryAdmin, getAllDirectoryListings)
     .post(protectDirectoryAdmin, createDirectoryListing);
