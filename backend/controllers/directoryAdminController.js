@@ -4,6 +4,7 @@ import DirectoryListing from '../models/DirectoryListing.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import DirectoryAdmin from '../models/DirectoryAdmin.js'; // Use the correct model for login
+import Tenant from '../models/Tenant.js';
 
 // @desc    Login as Directory Admin
 // @route   POST /api/directory-admin/login
@@ -93,6 +94,45 @@ const deleteDirectoryListing = asyncHandler(async (req, res) => {
     await listing.deleteOne();
     res.json({ message: `Listing "${listing.name}" has been deleted.` });
 });
+// @desc    Admin gets a list of all tenants (software customers)
+// @route   GET /api/admin/tenants
+// @access  Private/Admin
+const getAllTenants = asyncHandler(async (req, res) => {
+    const tenants = await Tenant.find({}).sort({ name: 1 });
+    res.json(tenants);
+});
+// @desc    Admin updates a tenant's public profile details
+// @route   PUT /api/admin/tenants/:id
+// @access  Private/Admin
+const updateTenant = asyncHandler(async (req, res) => {
+    const tenant = await Tenant.findById(req.params.id);
+    if (!tenant) {
+        res.status(404); throw new Error('Software Customer (Tenant) not found.');
+    }
+    
+    // Whitelist the fields an admin can change for a tenant's public profile
+    const { isListedInDirectory, publicAddress, publicPhone, publicEmail, city, country, description, logoUrl } = req.body;
+
+    if (isListedInDirectory !== undefined) tenant.isListedInDirectory = isListedInDirectory;
+    if (publicAddress !== undefined) tenant.publicAddress = publicAddress;
+    if (publicPhone !== undefined) tenant.publicPhone = publicPhone;
+    if (publicEmail !== undefined) tenant.publicEmail = publicEmail;
+    if (city !== undefined) tenant.city = city;
+    if (country !== undefined) tenant.country = country;
+    if (description !== undefined) tenant.description = description;
+    if (logoUrl !== undefined) tenant.logoUrl = logoUrl;
+    
+    const updatedTenant = await tenant.save();
+    res.json(updatedTenant);
+});
+// @desc    Super Admin gets a single tenant by ID
+// @route   GET /api/platform-admin/tenants/:id
+// @access  Private/SuperAdmin
+const getTenantById = asyncHandler(async (req, res) => {
+    const tenant = await Tenant.findById(req.params.id);
+    if (!tenant) { res.status(404); throw new Error('Tenant not found.'); }
+    res.json(tenant);
+});
 
 export {
     loginDirectoryAdmin,
@@ -100,4 +140,7 @@ export {
     getAllDirectoryListings,
     updateDirectoryListing,
     deleteDirectoryListing,
+    getAllTenants,
+    updateTenant,
+    getTenantById
 };

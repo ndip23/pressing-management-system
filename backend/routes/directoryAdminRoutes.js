@@ -5,7 +5,10 @@ import {
     createDirectoryListing,
     getAllDirectoryListings,
     updateDirectoryListing,
-    deleteDirectoryListing
+    deleteDirectoryListing,
+    getAllTenants,
+    updateTenant,
+    getTenantById
 } from '../controllers/directoryAdminController.js';
 import { protectDirectoryAdmin } from '../middleware/directoryAdminMiddleware.js';
 
@@ -20,5 +23,10 @@ router.route('/listings')
 router.route('/listings/:id')
     .put(protectDirectoryAdmin, updateDirectoryListing)
     .delete(protectDirectoryAdmin, deleteDirectoryListing);
+router.route('/tenants')
+    .get(getAllTenants);
+router.route('/tenants/:id')
+    .get(getTenantById)
+    .put(updateTenant);
 
 export default router;
