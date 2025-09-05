@@ -1,4 +1,5 @@
 // client/src/components/Admin/ListingFormModal.js
+
 import React, { useState, useEffect, useRef } from 'react';
 import Modal from '../UI/Modal';
 import Input from '../UI/Input';
@@ -17,7 +18,6 @@ const ListingFormModal = ({ isOpen, onClose, onSubmit, listingToEdit = null, api
     const [localError, setLocalError] = useState('');
     const fileInputRef = useRef(null);
 
-    // Effect to populate the form for editing or reset it for creation
     useEffect(() => {
         if (isOpen) {
             setLocalError('');
@@ -35,14 +35,13 @@ const ListingFormModal = ({ isOpen, onClose, onSubmit, listingToEdit = null, api
                     isActive: listingToEdit.isActive ?? true,
                 };
                 setFormData(initialData);
-                // --- THIS IS THE FIX ---
-                setLogoPreview(initialData.logoUrl); // Sync the preview with the data
-            } else { // Reset for new listing
+                setLogoPreview(initialData.logoUrl);
+            } else {
                 setFormData({ name: '', description: '', publicAddress: '', publicPhone: '', publicEmail: '', city: '', country: '', logoUrl: '', logoCloudinaryId: '', isActive: true });
-                setLogoPreview(''); // Reset the preview
+                setLogoPreview('');
             }
         }
-    }, [isOpen, listingToEdit]); // Reruns when the modal is opened or the user to edit changes
+    }, [isOpen, listingToEdit]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -53,25 +52,28 @@ const ListingFormModal = ({ isOpen, onClose, onSubmit, listingToEdit = null, api
         const file = e.target.files[0];
         if (!file) return;
 
-        if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        if (file.size > 2 * 1024 * 1024) {
             setLocalError("File is too large. Please select an image under 2MB.");
             return;
         }
 
-        setLogoPreview(URL.createObjectURL(file)); // Show instant local preview
+        setLogoPreview(URL.createObjectURL(file));
         setIsUploading(true);
         setLocalError('');
         const uploadFormData = new FormData();
-        uploadFormData.append('logoImage', file); // 'logoImage' must match backend middleware
+        
+        // --- THIS IS THE FIX ---
+        // The key must match the string inside uploadLogo.single('...') in your route.
+        // Your backend is expecting 'logoImage'.
+        uploadFormData.append('logoImage', file); 
 
         try {
             const { data } = await uploadListingLogoApi(uploadFormData);
-            // Update form state with the returned URL from Cloudinary
             setFormData(prev => ({ ...prev, logoUrl: data.imageUrl, logoCloudinaryId: data.cloudinaryId }));
         } catch (err) {
             console.error("Logo upload failed:", err);
             setLocalError(err.response?.data?.message || "Logo upload failed. Please try again.");
-            setLogoPreview(listingToEdit?.logoUrl || ''); // Revert to old logo on failure
+            setLogoPreview(listingToEdit?.logoUrl || '');
         } finally {
             setIsUploading(false);
         }
@@ -84,7 +86,6 @@ const ListingFormModal = ({ isOpen, onClose, onSubmit, listingToEdit = null, api
             setLocalError("Business Name is a required field.");
             return;
         }
-        // Pass the form data up to the parent page to handle the API call
         await onSubmit(formData);
     };
 
