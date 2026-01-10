@@ -6,7 +6,7 @@ const getBaseUrl = () => {
     window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1'
   ) {
-    return 'http://localhost:8000/api';
+    return 'http://localhost:5000/api';
   }
   // 2. If running on the live internet
   else {

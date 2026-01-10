@@ -22,7 +22,7 @@ const defaultPlans = [
             { currency: 'EUR', amount: 27 },
             { currency: 'GBP', amount: 23 },
             { currency: 'CAD', amount: 39 },
-            { currency: 'XAF', amount: 18000 },
+            { currency: 'XAF', amount: 100 },
             { currency: 'XOF', amount: 18000 },
             { currency: 'NGN', amount: 25000 },
             { currency: 'GHS', amount: 350 },
