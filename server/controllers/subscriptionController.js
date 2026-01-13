@@ -100,7 +100,7 @@ const initiateSubscription = asyncHandler(async (req, res) => {
     pendingUser.signupData.transactionId = transaction_id;
     
     // IMPORTANT: Point to your frontend route that handles payment verification
-    const redirectUrl = `${process.env.FRONTEND_URL}/#/verify-payment?transaction_id=${transaction_id}&email=${pendingUser.email}`;
+    const callback_url = `${process.env.FRONTEND_URL}/#/verify-payment?transaction_id=${transaction_id}&email=${pendingUser.email}`;
 
     // G. Save & Send OTP (So they can verify AFTER payment)
     await pendingUser.save();
@@ -117,7 +117,7 @@ const initiateSubscription = asyncHandler(async (req, res) => {
         transaction_id,
         description: `Subscription to PressFlow ${plan.name} Plan`,
         pass_digital_charge: true,
-        redirect_url: redirectUrl 
+        callback_url : callback_url 
     };
 
     try {
@@ -191,7 +191,7 @@ const changeSubscriptionPlan = asyncHandler(async (req, res) => {
         transaction_id,
         description: `Upgrade to PressFlow ${newPlan.name} Plan`,
         pass_digital_charge: true,
-        redirect_url: `${process.env.FRONTEND_URL}/#/verify-upgrade?transaction_id=${transaction_id}`
+        callback_url: `${process.env.FRONTEND_URL}/#/verify-upgrade?transaction_id=${transaction_id}`
     };
 
     try {

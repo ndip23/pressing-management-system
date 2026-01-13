@@ -63,7 +63,7 @@ const corsOptions = {
   origin:
     process.env.NODE_ENV === "production"
       ? (process.env.FRONTEND_URL || "").split(",").map((url) => url.trim())
-      : ["http://localhost:3000", "http://localhost:3001"],
+      : ["http://localhost:3000", "http://localhost:3001", "https://pressing-management-frontend.onrender.com"],
   credentials: true,
 };
 app.use(cors(corsOptions));

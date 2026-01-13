@@ -1,7 +1,17 @@
-// server/config/cloudinaryConfig.js
 import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import dotenv from 'dotenv';
+import { createRequire } from 'module';
+
+// 1. Set up 'require'
+const require = createRequire(import.meta.url);
+
+// 2. Load the library package
+const multerStoragePkg = require('multer-storage-cloudinary');
+
+// 3. SAFELY extract the Constructor
+// This line checks if .CloudinaryStorage exists, otherwise it uses the package itself.
+// This fixes the "is not a constructor" error.
+const CloudinaryStorage = multerStoragePkg.CloudinaryStorage || multerStoragePkg.default?.CloudinaryStorage || multerStoragePkg;
 
 dotenv.config(); 
 
@@ -17,16 +27,16 @@ const storage = new CloudinaryStorage({
     params: {
         folder: 'pressflow_profile_pics',
         allowed_formats: ['jpg', 'jpeg', 'png', 'gif'],
-        public_id: (req, file) => `user_${req.user.id}_${Date.now()}`, 
+        public_id: (req, file) => `user_${req.user ? req.user.id : 'guest'}_${Date.now()}`, 
     },
 });
+
 const logoStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'pressflow_logos',
         allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
         transformation: [{ width: 300, height: 300, crop: 'limit' }],
-        // Cloudinary will auto-generate a unique public_id (filename)
     },
 });
 
