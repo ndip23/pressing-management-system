@@ -80,6 +80,7 @@ To get a local copy up and running, follow these simple steps.
     -   Create a `.env` file and add the following required variables:
         ```env
         MONGO_URI=your_mongodb_connection_string
+        BACKEND_URL=http://localhost:5000/api
         JWT_SECRET=your_jwt_secret_key
         CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
         CLOUDINARY_API_KEY=your_cloudinary_api_key

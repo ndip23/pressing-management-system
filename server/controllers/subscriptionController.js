@@ -7,6 +7,21 @@ import Plan from '../models/Plan.js';
 import PendingUser from '../models/PendingUser.js';
 import crypto from 'crypto';
 import { COUNTRY_TO_CURRENCY } from '../utils/currencyMap.js';
+import User from '../models/User.js';
+import { customAlphabet } from 'nanoid';
+import { sendOtpEmail } from '../services/notificationService.js';
+import { finalizeRegistrationLogic } from '../services/registrationService.js';
+import generateToken from '../utils/generateToken.js';
+
+const extractPaymentAttributes = (payload) => {
+    return payload?.data?.data?.attributes || null;
+};
+
+const isPaymentSuccessful = (statusValue) => {
+    if (statusValue === 1 || statusValue === '1') return true;
+    if (typeof statusValue === 'string' && statusValue.toLowerCase() === 'success') return true;
+    return false;
+};
 
 // @desc    Initiate a PAID subscription for a NEW user AFTER OTP verification
 // @route   POST /api/subscriptions/initiate
@@ -100,7 +115,12 @@ const initiateSubscription = asyncHandler(async (req, res) => {
     pendingUser.signupData.transactionId = transaction_id;
     
     // IMPORTANT: Point to your frontend route that handles payment verification
-    const callback_url = `${process.env.FRONTEND_URL}/#/verify-payment?transaction_id=${transaction_id}&email=${pendingUser.email}`;
+    let backendBaseUrl = process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL;
+    if (!backendBaseUrl) {
+        throw new Error('BACKEND_URL (or RENDER_EXTERNAL_URL) must be configured for payment callbacks.');
+    }
+    backendBaseUrl = backendBaseUrl.replace(/\/api\/?$/, '');
+    const callback_url = `${backendBaseUrl}/api/webhooks/accountpe?flow=signup&transaction_id=${transaction_id}&email=${pendingUser.email}`;
 
     // G. Save & Send OTP (So they can verify AFTER payment)
     await pendingUser.save();
@@ -122,11 +142,18 @@ const initiateSubscription = asyncHandler(async (req, res) => {
 
     try {
         const paymentResponse = await createPaymentLink(paymentData);
+        console.log('[Payment Link Response][subscriptionController/initiate]', paymentResponse?.data);
+        const paymentLink =
+            paymentResponse?.data?.data?.payment_link ||
+            paymentResponse?.data?.payment_link;
+        if (!paymentLink) {
+            throw new Error('Payment link not found in provider response.');
+        }
         
         res.status(200).json({
             message: "OTP sent. Redirecting to payment.",
             paymentRequired: true,
-            paymentLink: paymentResponse.data.data.payment_link
+            paymentLink
         });
     } catch (paymentError) {
         console.error("Payment Link Creation Failed:", paymentError.response?.data || paymentError.message);
@@ -180,6 +207,11 @@ const changeSubscriptionPlan = asyncHandler(async (req, res) => {
     // --- SMART LOGIC END ---
 
     const transaction_id = `PRESSFLOW-UPGRADE-${loggedInUser.tenantId}-${crypto.randomBytes(4).toString('hex')}`;
+    let backendBaseUrl = process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL;
+    if (!backendBaseUrl) {
+        throw new Error('BACKEND_URL (or RENDER_EXTERNAL_URL) must be configured for payment callbacks.');
+    }
+    backendBaseUrl = backendBaseUrl.replace(/\/api\/?$/, '');
     
     const paymentData = {
         country_code: userCountryCode, // ✅ Dynamic
@@ -191,19 +223,26 @@ const changeSubscriptionPlan = asyncHandler(async (req, res) => {
         transaction_id,
         description: `Upgrade to PressFlow ${newPlan.name} Plan`,
         pass_digital_charge: true,
-        callback_url: `${process.env.FRONTEND_URL}/#/verify-upgrade?transaction_id=${transaction_id}`
+        callback_url: `${backendBaseUrl}/api/webhooks/accountpe?flow=upgrade&transaction_id=${transaction_id}`
     };
 
     try {
         const paymentResponse = await createPaymentLink(paymentData);
-        res.status(201).json(paymentResponse.data);
+        console.log('[Payment Link Response][subscriptionController/change-plan]', paymentResponse?.data);
+        const paymentLink =
+            paymentResponse?.data?.data?.payment_link ||
+            paymentResponse?.data?.payment_link;
+        if (!paymentLink) {
+            throw new Error('Payment link not found in provider response.');
+        }
+        res.status(201).json({ data: { payment_link: paymentLink } });
     } catch (error) {
         console.error("Error creating payment link for upgrade:", error);
         throw new Error("Could not create payment link for the upgrade.");
     }
 });
 const verifyPaymentAndFinalize = asyncHandler(async (req, res) => {
-    const { transaction_id } = req.body;
+    const { transaction_id, email } = req.body;
 
     if (!transaction_id) {
         res.status(400);
@@ -212,17 +251,66 @@ const verifyPaymentAndFinalize = asyncHandler(async (req, res) => {
 
     // Find the pending user associated with this transaction
     const pendingUser = await PendingUser.findOne({ 'signupData.transactionId': transaction_id });
+
     if (!pendingUser) {
+        if (email) {
+            const existingUser = await User.findOne({ email: email.toLowerCase() });
+            if (existingUser) {
+                const token = generateToken(existingUser._id);
+                const tenant = await Tenant.findById(existingUser.tenantId);
+                return res.status(200).json({
+                    _id: existingUser._id,
+                    username: existingUser.username,
+                    role: existingUser.role,
+                    tenantId: existingUser.tenantId,
+                    token,
+                    tenant: tenant ? {
+                        plan: tenant.plan,
+                        subscriptionStatus: tenant.subscriptionStatus,
+                        trialEndsAt: tenant.trialEndsAt,
+                        nextBillingAt: tenant.nextBillingAt,
+                    } : undefined,
+                    message: 'Payment already confirmed. Please continue to your dashboard.'
+                });
+            }
+        }
         res.status(404);
         throw new Error('Invalid transaction or registration session has expired. Please contact support.');
     }
-    
-    // Check the payment status with the AccountPe API
-    const statusResponse = await getPaymentLinkStatus(transaction_id);
-    
-    // IMPORTANT: Check the exact success status from the AccountPe documentation. It might be 'success', 'SUCCESS', 'completed', etc.
-    if (statusResponse.data.status !== 'success') {
-        throw new Error('Payment has not been confirmed. If you have paid, please wait a moment or contact support.');
+
+    if (!pendingUser.paymentConfirmedAt) {
+        // Check the payment status with the AccountPe API
+        const statusResponse = await getPaymentLinkStatus(transaction_id);
+        const attributes = extractPaymentAttributes(statusResponse.data);
+        const status = attributes?.status ?? statusResponse.data?.status;
+
+        if (!isPaymentSuccessful(status)) {
+            throw new Error('Payment has not been confirmed. If you have paid, please wait a moment or contact support.');
+        }
+        pendingUser.paymentStatus = 'success';
+        pendingUser.paymentConfirmedAt = new Date();
+        await pendingUser.save();
+    }
+
+    // If the user was already created (e.g. concurrent verify), return token directly.
+    const existingUser = await User.findOne({ email: pendingUser.email.toLowerCase() });
+    if (existingUser) {
+        const token = generateToken(existingUser._id);
+        const tenant = await Tenant.findById(existingUser.tenantId);
+        return res.status(200).json({
+            _id: existingUser._id,
+            username: existingUser.username,
+            role: existingUser.role,
+            tenantId: existingUser.tenantId,
+            token,
+            tenant: tenant ? {
+                plan: tenant.plan,
+                subscriptionStatus: tenant.subscriptionStatus,
+                trialEndsAt: tenant.trialEndsAt,
+                nextBillingAt: tenant.nextBillingAt,
+            } : undefined,
+            message: 'Payment confirmed. Please continue to your dashboard.'
+        });
     }
 
     // Payment is successful, so we can now finalize the user's registration.

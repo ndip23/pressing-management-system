@@ -13,11 +13,11 @@ const payinApi = axios.create({
     headers: { 'Content-Type': 'application/json' },
 });
 
-// --- 2. CREATE the custom HTTPS agent ---
-// This agent will be used to bypass local SSL/TLS issues.
-const httpsAgent = new https.Agent({  
-  rejectUnauthorized: false,
-});
+// --- 2. OPTIONAL HTTPS agent ---
+// Only allow insecure TLS if explicitly enabled (never in production).
+const httpsAgent = process.env.ACCOUNTPE_ALLOW_INSECURE_TLS === 'true'
+  ? new https.Agent({ rejectUnauthorized: false })
+  : undefined;
 
 
 /**
@@ -64,7 +64,9 @@ const getAuthToken = async () => {
  */
 export const createPaymentLink = async (paymentData) => {
     const url = '/create_payment_links';
-    return payinApi.post(url, paymentData, { httpsAgent });
+    const idempotencyKey = paymentData?.transaction_id || undefined;
+    const headers = idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined;
+    return payinApi.post(url, paymentData, { httpsAgent, headers });
 };
 
 /**

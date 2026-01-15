@@ -11,13 +11,16 @@ import toast from 'react-hot-toast';
 const VerifyPaymentPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { loginWithToken } = useAuth();
     const [statusMessage, setStatusMessage] = useState('Verifying your payment...');
     const [error, setError] = useState('');
     const [isSuccess, setIsSuccess] = useState(false);
+    const [needsLogin, setNeedsLogin] = useState(false);
 
     useEffect(() => {
-        const transactionId = new URLSearchParams(location.search).get('transaction_id');
+        const params = new URLSearchParams(location.search);
+        const transactionId = params.get('transaction_id');
+        const email = params.get('email');
 
         if (!transactionId) {
             setError("Invalid verification link. No transaction ID found.");
@@ -26,16 +29,20 @@ const VerifyPaymentPage = () => {
 
         const verify = async () => {
             try {
-                const { data } = await verifyPaymentAndFinalizeApi({ transaction_id: transactionId });
+                const { data } = await verifyPaymentAndFinalizeApi({ transaction_id: transactionId, email });
                 setStatusMessage("Payment confirmed! Your account is ready.");
                 setIsSuccess(true);
-                login(data); // Log the user in with the data from the backend
-                toast.success(data.message);
-                
-                // Redirect to the dashboard after a short delay to allow the user to read the message
-                setTimeout(() => {
-                    navigate('/app/dashboard');
-                }, 3000);
+                if (data?.token) {
+                    await loginWithToken(data.token);
+                    toast.success(data.message || "Payment confirmed!");
+                    // Redirect to the dashboard after a short delay to allow the user to read the message
+                    setTimeout(() => {
+                        navigate('/app/dashboard');
+                    }, 3000);
+                } else {
+                    setNeedsLogin(true);
+                    setStatusMessage('Payment confirmed. Please log in to continue.');
+                }
 
             } catch (err) {
                 setError(err.response?.data?.message || "Failed to verify your payment. Please contact support.");
@@ -45,7 +52,7 @@ const VerifyPaymentPage = () => {
         // Run the verification once on component mount
         verify();
 
-    }, [location.search, navigate, login]); // Dependencies
+    }, [location.search, navigate, loginWithToken]); // Dependencies
 
     return (
         <div className="min-h-screen bg-apple-gray-50 dark:bg-apple-gray-950 flex flex-col items-center justify-center text-center p-4">
@@ -62,7 +69,13 @@ const VerifyPaymentPage = () => {
                 <div className="flex flex-col items-center max-w-md">
                     <CheckCircle2 size={48} className="text-green-500 mb-4" />
                     <h1 className="text-2xl font-bold text-green-500">{statusMessage}</h1>
-                    <p className="mt-2 text-gray-600 dark:text-apple-gray-400">Redirecting you to your dashboard now...</p>
+                    {needsLogin ? (
+                        <p className="mt-2 text-gray-600 dark:text-apple-gray-400">
+                            Please <Link to="/login" className="text-apple-blue underline font-semibold">log in</Link> to continue.
+                        </p>
+                    ) : (
+                        <p className="mt-2 text-gray-600 dark:text-apple-gray-400">Redirecting you to your dashboard now...</p>
+                    )}
                 </div>
             ) : (
                 <div className="flex flex-col items-center max-w-md">

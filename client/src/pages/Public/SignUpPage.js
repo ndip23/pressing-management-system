@@ -385,6 +385,9 @@ const SignUpPage = () => {
 
             if (data.paymentRequired) {
                 // The backend says payment is needed and has sent us the link.
+                if (!data.paymentLink) {
+                    throw new Error("Payment link was not returned by the server.");
+                }
                 window.location.href = data.paymentLink;
             } else {
                 // The backend says it's a Trial, so we move to the OTP step.
