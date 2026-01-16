@@ -4,8 +4,7 @@ import Tenant from '../models/Tenant.js';
 import Customer from '../models/Customer.js';
 import InboundMessage from '../models/InboundMessage.js';
 import PendingUser from '../models/PendingUser.js';
-// We'll need the full finalizeRegistration logic here or imported
-import { finalizeRegistrationLogic } from '../services/registrationService.js';
+import crypto from 'crypto';
 // Import your notification service if you want to forward the message to the admin
 // import { sendAdminAlertEmail } from '../services/notificationService.js';
 
@@ -79,31 +78,71 @@ const handleTwilioWhatsapp = asyncHandler(async (req, res) => {
 // @desc    Handle incoming webhooks from AccountPe
 // @route   POST /api/webhooks/accountpe
 // @access  Public
+const verifySwychrSignature = (rawBody, signature) => {
+    const secret = process.env.ACCOUNTPE_WEBHOOK_SECRET;
+    if (!secret) return true;
+    if (!signature || !rawBody) return false;
+    const expected = crypto
+        .createHmac('sha256', secret)
+        .update(rawBody)
+        .digest('hex');
+    try {
+        return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+    } catch (_err) {
+        return false;
+    }
+};
+
+const extractPaymentAttributes = (payload) => {
+    return payload?.data?.data?.attributes || null;
+};
+
+const isPaymentSuccessful = (statusValue) => {
+    if (statusValue === 1 || statusValue === '1') return true;
+    if (typeof statusValue === 'string' && statusValue.toLowerCase() === 'success') return true;
+    return false;
+};
+
 const accountPeWebhook = asyncHandler(async (req, res) => {
-    const { transaction_id, status } = req.body;
+    const rawBody = req.body instanceof Buffer ? req.body.toString('utf8') : null;
+    const signature = req.headers['x-swychr-signature'];
 
-    console.log(`[Webhook] Received for transaction: ${transaction_id}, status: ${status}`);
+    if (!verifySwychrSignature(rawBody, signature)) {
+        console.warn('[Webhook] Invalid SwyChr signature. Request rejected.');
+        return res.status(403).send('Forbidden');
+    }
 
-    if (status === 'success') {
-        if (transaction_id.startsWith('PRESSFLOW-SUB-')) {
-            // This is for a new user registration
-            const pendingUser = await PendingUser.findOne({ 'signupData.transactionId': transaction_id });
+    const payload = rawBody ? JSON.parse(rawBody) : req.body;
+    const attributes = extractPaymentAttributes(payload);
+
+    if (!attributes) {
+        return res.status(400).send('Invalid webhook payload.');
+    }
+
+    const transactionId = attributes.transaction_id;
+    const status = attributes.status;
+
+    console.log(`[Webhook] Received for transaction: ${transactionId}, status: ${status}`);
+
+    if (isPaymentSuccessful(status)) {
+        if (transactionId?.startsWith('PRESSFLOW-SUB-')) {
+            // This is for a new user registration. Mark payment confirmed; finalize on verify endpoint.
+            const pendingUser = await PendingUser.findOne({ 'signupData.transactionId': transactionId });
             if (pendingUser) {
-                console.log(`Finalizing registration for ${pendingUser.email}`);
-                // You MUST refactor your finalizeRegistration controller logic into a reusable
-                // function (`finalizeRegistrationLogic`) that can be called from here.
-                // This function will create the Tenant, User, Settings, etc.
-                await finalizeRegistrationLogic(pendingUser);
+                pendingUser.paymentStatus = 'success';
+                pendingUser.paymentConfirmedAt = new Date();
+                await pendingUser.save();
+                console.log(`[Webhook] Marked payment confirmed for ${pendingUser.email}`);
             } else {
-                console.error(`[Webhook] No pending user found for SUB transaction: ${transaction_id}`);
+                console.error(`[Webhook] No pending user found for SUB transaction: ${transactionId}`);
             }
-        } else if (transaction_id.startsWith('PRESSFLOW-UPGRADE-')) {
+        } else if (transactionId?.startsWith('PRESSFLOW-UPGRADE-')) {
             // This is for an existing user upgrade
             // You would need to find the tenant based on the saved transactionId
             // For now, we'll extract the tenant ID from the transaction string
-            const tenantId = transaction_id.split('-')[2]; 
+            const tenantId = transactionId.split('-')[2]; 
             const tenant = await Tenant.findById(tenantId);
-            const newPlanName = "Pro"; // This should also be stored with the payment intent
+            const newPlanName = "Pro"; // TODO: Store plan on the payment intent and use it here.
             
             if (tenant) {
                 console.log(`Upgrading subscription for ${tenant.name}`);
@@ -116,7 +155,7 @@ const accountPeWebhook = asyncHandler(async (req, res) => {
                 tenant.nextBillingAt = nextBillingDate;
                 await tenant.save();
             } else {
-                console.error(`[Webhook] No tenant found for UPGRADE transaction: ${transaction_id}`);
+                console.error(`[Webhook] No tenant found for UPGRADE transaction: ${transactionId}`);
             }
         }
     }
@@ -124,4 +163,21 @@ const accountPeWebhook = asyncHandler(async (req, res) => {
     res.status(200).send('Webhook received.');
 });
 
-export { accountPeWebhook, handleTwilioWhatsapp };
+const accountPeRedirect = asyncHandler(async (req, res) => {
+    const { flow, transaction_id, email } = req.query;
+    const frontendBase = process.env.FRONTEND_URL;
+
+    if (!frontendBase) {
+        return res.status(500).send('FRONTEND_URL is not configured.');
+    }
+
+    if (flow === 'upgrade') {
+        const redirectUrl = `${frontendBase}/#/verify-upgrade?transaction_id=${transaction_id || ''}`;
+        return res.redirect(302, redirectUrl);
+    }
+
+    const redirectUrl = `${frontendBase}/#/verify-payment?transaction_id=${transaction_id || ''}&email=${email || ''}`;
+    return res.redirect(302, redirectUrl);
+});
+
+export { accountPeWebhook, accountPeRedirect, handleTwilioWhatsapp };

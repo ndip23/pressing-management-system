@@ -2,6 +2,8 @@
 import mongoose from 'mongoose'; 
 import Order from '../models/Order.js';
 import Customer from '../models/Customer.js';
+import Tenant from '../models/Tenant.js';
+import Plan from '../models/Plan.js';
 import asyncHandler from '../middleware/asyncHandler.js';
 import { generateReceiptNumber } from '../utils/generateReceiptNumber.js';
 import { sendNotification } from '../services/notificationService.js';

@@ -4,7 +4,8 @@ import mongoose from 'mongoose';
 // --- DEFINE SUB-SCHEMAS AT THE TOP LEVEL ---
 const orderItemSchema = new mongoose.Schema({
     itemType: { type: String, required: [true, 'Item type is required'] },
-    serviceType: { type: String, required: [true, 'Service type is required'], enum: ['wash', 'dry clean', 'iron', 'wash & iron', 'special care', 'other'] },
+    // Service types are tenant-configurable, so avoid a hard-coded enum.
+    serviceType: { type: String, required: [true, 'Service type is required'], trim: true },
     quantity: { type: Number, required: [true, 'Quantity is required'], min: [1, 'Quantity must be at least 1'] },
     specialInstructions: { type: String, trim: true },
 }, { _id: false });

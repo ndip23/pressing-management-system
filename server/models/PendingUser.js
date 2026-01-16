@@ -19,6 +19,8 @@ const pendingUserSchema = new mongoose.Schema({
         plan: { type: String, required: true },
         transactionId: { type: String } // For linking payment to registration
     },
+    paymentStatus: { type: String },
+    paymentConfirmedAt: { type: Date },
     expireAt: {
         type: Date,
         default: () => new Date(Date.now() + 15 * 60 * 1000), // 15 minutes

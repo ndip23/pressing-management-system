@@ -16,42 +16,6 @@ import crypto from 'crypto';
 import DirectoryListing from '../models/DirectoryListing.js';
 import { sendContactFormEmail } from '../services/notificationService.js';
 
-// Map ISO Country Codes to Currencies supported by AccountPe/Your Business
-const COUNTRY_TO_CURRENCY = {
-    // --- Central Africa (XAF) ---
-    'CM': 'XAF', // Cameroon
-    'GA': 'XAF', // Gabon
-    'TD': 'XAF', // Chad
-    'CG': 'XAF', // Republic of Congo
-    'GQ': 'XAF', // Equatorial Guinea
-    'CF': 'XAF', // Central African Republic
-
-    // --- West Africa (XOF) ---
-    'BJ': 'XOF', // Benin
-    'BF': 'XOF', // Burkina Faso
-    'CI': 'XOF', // Côte d'Ivoire (Ivory Coast)
-    'GW': 'XOF', // Guinea-Bissau
-    'ML': 'XOF', // Mali
-    'NE': 'XOF', // Niger
-    'SN': 'XOF', // Senegal
-    'TG': 'XOF', // Togo
-
-    // --- Southern/East Africa ---
-    'ZW': 'ZWL', // Zimbabwe
-    'ZA': 'ZAR', // South Africa
-    'KE': 'KES', // Kenya
-    
-    // --- West Africa (Others) ---
-    'NG': 'NGN', // Nigeria
-    'GH': 'GHS', // Ghana
-
-    // --- International ---
-    'US': 'USD', // USA
-    'GB': 'GBP', // UK
-    'FR': 'EUR', // France
-    'CA': 'CAD', // Canada
-    'PH': 'PHP', // Philippines
-};
 // --- STEP 1: INITIATE REGISTRATION & SEND OTP ---
 const initiateRegistration = asyncHandler(async (req, res) => {
     const registrationData = req.body;
@@ -98,8 +62,8 @@ const initiateRegistration = asyncHandler(async (req, res) => {
         const plan = await Plan.findOne({ name: planName });
         if (!plan) throw new Error('Invalid plan selected.');
 
-        // --- THIS IS THE FIX ---
-        const paymentCurrency = 'XAF'; // Target currency for payment
+        // --- STATIC CURRENCY FOR NOW (XAF) ---
+        const paymentCurrency = 'XAF';
         const priceDetails = plan.prices.find(p => p.currency === paymentCurrency);
         const fallbackPriceDetails = plan.prices.find(p => p.currency === 'USD');
         const finalPriceDetails = priceDetails || fallbackPriceDetails;
@@ -110,7 +74,13 @@ const initiateRegistration = asyncHandler(async (req, res) => {
         
         const transaction_id = `PRESSFLOW-SUB-${pendingUser._id}-${crypto.randomBytes(4).toString('hex')}`;
         pendingUser.signupData.transactionId = transaction_id;
-        const callback_url  = `${process.env.FRONTEND_URL}/#/verify-payment?transaction_id=${transaction_id}&email=${pendingUser.email}`;
+        let backendBaseUrl = process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL;
+        if (!backendBaseUrl) {
+            throw new Error('BACKEND_URL (or RENDER_EXTERNAL_URL) must be configured for payment callbacks.');
+        }
+        // Avoid double "/api" when env var already includes it.
+        backendBaseUrl = backendBaseUrl.replace(/\/api\/?$/, '');
+        const callback_url  = `${backendBaseUrl}/api/webhooks/accountpe?flow=signup&transaction_id=${transaction_id}&email=${pendingUser.email}`;
 
 // --- ADD THIS LOG for definitive proof ---
         console.log(`[Payment Flow] Sending this redirect_url to AccountPe: ${callback_url }`);
@@ -122,6 +92,7 @@ const initiateRegistration = asyncHandler(async (req, res) => {
             name: pendingUser.signupData.adminUser.username,
             email: pendingUser.email,
             amount: finalPriceDetails.amount, // <-- Now sends the correct amount (e.g., 36000)
+            currency: finalPriceDetails.currency,
             transaction_id,
             description: `Subscription to PressFlow ${plan.name} Plan`,
             pass_digital_charge: true,
@@ -130,10 +101,17 @@ const initiateRegistration = asyncHandler(async (req, res) => {
 
         try {
             const paymentResponse = await createPaymentLink(paymentData);
+            console.log('[Payment Link Response][publicController]', paymentResponse?.data);
+            const paymentLink =
+                paymentResponse?.data?.data?.payment_link ||
+                paymentResponse?.data?.payment_link;
+            if (!paymentLink) {
+                throw new Error('Payment link not found in provider response.');
+            }
             res.status(200).json({
                 message: "OTP sent. Redirecting to payment.",
                 paymentRequired: true,
-                paymentLink: paymentResponse.data.data.payment_link
+                paymentLink
             });
         } catch (paymentError) {
             console.error("Payment Link Creation Failed:", paymentError);

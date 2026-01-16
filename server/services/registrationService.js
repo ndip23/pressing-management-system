@@ -23,10 +23,12 @@ export const finalizeRegistrationLogic = async (pendingUser) => {
         throw new Error("Pending registration data is incomplete.");
     }
 
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
-    try {
+    const maxRetries = 3;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
         // --- 1. DETERMINE PLAN ---
         // Normalize plan name from input (e.g. 'trial' -> 'Trial')
         let chosenPlanName = planName ? (planName.charAt(0).toUpperCase() + planName.slice(1)) : 'Trial';
@@ -110,15 +112,19 @@ export const finalizeRegistrationLogic = async (pendingUser) => {
         
         const token = generateToken(savedUser._id); // Generate JWT for immediate login
 
-        await session.commitTransaction();
-        
-        return { tenant: savedTenant, user: savedUser, token };
-
-    } catch (error) {
-        await session.abortTransaction();
-        console.error("Transaction failed in registrationService:", error);
-        throw error;
-    } finally {
-        session.endSession();
+            await session.commitTransaction();
+            return { tenant: savedTenant, user: savedUser, token };
+        } catch (error) {
+            await session.abortTransaction();
+            console.error("Transaction failed in registrationService:", error);
+            const shouldRetry = Array.isArray(error?.errorLabels) && error.errorLabels.includes('TransientTransactionError');
+            if (shouldRetry && attempt < maxRetries - 1) {
+                session.endSession();
+                continue;
+            }
+            throw error;
+        } finally {
+            session.endSession();
+        }
     }
 };
