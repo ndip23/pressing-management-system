@@ -383,7 +383,7 @@
     "fetchReport": "Kunin ang Ulat",
     "reportFor": "Ulat para sa: {{date}}",
     "totalCollected": "Kabuuang Nakolektang Halaga",
-    "numberOfTransactions": "# ng Mga Transaksyon ng Bayad",
+    "numberOfTransactions": "number ng Mga Transaksyon ng Bayad",
     "detailedTransactions": "Mga Detalyadong Transaksyon:",
     "table": {
       "paymentTime": "Oras ng Bayad",

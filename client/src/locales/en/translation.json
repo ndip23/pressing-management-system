@@ -104,7 +104,7 @@
   "dashboard": {
     "title": "Dashboard",
     "totalOrders": "Total Orders",
-    "pendingProcessing": "Pending/Processing",
+    "pendingProcessing": "Pending/Process",
     "readyForPickup": "Ready for Pickup",
     "overdueOrders": "Overdue Orders",
     "orderList": "Order List",
@@ -422,7 +422,7 @@
     "fetchReport": "Fetch Report",
     "reportFor": "Report for: {{date}}",
     "totalCollected": "Total Amount Collected",
-    "numberOfTransactions": "# of Payment Transactions",
+    "numberOfTransactions": "Number of Payment Transactions",
     "detailedTransactions": "Detailed Transactions:",
     "table": {
       "paymentTime": "Payment Time",

@@ -88,6 +88,8 @@ function App() {
                             <Route path ="/Demo" element={<SignUpPage />} />
                             <Route path="/verify-payment" element={<VerifyPaymentPage />} />    
                             <Route path="/verify-upgrade" element={<VerifyUpgradePage />} /> 
+                            <Route path="/signup" element={<SignUpPage />} />
+                                <Route path="/login" element={<LoginPage />} />
                         </Route>
 
                         {/* --- 2. PUBLIC DIRECTORY ROUTES --- */}
@@ -97,8 +99,7 @@ function App() {
                         </Route>
                         
                         {/* --- 3. STANDALONE PUBLIC ROUTES (No standard layout) --- */}
-                        <Route path="/signup" element={<SignUpPage />} />
-                        <Route path="/login" element={<LoginPage />} />
+                        
                         <Route path="/contact" element={<ContactPage />} />
                         <Route path="/directory-admin/login" element={<DirectoryAdminLoginPage />} />
 

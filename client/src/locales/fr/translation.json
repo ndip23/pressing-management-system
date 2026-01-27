@@ -383,7 +383,7 @@
     "fetchReport": "Générer le Rapport",
     "reportFor": "Rapport pour: {{date}}",
     "totalCollected": "Montant Total Collecté",
-    "numberOfTransactions": "# de Transactions de Paiement",
+    "numberOfTransactions": "Nombre de Transactions de Paiement",
     "detailedTransactions": "Transactions Détaillées:",
     "table": {
       "paymentTime": "Heure de Paiement",

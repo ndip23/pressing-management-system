@@ -42,5 +42,4 @@ const styles = StyleSheet.create({
     title: { fontSize: 40, fontWeight: 'bold', textAlign: 'center', marginBottom: 40, color: '#1c1c1e' },
     errorText: { color: '#ff3b30', textAlign: 'center', marginBottom: 12, fontWeight: '500' },
 });
-
 export default LoginScreen;
