@@ -1,9 +1,9 @@
 - envId: dev
   name: Development
   gitRefName: main
-  awsAccountId: 362954627441
+  awsAccountId: 705008887929
   domainName: pressmark.site
   projectName: pressmark
-  hostedZoneId: Z07312001XKUEA4T7Z91P
+  hostedZoneId: Z10385722TGFZRW3RVLGX
 
 
