@@ -10,7 +10,7 @@ const getBaseUrl = () => {
   }
   // 2. If running on the live internet
   else {
-    return 'https://pressing-management-api.onrender.com/api';
+    return 'https://pressmark-api.onrender.com';
   }
 };
 
