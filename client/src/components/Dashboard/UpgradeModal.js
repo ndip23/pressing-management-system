@@ -9,7 +9,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLocalization } from '../../contexts/LocalizationContext';
 import { Check, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
 
 // Reusable card for displaying a plan inside the modal
 const PlanCard = ({ plan, onSelect, currentPlan, isLoading }) => {
@@ -54,8 +53,7 @@ const PlanCard = ({ plan, onSelect, currentPlan, isLoading }) => {
 
 // Main Modal Component
 const UpgradeModal = ({ isOpen, onClose }) => {
-    const { user, login } = useAuth();
-    const navigate = useNavigate();
+    const { user } = useAuth();
     const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isUpgrading, setIsUpgrading] = useState(false);

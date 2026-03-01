@@ -5,7 +5,6 @@ import { fetchCustomers, deleteCustomerApi } from '../../services/api';
 import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
 import Input from '../../components/UI/Input';
-import { trackEvent } from '../../utils/pixel';
 import Spinner from '../../components/UI/Spinner';
 import { useAuth } from '../../contexts/AuthContext';
 import { Users, PlusCircle, Search, Edit3, Trash2, Eye, AlertTriangle, CheckCircle2 } from 'lucide-react';

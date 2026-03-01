@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import Input from '../UI/Input';
 import Select from '../UI/Select';
 import Button from '../UI/Button';
-import { Filter, RotateCcw, Search } from 'lucide-react';
+import { RotateCcw, Search } from 'lucide-react';
 
 const FilterControls = ({ filters, onFilterChange, onResetFilters, onApplyFilters }) => {
     const { t } = useTranslation();

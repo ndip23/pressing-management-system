@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle2, AlertCircle, Clock3, RefreshCw, XCircle, HelpCircle } from 'lucide-react';
+import { CheckCircle2,  Clock3, RefreshCw, XCircle, HelpCircle } from 'lucide-react';
 
 const OrderStatusBadge = ({ status }) => {
     const { t } = useTranslation();

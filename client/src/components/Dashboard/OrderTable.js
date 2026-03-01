@@ -5,12 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { format, parseISO, isPast } from 'date-fns';
 import { useAppSettings } from '../../contexts/SettingsContext'; 
 import {
-    Edit3,
     Eye,
     AlertTriangle,
     CheckCircle2, 
-    Clock3,       
-    DollarSign,  
+    Clock3,        
     Shirt,       
     // XCircle,      // Example: Could be used for a "Cancel Order" action icon
     // MoreHorizontal // Example: Could be used for a dropdown menu action icon

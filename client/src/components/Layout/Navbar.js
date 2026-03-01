@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useAdminNotifications } from '../../contexts/NotificationContext';
 import {
     Bell, Menu, AlertTriangle,
-    XCircle, PlusCircle
+    PlusCircle
 } from 'lucide-react';
 import Button from '../UI/Button';
 import LanguageSwitcher from '../UI/LanguageSwitcher';
@@ -16,7 +16,7 @@ import { formatDistanceToNowStrict, isValid as isValidDate } from 'date-fns';
 
 const Navbar = ({ toggleSidebar, sidebarOpen }) => {
     const { t } = useTranslation();
-    const { user, logout, isAuthenticated } = useAuth();
+    const { isAuthenticated } = useAuth();
     const { notifications, unreadCount, markAsRead, clearAllNotifications, loadingNotifications } = useAdminNotifications();
     const [showNotifications, setShowNotifications] = useState(false);
 
