@@ -63,7 +63,10 @@ const corsOptions = {
   origin:
     process.env.NODE_ENV === "production"
       ? (process.env.FRONTEND_URL || "").split(",").map((url) => url.trim())
-      : ["http://localhost:3000", "http://localhost:3001", "https://pressing-management-frontend.onrender.com"],
+      : ["http://localhost:3000",
+        "https://pressmark.site",      
+        "https://www.pressmark.site",  
+        "https://pressing-management-system.vercel.app" ],
   credentials: true,
 };
 app.use(cors(corsOptions));
