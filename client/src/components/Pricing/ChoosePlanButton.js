@@ -40,7 +40,7 @@ const ChoosePlanButton = ({ planName, isFeatured }) => {
     } else { // User is a guest
         // The link correctly passes the plan to the registration page
         return (
-            <Link to={`/register?plan=${planName.toLowerCase()}`} className="w-full">
+            <Link to={`/signup?plan=${planName.toLowerCase()}`} className="w-full">
                 <Button variant={isFeatured ? 'primary' : 'secondary'} size="lg" className="w-full">
                     Choose {planName}
                 </Button>
