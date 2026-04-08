@@ -47,7 +47,7 @@ export const PublicHeader = () => {
                     
                     {/* Desktop Navigation */}
                     <div className="hidden md:flex space-x-6 items-center">
-                        <Link to="/directory" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.home')}</Link>
+                       {/* <Link to="/directory" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.home')}</Link>*/}
                        < Link to="/add-your-buisness" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.add')}</Link>
                         <Link to="/features" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.features')}</Link>
                         <Link to="/demo" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">Demo</Link>
