@@ -12,6 +12,10 @@ const payinApi = axios.create({
     baseURL: 'https://api.accountpe.com/api/payin',
     headers: { 'Content-Type': 'application/json' },
 });
+const payoutApi = axios.create({
+    baseURL: 'https://api.accountpe.com/api/payout', // <-- Note the /payout URL
+    headers: { 'Content-Type': 'application/json' },
+});
 
 // --- 2. OPTIONAL HTTPS agent ---
 // Only allow insecure TLS if explicitly enabled (never in production).
@@ -58,7 +62,29 @@ const getAuthToken = async () => {
         throw new Error('Payment provider authentication failed.');
     }
 };
+export const convertFiatToPUSD = async (currencyCode, fiatAmount) => {
+    try {
+        const response = await payoutApi.post('/fiat_to_pusd_conversion', {
+            currency_code: currencyCode,
+            fiat_amount: Number(fiatAmount)
+        }, { httpsAgent });
 
+        console.log('[AccountPe Service] Conversion Response:', response.data);
+
+        // Extract the converted amount. 
+        // Adjust "response.data.data.pusd_amount" based on actual AccountPe API response structure.
+        const convertedAmount = response.data?.data?.pusd_amount || response.data?.pusd_amount || response.data?.converted_amount;
+        
+        if (!convertedAmount) {
+             throw new Error('Could not read converted amount from response.');
+        }
+
+        return convertedAmount;
+    } catch (error) {
+        console.error("[AccountPe Service] Currency conversion failed:", error.response?.data || error.message);
+        throw new Error("Currency conversion failed.");
+    }
+}
 /**
  * Creates a payment link. This function relies on the interceptor to get a token.
  */
@@ -80,16 +106,12 @@ export const getPaymentLinkStatus = async (transactionId) => {
 /**
  * Axios request interceptor.
  */
-payinApi.interceptors.request.use(
-    async (config) => {
-        if (config.url === '/admin/auth') {
-            return config;
-        }
-        if (!authToken || new Date() > tokenExpiresAt) {
-            await getAuthToken();
-        }
-        config.headers['Authorization'] = `Bearer ${authToken}`;
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
+const authInterceptor = async (config) => {
+    if (config.url === '/admin/auth') return config;
+    if (!authToken || new Date() > tokenExpiresAt) await getAuthToken();
+    config.headers['Authorization'] = `Bearer ${authToken}`;
+    return config;
+};
+
+payinApi.interceptors.request.use(authInterceptor, (error) => Promise.reject(error));
+payoutApi.interceptors.request.use(authInterceptor, (error) => Promise.reject(error));

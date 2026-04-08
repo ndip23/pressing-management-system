@@ -66,6 +66,8 @@ const corsOptions = {
       : ["http://localhost:3000",
         "https://pressmark.site",      
         "https://www.pressmark.site",  
+        "https://sys.pressmark.site",
+        "https://www.sys.pressmark.site",
         "https://pressing-management-system.vercel.app" ],
   credentials: true,
 };

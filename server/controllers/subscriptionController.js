@@ -1,7 +1,7 @@
 // server/controllers/subscriptionController.js
 
 import asyncHandler from '../middleware/asyncHandler.js';
-import { createPaymentLink, getPaymentLinkStatus } from '../services/accountPeService.js';
+import { createPaymentLink, getPaymentLinkStatus, convertFiatToPUSD } from '../services/accountPeService.js';
 import Tenant from '../models/Tenant.js';
 import Plan from '../models/Plan.js';
 import PendingUser from '../models/PendingUser.js';
@@ -49,7 +49,8 @@ const initiateSubscription = asyncHandler(async (req, res) => {
     // --- 2. Clean up old pending attempts ---
     await PendingUser.deleteOne({ email: adminUser.email.toLowerCase() });
 
-    // --- 3. Generate OTP & Create Pending User ---
+    // --- 3. Create Pending User ---
+    // We still generate a random string just to satisfy the DB schema if it requires otpHash
     const nanoid = customAlphabet('1234567890', 6);
     const otp = nanoid();
 
@@ -59,25 +60,36 @@ const initiateSubscription = asyncHandler(async (req, res) => {
         signupData: registrationData,
     });
     
-    // --- 4. LOGIC: TRIAL ACCOUNT (No Payment) ---
-    // If the plan is missing OR explicitly 'Trial', skip payment.
+    // --- 4. LOGIC: TRIAL ACCOUNT (No Payment & No OTP) ---
+    // If the plan is missing OR explicitly 'Trial', skip payment and finalize immediately.
     if (!planName || planName.toLowerCase() === 'trial') {
         // Ensure plan name is consistent for finalize step
         pendingUser.signupData.plan = 'Trial'; 
+        
+        // Mark as paid/success so the system knows it's a valid trial
+        pendingUser.paymentStatus = 'success';
+        pendingUser.paymentConfirmedAt = new Date();
         await pendingUser.save();
         
-        try {
-            await sendOtpEmail(adminUser.email, otp);
-        } catch (emailError) {
-            console.error(`FAILED to send OTP email:`, emailError);
-            throw new Error("Could not send verification email.");
-        }
+        // Finalize immediately since we removed OTP
+        const { tenant, user, token } = await finalizeRegistrationLogic(pendingUser);
 
-        res.status(200).json({ 
-            message: `A verification code has been sent to ${adminUser.email}.`,
-            paymentRequired: false
+        // Return the payload the frontend expects to log the user in
+        return res.status(201).json({ 
+            paymentRequired: false,
+            _id: user._id, 
+            username: user.username, 
+            role: user.role,
+            tenantId: user.tenantId, 
+            token,
+            tenant: { 
+                plan: tenant.plan,
+                subscriptionStatus: tenant.subscriptionStatus,
+                trialEndsAt: tenant.trialEndsAt,
+                nextBillingAt: tenant.nextBillingAt,
+            },
+            message: `Account for '${tenant.name}' has been created successfully.`
         });
-        return; // Stop here, do not create payment link
     } 
 
     // --- 5. LOGIC: PAID ACCOUNT (Smart Payment) ---
@@ -122,16 +134,30 @@ const initiateSubscription = asyncHandler(async (req, res) => {
     backendBaseUrl = backendBaseUrl.replace(/\/api\/?$/, '');
     const callback_url = `${backendBaseUrl}/api/webhooks/accountpe?flow=signup&transaction_id=${transaction_id}&email=${pendingUser.email}`;
 
-    // G. Save & Send OTP (So they can verify AFTER payment)
+    // G. Save (OTP Email has been removed)
     await pendingUser.save();
-    await sendOtpEmail(adminUser.email, otp);
 
-    // H. Create AccountPe Link
+    // H. Currency Conversion to USD (PUSD)
+    let finalCurrency = finalPriceDetails.currency;
+    let finalAmount = finalPriceDetails.amount;
+
+    if (finalCurrency !== 'USD') {
+        try {
+            console.log(`[Init Reg] Converting ${finalAmount} ${finalCurrency} to USD...`);
+            finalAmount = await convertFiatToPUSD(finalCurrency, finalAmount);
+            finalCurrency = 'USD'; // Switch currency to USD for the payment link
+            console.log(`[Init Reg] Converted Amount: ${finalAmount} USD`);
+        } catch (error) {
+            res.status(500);
+            throw new Error("Failed to convert currency. Please try again later.");
+        }
+    }
+
+    // I. Create AccountPe Link
     const paymentData = {
         country_code: userCountryCode, // e.g. 'NG'
-        currency: finalPriceDetails.currency, // e.g. 'NGN'
-        amount: finalPriceDetails.amount, // e.g. 25000
-        
+        currency: finalCurrency,       // Guaranteed to be USD
+        amount: finalAmount,           // The converted USD amount
         name: pendingUser.signupData.adminUser.username,
         email: pendingUser.email,
         transaction_id,
@@ -151,7 +177,7 @@ const initiateSubscription = asyncHandler(async (req, res) => {
         }
         
         res.status(200).json({
-            message: "OTP sent. Redirecting to payment.",
+            message: "Redirecting to payment...", // Updated message to remove OTP mention
             paymentRequired: true,
             paymentLink
         });
@@ -160,7 +186,6 @@ const initiateSubscription = asyncHandler(async (req, res) => {
         throw new Error("Could not create payment link. Please try again.");
     }
 });
-
 // @desc    Generate a payment link for an EXISTING tenant to upgrade their plan
 // @route   POST /api/subscriptions/change-plan
 // @access  Private (Tenant)
@@ -213,11 +238,26 @@ const changeSubscriptionPlan = asyncHandler(async (req, res) => {
     }
     backendBaseUrl = backendBaseUrl.replace(/\/api\/?$/, '');
     
+    // Currency Conversion to USD (PUSD) for Upgrades
+    let finalCurrency = finalPriceDetails.currency;
+    let finalAmount = finalPriceDetails.amount;
+
+    if (finalCurrency !== 'USD') {
+        try {
+            console.log(`[Upgrade] Converting ${finalAmount} ${finalCurrency} to USD...`);
+            finalAmount = await convertFiatToPUSD(finalCurrency, finalAmount);
+            finalCurrency = 'USD'; // Switch currency to USD
+            console.log(`[Upgrade] Converted Amount: ${finalAmount} USD`);
+        } catch (error) {
+            res.status(500);
+            throw new Error("Failed to convert currency for upgrade. Please try again later.");
+        }
+    }
+
     const paymentData = {
-        country_code: userCountryCode, // ✅ Dynamic
-        currency: finalPriceDetails.currency, // ✅ Dynamic
-        amount: finalPriceDetails.amount, // ✅ Dynamic
-        
+        country_code: userCountryCode, 
+        currency: finalCurrency, // Guaranteed to be USD
+        amount: finalAmount,     // The converted USD amount
         name: tenant.name,
         email: loggedInUser.email,
         transaction_id,
@@ -241,6 +281,7 @@ const changeSubscriptionPlan = asyncHandler(async (req, res) => {
         throw new Error("Could not create payment link for the upgrade.");
     }
 });
+
 const verifyPaymentAndFinalize = asyncHandler(async (req, res) => {
     const { transaction_id, email } = req.body;
 

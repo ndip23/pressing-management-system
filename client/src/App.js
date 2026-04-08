@@ -20,7 +20,6 @@ import DirectoryAdminRoute from './components/Auth/DirectoryAdminRoute';
 const LoginPage = lazy(() => import('./pages/Auth/LoginPage'));
 const SignUpPage = lazy(() => import('./pages/Public/SignUpPage'));
 const DirectoryAdminLoginPage = lazy(() => import('./pages/Admin/DirectoryAdminLoginPage'));
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const LandingPage = lazy(() => import('./pages/Public/LandingPage'));
 const FeaturesPage = lazy(() => import('./pages/Public/FeaturesPage'));
 const PricingPage = lazy(() => import('./pages/Public/PricingPage'));
@@ -64,75 +63,78 @@ const AdminRoute = ({ children }) => {
 
 
 function App() {
+    // Get the current domain
+    const hostname = window.location.hostname;
+    const isSysSubdomain = hostname.startsWith('sys.');
 
     React.useEffect(() => {
-        AOS.init({
-            duration: 900,
-            offset: 100,
-            once: false,     
-            mirror: true     
-        });
+        AOS.init({ duration: 900, offset: 100, once: false, mirror: true });
     }, []);
+
     return (
         <Router>
-                <PixelTracker />
+            <PixelTracker />
             <DirectoryAuthProvider>
                 <Suspense fallback={<div className="flex h-screen items-center justify-center"><Spinner size="lg" /></div>}>
                     <Routes>
-                        {/* --- 1. SaaS MARKETING & PUBLIC ROUTES --- */}
-                        <Route element={<PublicLayout />}>
-                            <Route path="/" element={<DirectoryPage />} />
-                            <Route path="/add-your-buisness" element={<LandingPage />} />
-                            <Route path="/features" element={<FeaturesPage />} />
-                            <Route path="/pricing" element={<PricingPage />} />
-                            <Route path ="/Demo" element={<SignUpPage />} />
-                            <Route path="/verify-payment" element={<VerifyPaymentPage />} />    
-                            <Route path="/verify-upgrade" element={<VerifyUpgradePage />} /> 
-                            <Route path="/signup" element={<SignUpPage />} />
-                                <Route path="/login" element={<LoginPage />} />
-                        </Route>
-
-                        {/* --- 2. PUBLIC DIRECTORY ROUTES --- */}
-                        <Route element={<DirectoryLayout />}>
-                            <Route path="/directory" element={<DirectoryPage />} />
-                            <Route path="/directory/:slug" element={<BusinessProfilePage />} />
-                        </Route>
                         
-                        {/* --- 3. STANDALONE PUBLIC ROUTES (No standard layout) --- */}
-                        
-                        <Route path="/contact" element={<ContactPage />} />
-                        <Route path="/directory-admin/login" element={<DirectoryAdminLoginPage />} />
-
-                        {/* --- 4. PROTECTED MAIN APPLICATION --- */}
-                        <Route path="/app" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-                            <Route index element={<Navigate to="dashboard" replace />} />
-                            <Route path="dashboard" element={<DashboardPage />} />
-                            <Route path="orders/new" element={<CreateOrderPage />} />
-                            <Route path="orders/:id" element={<OrderDetailsPage />} />
-                            <Route path="orders/:id/edit" element={<EditOrderPage />} />
-                            <Route path="customers" element={<CustomerListPage />} />
-                            <Route path="customers/new" element={<CustomerFormPage mode="create" />} />
-                            <Route path="customers/:id/edit" element={<CustomerFormPage mode="edit" />} />
-                            <Route path="customers/:id/details" element={<CustomerDetailsPage />} />
-                            <Route path="payments" element={<DailyPaymentsPage />} />
-                            <Route path="inbox" element={<InboxPage />} />
-                            <Route path="profile" element={<ProfilePage />} />
-                            <Route path="admin" element={<AdminRoute><Outlet /></AdminRoute>}>
-                                <Route index element={<Navigate to="settings" replace />} />
-                                <Route path="settings" element={<SettingsPage />}/>
-                                <Route path="users" element={<ManageUsersPage />}/>
-                                <Route path="pricing" element={<PricingSettingsPage />}/>
-                                <Route path="directory" element={<ManageDirectoryPage />}/>
+                        {/* --- SCENARIO 1: MAIN DOMAIN (Only Directory) --- */}
+                        {!isSysSubdomain && (
+                            <Route element={<DirectoryLayout />}>
+                                <Route path="/" element={<DirectoryPage />} />
+                                <Route path="/directory" element={<DirectoryPage />} />
+                                <Route path="/directory/:slug" element={<BusinessProfilePage />} />
+                                <Route path="*" element={<Navigate to="/" replace />} />
                             </Route>
-                        </Route>
+                        )}
 
-                        {/* --- 5. HIDDEN DIRECTORY ADMIN DASHBOARD --- */}
-                        <Route element={<DirectoryAdminRoute />}>
-                            <Route path="/directory-admin/dashboard" element={<DirectoryAdminDashboard />} />
-                        </Route>
+                        {/* --- SCENARIO 2: SUBDOMAIN (SaaS + Landing + App) --- */}
+                        {isSysSubdomain && (
+                            <>
+                                <Route element={<PublicLayout />}>
+                                    <Route path="/" element={<LandingPage />} />
+                                    <Route path="/add-your-buisness" element={<LandingPage />} />
+                                    <Route path="/features" element={<FeaturesPage />} />
+                                    <Route path="/pricing" element={<PricingPage />} />
+                                    <Route path="/Demo" element={<SignUpPage />} />
+                                    <Route path="/signup" element={<SignUpPage />} />
+                                    <Route path="/login" element={<LoginPage />} />
+                                    <Route path="/contact" element={<ContactPage />} />
+                                    <Route path="/verify-payment" element={<VerifyPaymentPage />} />    
+                                    <Route path="/verify-upgrade" element={<VerifyUpgradePage />} /> 
+                                </Route>
 
-                        {/* --- 6. CATCH-ALL NOT FOUND --- */}
-                        <Route path="*" element={<NotFoundPage />} />
+                                {/* Protected Main App */}
+                                <Route path="/app" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+                                    <Route index element={<Navigate to="dashboard" replace />} />
+                                    <Route path="dashboard" element={<DashboardPage />} />
+                                    {/* ... rest of your dashboard routes ... */}
+                                    <Route path="orders/new" element={<CreateOrderPage />} />
+                                    <Route path="orders/:id" element={<OrderDetailsPage />} />
+                                    <Route path="orders/:id/edit" element={<EditOrderPage />} />
+                                    <Route path="customers" element={<CustomerListPage />} />
+                                    <Route path="customers/new" element={<CustomerFormPage mode="create" />} />
+                                    <Route path="customers/:id/edit" element={<CustomerFormPage mode="edit" />} />
+                                    <Route path="customers/:id/details" element={<CustomerDetailsPage />} />
+                                    <Route path="payments" element={<DailyPaymentsPage />} />
+                                    <Route path="inbox" element={<InboxPage />} />
+                                    <Route path="profile" element={<ProfilePage />} />
+                                    <Route path="admin" element={<AdminRoute><Outlet /></AdminRoute>}>
+                                        <Route index element={<Navigate to="settings" replace />} />
+                                        <Route path="settings" element={<SettingsPage />}/>
+                                        <Route path="users" element={<ManageUsersPage />}/>
+                                        <Route path="pricing" element={<PricingSettingsPage />}/>
+                                        <Route path="directory" element={<ManageDirectoryPage />}/>
+                                    </Route>
+                                </Route>
+
+                                {/* Admin Login routes */}
+                                <Route path="/directory-admin/login" element={<DirectoryAdminLoginPage />} />
+                                <Route element={<DirectoryAdminRoute />}>
+                                    <Route path="/directory-admin/dashboard" element={<DirectoryAdminDashboard />} />
+                                </Route>
+                            </>
+                        )}
                     </Routes>
                 </Suspense>
             </DirectoryAuthProvider>

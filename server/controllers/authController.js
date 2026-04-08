@@ -71,7 +71,15 @@ const loginUser = asyncHandler(async (req, res) => {
         const tenant = await Tenant.findById(user.tenantId);
         if (!tenant || !tenant.isActive) { res.status(403); throw new Error('This business account is inactive.'); }
         const token = generateToken(user._id, user.username, user.role, user.tenantId);
-        res.json({ _id: user._id, username: user.username, role: user.role, token: token });
+        res.cookie('token', token, {
+    httpOnly: true, // Prevents JS from reading it
+    secure: process.env.NODE_ENV === 'production', // true in production
+    sameSite: 'lax',
+    domain: '.pressmark.site', // <--- THIS IS THE KEY: The leading dot allows access on all subdomains
+    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+});
+
+res.json({ _id: user._id, username: user.username, role: user.role });
     } else {
         res.status(401); throw new Error('Invalid username or password.');
     }
