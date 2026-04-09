@@ -67,6 +67,7 @@ export const AuthProvider = ({ children }) => {
     const login = async (username, password) => {
         try {
             const { data } = await apiLoginUser({ username, password });
+            console.log("RESPONSE FROM BACKEND:", data);
             await fetchAndSetUser(data.token);
             return true;
         } catch (error) {

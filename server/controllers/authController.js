@@ -79,7 +79,7 @@ const loginUser = asyncHandler(async (req, res) => {
     maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
 });
 
-res.json({ _id: user._id, username: user.username, role: user.role });
+res.json({ _id: user._id, username: user.username, role: user.role, token });
     } else {
         res.status(401); throw new Error('Invalid username or password.');
     }
