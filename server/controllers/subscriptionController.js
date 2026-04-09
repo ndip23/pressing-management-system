@@ -50,7 +50,6 @@ const initiateSubscription = asyncHandler(async (req, res) => {
     await PendingUser.deleteOne({ email: adminUser.email.toLowerCase() });
 
     // --- 3. Create Pending User ---
-    // We still generate a random string just to satisfy the DB schema if it requires otpHash
     const nanoid = customAlphabet('1234567890', 6);
     const otp = nanoid();
 
@@ -61,20 +60,16 @@ const initiateSubscription = asyncHandler(async (req, res) => {
     });
     
     // --- 4. LOGIC: TRIAL ACCOUNT (No Payment & No OTP) ---
-    // If the plan is missing OR explicitly 'Trial', skip payment and finalize immediately.
     if (!planName || planName.toLowerCase() === 'trial') {
-        // Ensure plan name is consistent for finalize step
         pendingUser.signupData.plan = 'Trial'; 
         
-        // Mark as paid/success so the system knows it's a valid trial
         pendingUser.paymentStatus = 'success';
         pendingUser.paymentConfirmedAt = new Date();
         await pendingUser.save();
         
-        // Finalize immediately since we removed OTP
+        // Finalize immediately - OTP EMAIL REMOVED
         const { tenant, user, token } = await finalizeRegistrationLogic(pendingUser);
 
-        // Return the payload the frontend expects to log the user in
         return res.status(201).json({ 
             paymentRequired: false,
             _id: user._id, 
@@ -93,40 +88,26 @@ const initiateSubscription = asyncHandler(async (req, res) => {
     } 
 
     // --- 5. LOGIC: PAID ACCOUNT (Smart Payment) ---
-    
-    // A. Get the Plan from DB
     const plan = await Plan.findOne({ name: planName });
     if (!plan) {
         res.status(400);
         throw new Error('Invalid plan selected.');
     }
 
-    // B. Detect Country & Currency
-    // Use the countryCode sent from frontend (PhoneInput), default to 'CM'
     const userCountryCode = companyInfo.countryCode || 'CM'; 
     const targetCurrency = COUNTRY_TO_CURRENCY[userCountryCode] || 'USD';
 
     console.log(`[Init Reg] Country: ${userCountryCode}, Currency: ${targetCurrency}`);
 
-    // C. Find Price in DB
-    let finalPriceDetails = plan.prices.find(p => p.currency === targetCurrency);
+    let finalPriceDetails = plan.prices.find(p => p.currency === targetCurrency) || plan.prices.find(p => p.currency === 'USD');
 
-    // D. Fallback to USD if specific currency price is missing
-    if (!finalPriceDetails) {
-        console.log(`[Init Reg] No price for ${targetCurrency}. Using USD.`);
-        finalPriceDetails = plan.prices.find(p => p.currency === 'USD');
-    }
-
-    // E. Safety Check
     if (!finalPriceDetails || finalPriceDetails.amount <= 0) {
         throw new Error(`Pricing for ${plan.name} is not configured for ${targetCurrency} or USD.`);
     }
     
-    // F. Generate Transaction ID & Redirect URL
     const transaction_id = `PRESSFLOW-SUB-${pendingUser._id}-${crypto.randomBytes(4).toString('hex')}`;
     pendingUser.signupData.transactionId = transaction_id;
     
-    // IMPORTANT: Point to your frontend route that handles payment verification
     let backendBaseUrl = process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL;
     if (!backendBaseUrl) {
         throw new Error('BACKEND_URL (or RENDER_EXTERNAL_URL) must be configured for payment callbacks.');
@@ -134,10 +115,9 @@ const initiateSubscription = asyncHandler(async (req, res) => {
     backendBaseUrl = backendBaseUrl.replace(/\/api\/?$/, '');
     const callback_url = `${backendBaseUrl}/api/webhooks/accountpe?flow=signup&transaction_id=${transaction_id}&email=${pendingUser.email}`;
 
-    // G. Save (OTP Email has been removed)
+    // G. Save - OTP EMAIL REMOVED
     await pendingUser.save();
 
-    // H. Currency Conversion to USD (PUSD)
     let finalCurrency = finalPriceDetails.currency;
     let finalAmount = finalPriceDetails.amount;
 
@@ -145,7 +125,7 @@ const initiateSubscription = asyncHandler(async (req, res) => {
         try {
             console.log(`[Init Reg] Converting ${finalAmount} ${finalCurrency} to USD...`);
             finalAmount = await convertFiatToPUSD(finalCurrency, finalAmount);
-            finalCurrency = 'USD'; // Switch currency to USD for the payment link
+            finalCurrency = 'USD';
             console.log(`[Init Reg] Converted Amount: ${finalAmount} USD`);
         } catch (error) {
             res.status(500);
@@ -153,11 +133,10 @@ const initiateSubscription = asyncHandler(async (req, res) => {
         }
     }
 
-    // I. Create AccountPe Link
     const paymentData = {
-        country_code: userCountryCode, // e.g. 'NG'
-        currency: finalCurrency,       // Guaranteed to be USD
-        amount: finalAmount,           // The converted USD amount
+        country_code: userCountryCode,
+        currency: finalCurrency,
+        amount: finalAmount,
         name: pendingUser.signupData.adminUser.username,
         email: pendingUser.email,
         transaction_id,
@@ -169,15 +148,13 @@ const initiateSubscription = asyncHandler(async (req, res) => {
     try {
         const paymentResponse = await createPaymentLink(paymentData);
         console.log('[Payment Link Response][subscriptionController/initiate]', paymentResponse?.data);
-        const paymentLink =
-            paymentResponse?.data?.data?.payment_link ||
-            paymentResponse?.data?.payment_link;
+        const paymentLink = paymentResponse?.data?.data?.payment_link || paymentResponse?.data?.payment_link;
         if (!paymentLink) {
             throw new Error('Payment link not found in provider response.');
         }
         
         res.status(200).json({
-            message: "Redirecting to payment...", // Updated message to remove OTP mention
+            message: "Redirecting to payment...",
             paymentRequired: true,
             paymentLink
         });
