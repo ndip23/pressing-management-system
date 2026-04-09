@@ -10,7 +10,7 @@ import Input from '../../components/UI/Input';
 import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, User, Building, KeyRound, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PhoneInput from '../../components/UI/PhoneInput'; 
-import { PublicHeader, PublicFooter } from './PublicLayout'; 
+import {  PublicFooter } from './PublicLayout'; 
 
 const countryCurrencyMap = {
     CM: 'FCFA', NG: 'NGN', GH: 'GHS', KE: 'KES', ZA: 'ZAR', US: 'USD', GB: 'GBP', FR: 'EUR',
