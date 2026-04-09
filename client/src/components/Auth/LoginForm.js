@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Input from '../UI/Input';
 import Button from '../UI/Button';
-import { LogIn, Eye, EyeOff } from 'lucide-react'; 
+import { LogIn, Eye, EyeOff } from 'lucide-react';
 
 const LoginForm = ({ onSubmit, isLoading, error }) => {
     const { t } = useTranslation();
