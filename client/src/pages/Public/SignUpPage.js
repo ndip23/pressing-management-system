@@ -203,7 +203,6 @@ const SignUpPage = () => {
 
     return (
         <div className="bg-apple-gray-50 dark:bg-apple-gray-950 min-h-screen flex flex-col">
-            <PublicHeader />
 
             <main className="flex-grow flex flex-col items-center justify-center p-4 py-12">
                 <Card className="w-full max-w-3xl shadow-apple-lg border border-apple-gray-200 dark:border-apple-gray-800">
