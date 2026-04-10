@@ -99,7 +99,7 @@ const Step2CompanyInfo = ({ data, setData, onNext, onPrev }) => {
                 name="currencySymbol" 
                 value={data.currencySymbol} 
                 onChange={e => setData('setTopLevel', 'currencySymbol', e.target.value)} 
-                disabled={true} // It's better to disable this so it stays in sync with the country
+                disabled={true} 
             />
             
             <div className="flex justify-between pt-4">
@@ -122,7 +122,6 @@ const Step3Confirmation = ({ data, onPrev, onConfirm, isSubmitting }) => {
                 <p><strong>{t('signup.step4.adminUsername')}</strong> {data.adminUser.username}</p>
                 <p><strong>{t('signup.step4.adminEmail')}</strong> {data.adminUser.email}</p>
                 <p><strong>{t('signup.step4.businessName')}</strong> {data.companyInfo.name}</p>
-                {/* Removed the Items/Services summary since user didn't input them */}
             </div>
             <div className="flex justify-between pt-4">
                 <Button variant="secondary" onClick={onPrev} iconLeft={<ArrowLeft size={16} />} disabled={isSubmitting}>{t('signup.step4.backButton')}</Button>
