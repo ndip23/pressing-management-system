@@ -1,3 +1,4 @@
+// client/src/components/UI/PhoneInput.js
 import React from 'react';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css'; 
@@ -8,18 +9,13 @@ const CustomPhoneInput = React.forwardRef(({
     value, 
     onChange, 
     onCountryChange, 
-    countries, // <--- 1. Accept the new prop
+    onlyCountries, // Keep this name if you want, but pass it as 'countries' to the lib
     ...props 
 }, ref) => {
     
     return (
         <div>
-            {label && (
-                <label className="block text-sm font-medium mb-1 text-apple-gray-700 dark:text-apple-gray-300">
-                    {label}
-                </label>
-            )}
-            
+            {label && <label className="block text-sm font-medium mb-1">{label}</label>}
             <div className="phone-input-wrapper">
                 <PhoneInput
                     international
@@ -27,13 +23,12 @@ const CustomPhoneInput = React.forwardRef(({
                     value={value}
                     onChange={onChange}
                     onCountryChange={onCountryChange}
-                    // ✅ 2. Pass the countries array to the library
-                    countries={countries} 
+                    // ✅ CHANGE THIS PROP NAME TO 'countries'
+                    countries={onlyCountries} 
                     {...props}
                 />
             </div>
         </div>
     );
 });
-
 export default CustomPhoneInput;
