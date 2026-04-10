@@ -64,16 +64,18 @@ const getAuthToken = async () => {
 };
 export const convertFiatToPUSD = async (currencyCode, fiatAmount) => {
     try {
-        const response = await payoutApi.post('/fiat_to_pusd_conversion', {
+        const payload = {
             currency_code: currencyCode,
-            fiat_amount: Number(fiatAmount)
-        }, { httpsAgent });
+            amount: Number(fiatAmount) // ✅ Changed from 'fiat_amount' to 'amount'
+        };
+        
+        console.log('[AccountPe Service] Sending Conversion Request:', payload);
 
-        console.log('[AccountPe Service] Conversion Response:', response.data);
+        const response = await payoutApi.post('/fiat_to_pusd_conversion', payload, { httpsAgent });
 
-        // Extract the converted amount. 
-        // Adjust "response.data.data.pusd_amount" based on actual AccountPe API response structure.
-        const convertedAmount = response.data?.data?.pusd_amount || response.data?.pusd_amount || response.data?.converted_amount;
+        console.log('[AccountPe Service] Conversion Response:', JSON.stringify(response.data, null, 2));
+
+        const convertedAmount = response.data?.data?.pusd_amount || response.data?.pusd_amount || response.data?.amount;
         
         if (!convertedAmount) {
              throw new Error('Could not read converted amount from response.');
