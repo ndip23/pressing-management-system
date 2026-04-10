@@ -107,6 +107,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 </nav>
 
                 <div className="p-4 border-t border-apple-gray-200 dark:border-apple-gray-800">
+                     <button
+                        onClick={logout}
+                        className="flex items-center w-full space-x-3 px-3 py-2.5 rounded-apple text-sm font-medium text-apple-red hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    >
+                        <LogOut size={18} />
+                        <span>Logout</span>
+                    </button>
                     <p className="text-xs text-apple-gray-500 dark:text-apple-gray-400 text-center">
                         © {new Date().getFullYear()} PressMark
                     </p>
