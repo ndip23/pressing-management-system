@@ -72,7 +72,7 @@ export const DirectoryFooter = () => {
                 </div>
                 <div className="mt-10 pt-6 border-t border-sky-700 text-center text-xs text-sky-300">
                     <p>&copy; {new Date().getFullYear()} PressMark. {t("directory.footer.rights")}</p>
-                    <a href={`${SAAS_URL}/directory-admin/login`} className="mt-2 inline-block hover:text-white hover:underline">{t("directory.footer.adminPortal")}</a>
+                    <Link to="/directory-admin/login" className="mt-2 inline-block hover:text-white hover:underline">{t("directory.footer.adminPortal")}</Link>
                 </div>
             </div>
         </footer>

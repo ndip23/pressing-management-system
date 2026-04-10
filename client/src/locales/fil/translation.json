@@ -904,7 +904,7 @@
       "title": "Gumawa ng Inyong Admin Account",
       "subtitle": "Ito ang magiging inyong personal login para sa pamamahala ng negosyo.",
       "username": "Username*",
-      "email": "Email (para sa verification)*",
+      "email": "Email",
       "password": "Password*",
       "confirmPassword": "I-confirm ang Password*",
       "nextButton": "Susunod: Company Info",

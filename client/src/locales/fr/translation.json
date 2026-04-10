@@ -909,7 +909,7 @@
       "title": "Créez Votre Compte Admin",
       "subtitle": "Ce sera votre identifiant personnel pour gérer l'entreprise.",
       "username": "Nom d'utilisateur*",
-      "email": "Email (pour vérification)*",
+      "email": "Email ",
       "password": "Mot de passe*",
       "confirmPassword": "Confirmer le mot de passe*",
       "nextButton": "Suivant : Infos Entreprise",

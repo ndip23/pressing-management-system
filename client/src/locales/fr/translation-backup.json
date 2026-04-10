@@ -294,7 +294,7 @@
       "title": "Créez Votre Compte Administrateur",
       "subtitle": "Ce sera votre identifiant personnel pour gérer l'entreprise.",
       "username": "Nom d'utilisateur*",
-      "email": "E-mail (pour vérification)*",
+      "email": "E-mail",
       "password": "Mot de passe*",
       "confirmPassword": "Confirmer le mot de passe*",
       "nextButton": "Suivant : Infos Entreprise",

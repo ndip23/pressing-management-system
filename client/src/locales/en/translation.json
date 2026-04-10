@@ -869,7 +869,7 @@
       "title": "Create Your Admin Account",
       "subtitle": "This will be your personal login for managing the business.",
       "username": "Username*",
-      "email": "Email (for verification)*",
+      "email": "Email",
       "password": "Password*",
       "confirmPassword": "Confirm Password*",
       "nextButton": "Next: Company Info",
