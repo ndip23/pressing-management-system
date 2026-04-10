@@ -1,7 +1,7 @@
 // server/controllers/subscriptionController.js
 
 import asyncHandler from '../middleware/asyncHandler.js';
-import { createPaymentLink, getPaymentLinkStatus, convertFiatToPUSD } from '../services/accountPeService.js';
+import { createPaymentLink, getPaymentLinkStatus, convertPUSDToFiat } from '../services/accountPeService.js';
 import Tenant from '../models/Tenant.js';
 import Plan from '../models/Plan.js';
 import PendingUser from '../models/PendingUser.js';
