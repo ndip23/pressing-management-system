@@ -11,7 +11,8 @@ import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, User, Building, Key
 import toast from 'react-hot-toast';
 import PhoneInput from '../../components/UI/PhoneInput'; 
 import {  PublicFooter } from './PublicLayout'; 
-import { COUNTRY_TO_CURRENCY } from '../../utils/currencyMap';
+import { COUNTRY_TO_CURRENCY, SUPPORTED_COUNTRIES } from '../../utils/currencyMap';
+
 
 // --- Step Components ---
 const Step1AdminAccount = ({ data, setData, onNext }) => {
@@ -90,6 +91,7 @@ const Step2CompanyInfo = ({ data, setData, onNext, onPrev }) => {
                 value={data.phone} 
                 onChange={(value) => setData('companyInfo', 'phone', value)} 
                 onCountryChange={handleCountryChange} 
+                onlyCountries={SUPPORTED_COUNTRIES} 
             />
             
             <Input 
