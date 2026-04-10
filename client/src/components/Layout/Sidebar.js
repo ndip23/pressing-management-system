@@ -12,7 +12,8 @@ import {
     X,
     KeyRound,
     Tags,
-    Inbox          // For closing sidebar on mobile
+    Inbox,
+    LogOut
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext'; // To conditionally show Admin section
 import Button from '../UI/Button';
@@ -43,7 +44,7 @@ const NavItem = ({ to, icon: Icon, children, end = false, disabled = false }) =>
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
     const { t } = useTranslation();
-    const { user } = useAuth(); // Get user to check for admin role
+    const { user, logout } = useAuth(); // Get user to check for admin role
 
     return (
         <>
