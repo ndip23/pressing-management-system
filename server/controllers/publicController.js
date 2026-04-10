@@ -130,8 +130,6 @@ const finalizeRegistration = asyncHandler(async (req, res) => {
         message: 'Account finalized successfully.'
     });
 });
-
-export { initiateRegistration, finalizeRegistration };
 // @desc    Get a list of publicly listed businesses for the directory
 // @route   GET /api/public/directory
 // @access  Public
