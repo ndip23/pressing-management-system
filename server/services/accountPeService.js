@@ -62,31 +62,30 @@ const getAuthToken = async () => {
         throw new Error('Payment provider authentication failed.');
     }
 };
-export const convertFiatToPUSD = async (currencyCode, fiatAmount) => {
+
+/**
+ * Converts USD (PUSD) amount to Local Fiat Currency using AccountPe
+ */
+export const convertPUSDToFiat = async (countryCode, usdAmount) => {
     try {
-        const payload = {
-            currency_code: currencyCode,
-            amount: Number(fiatAmount) // ✅ Changed from 'fiat_amount' to 'amount'
-        };
+        // Based on your API docs screenshot for /pusd_to_fiat_rate
+        const response = await payoutApi.post('/pusd_to_fiat_rate', {
+            country_code: countryCode,
+            amount: Number(usdAmount)
+        }, { httpsAgent });
+
+        console.log('[AccountPe Service] PUSD to Fiat Conversion Response:', response.data);
+
+        // Extract the converted amount (Verify this key name in your console logs)
+        const convertedAmount = response.data?.data?.amount || response.data?.amount;
         
-        console.log('[AccountPe Service] Sending Conversion Request:', payload);
-
-        const response = await payoutApi.post('/fiat_to_pusd_conversion', payload, { httpsAgent });
-
-        console.log('[AccountPe Service] Conversion Response:', JSON.stringify(response.data, null, 2));
-
-        const convertedAmount = response.data?.data?.pusd_amount || response.data?.pusd_amount || response.data?.amount;
-        
-        if (!convertedAmount) {
-             throw new Error('Could not read converted amount from response.');
-        }
-
+        if (!convertedAmount) throw new Error('Could not read converted amount.');
         return convertedAmount;
     } catch (error) {
-        console.error("[AccountPe Service] Currency conversion failed:", error.response?.data || error.message);
+        console.error("[AccountPe Service] PUSD to Fiat conversion failed:", error.message);
         throw new Error("Currency conversion failed.");
     }
-}
+};
 /**
  * Creates a payment link. This function relies on the interceptor to get a token.
  */

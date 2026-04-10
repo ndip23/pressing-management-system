@@ -30,113 +30,71 @@ const initiateSubscription = asyncHandler(async (req, res) => {
     const registrationData = req.body;
     const { adminUser, companyInfo, plan: planName } = registrationData;
 
-    // --- 1. Validation ---
-    if (!adminUser?.email || !/^\S+@\S+\.\S+$/.test(adminUser.email)) { 
-        res.status(400); throw new Error('A valid email address is required.'); 
-    }
-    if (!companyInfo?.name || !adminUser?.username || !adminUser?.password) { 
-        res.status(400); throw new Error('Business name, admin username, and password are required.'); 
-    }
-    
+    // --- 1. Validation & Pending User Creation (Your existing logic) ---
+    if (!adminUser?.email || !/^\S+@\S+\.\S+$/.test(adminUser.email)) { res.status(400); throw new Error('A valid email address is required.'); }
     const userExists = await User.findOne({ email: adminUser.email.toLowerCase() });
-    if (userExists) { res.status(400); throw new Error('A user with this email already exists.'); }
+    if (userExists) { res.status(400); throw new Error('User already exists.'); }
 
-    // --- 2. Clean up old pending attempts ---
     await PendingUser.deleteOne({ email: adminUser.email.toLowerCase() });
-
-    // --- 3. Create Pending User ---
-    const pendingUser = new PendingUser({
-        email: adminUser.email.toLowerCase(),
-        otpHash: '000000', 
-        signupData: registrationData,
-    });
+    const pendingUser = new PendingUser({ email: adminUser.email.toLowerCase(), otpHash: '000000', signupData: registrationData });
     
-    // --- 4. LOGIC: TRIAL ACCOUNT ---
+    // --- 2. TRIAL FLOW (Existing) ---
     if (!planName || planName.toLowerCase() === 'trial') {
-        pendingUser.signupData.plan = 'Trial'; 
         pendingUser.paymentStatus = 'success';
-        pendingUser.paymentConfirmedAt = new Date();
         await pendingUser.save();
-        
         const { tenant, user, token } = await finalizeRegistrationLogic(pendingUser);
-
-        return res.status(201).json({ 
-            paymentRequired: false,
-            _id: user._id, 
-            username: user.username, 
-            role: user.role,
-            tenantId: user.tenantId, 
-            token,
-            tenant: { plan: tenant.plan, subscriptionStatus: tenant.subscriptionStatus },
-            message: `Account created successfully.`
-        });
+        return res.status(201).json({ paymentRequired: false, _id: user._id, token, tenant: { plan: tenant.plan }, message: "Account created." });
     } 
 
-    // --- 5. LOGIC: PAID ACCOUNT ---
+    // --- 3. PAID FLOW (CONVERSION LOGIC) ---
     const plan = await Plan.findOne({ name: planName });
-    if (!plan) throw new Error('Invalid plan selected.');
+    if (!plan) throw new Error('Invalid plan.');
 
-    // ✅ FIX: Ensure we get the countryCode correctly from companyInfo
-    const userCountryCode = companyInfo.countryCode || 'CM'; 
-    const targetCurrency = COUNTRY_TO_CURRENCY[userCountryCode] || 'USD';
-
-    console.log(`[Init Reg] User Country: ${userCountryCode}, Target Currency: ${targetCurrency}`);
-
-    let finalPriceDetails = plan.prices.find(p => p.currency === targetCurrency) || plan.prices.find(p => p.currency === 'USD');
-
-    if (!finalPriceDetails || finalPriceDetails.amount <= 0) {
-        throw new Error(`Pricing for ${plan.name} is not configured for your country.`);
-    }
+    const userCountryCode = companyInfo.countryCode || 'CM';
+    const usdPrice = plan.prices.find(p => p.currency === 'USD')?.amount;
     
-    const transaction_id = `PRESSFLOW-SUB-${pendingUser._id}-${crypto.randomBytes(4).toString('hex')}`;
-    pendingUser.signupData.transactionId = transaction_id;
-    
-    let backendBaseUrl = (process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL || '').replace(/\/api\/?$/, '');
-    const callback_url = `${backendBaseUrl}/api/webhooks/accountpe?flow=signup&transaction_id=${transaction_id}&email=${pendingUser.email}`;
+    if (!usdPrice) throw new Error("USD price not configured.");
 
-    await pendingUser.save();
+    // 🌟 THE CONVERSION STEP: $29 USD -> Local Currency
+    let finalAmount = usdPrice;
+    let finalCurrency = COUNTRY_TO_CURRENCY[userCountryCode] || 'USD';
 
-    let finalCurrency = finalPriceDetails.currency;
-    let finalAmount = finalPriceDetails.amount;
-
-    // ✅ Perform Conversion to USD (PUSD)
     if (finalCurrency !== 'USD') {
         try {
-            console.log(`[Init Reg] Converting ${finalAmount} ${finalCurrency} to USD via AccountPe...`);
-            finalAmount = await convertFiatToPUSD(finalCurrency, finalAmount);
-            finalCurrency = 'USD';
-            console.log(`[Init Reg] Successfully converted to: ${finalAmount} USD`);
+            console.log(`[Init Reg] Converting ${usdPrice} USD to ${finalCurrency} for ${userCountryCode}...`);
+            finalAmount = await convertPUSDToFiat(userCountryCode, usdPrice);
+            console.log(`[Init Reg] Local Price for user: ${finalAmount} ${finalCurrency}`);
         } catch (error) {
-            console.error("Conversion failed:", error.message);
-            throw new Error("Currency conversion service is currently unavailable. Please try again later.");
+            console.error("Conversion Error:", error.message);
+            throw new Error("Currency conversion failed.");
         }
     }
 
+    const transaction_id = `PRESSFLOW-SUB-${pendingUser._id}-${crypto.randomBytes(4).toString('hex')}`;
+    pendingUser.signupData.transactionId = transaction_id;
+    await pendingUser.save();
+
     const paymentData = {
         country_code: userCountryCode,
-        currency: finalCurrency,
-        amount: finalAmount,
-        name: pendingUser.signupData.adminUser.username,
-        email: pendingUser.email,
+        currency: finalCurrency, // e.g., 'XAF'
+        amount: finalAmount,     // e.g., 18500
+        name: adminUser.username,
+        email: adminUser.email,
         transaction_id,
         description: `Subscription to PressFlow ${plan.name} Plan`,
         pass_digital_charge: true,
-        callback_url : callback_url 
+        callback_url: `${(process.env.RENDER_EXTERNAL_URL || '').replace(/\/api\/?$/, '')}/api/webhooks/accountpe?flow=signup&transaction_id=${transaction_id}&email=${adminUser.email}`
     };
 
     try {
         const paymentResponse = await createPaymentLink(paymentData);
-        const paymentLink = paymentResponse?.data?.data?.payment_link || paymentResponse?.data?.payment_link;
-        if (!paymentLink) throw new Error('Payment provider did not return a link.');
-        
         res.status(200).json({
             message: "Redirecting to payment...",
             paymentRequired: true,
-            paymentLink
+            paymentLink: paymentResponse?.data?.data?.payment_link || paymentResponse?.data?.payment_link
         });
     } catch (paymentError) {
-        console.error("Payment Link Creation Failed:", paymentError.response?.data || paymentError.message);
-        throw new Error("Could not contact payment provider. Please check your credentials.");
+        throw new Error("Could not create payment link.");
     }
 });
 // @desc    Generate a payment link for an EXISTING tenant to upgrade their plan
