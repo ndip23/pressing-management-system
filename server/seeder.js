@@ -170,7 +170,4 @@ const updateData = async () => {
         process.exit(1);
     }
 };
-
-// We removed the logic for destruction entirely.
-// Running this file ONLY updates plans.
 updateData()

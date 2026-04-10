@@ -32,42 +32,32 @@ const initiateSubscription = asyncHandler(async (req, res) => {
 
     // --- 1. Validation ---
     if (!adminUser?.email || !/^\S+@\S+\.\S+$/.test(adminUser.email)) { 
-        res.status(400); 
-        throw new Error('A valid email address is required.'); 
+        res.status(400); throw new Error('A valid email address is required.'); 
     }
     if (!companyInfo?.name || !adminUser?.username || !adminUser?.password) { 
-        res.status(400); 
-        throw new Error('Business name, admin username, and password are required.'); 
+        res.status(400); throw new Error('Business name, admin username, and password are required.'); 
     }
     
     const userExists = await User.findOne({ email: adminUser.email.toLowerCase() });
-    if (userExists) { 
-        res.status(400); 
-        throw new Error('A user with this email already exists.'); 
-    }
+    if (userExists) { res.status(400); throw new Error('A user with this email already exists.'); }
 
     // --- 2. Clean up old pending attempts ---
     await PendingUser.deleteOne({ email: adminUser.email.toLowerCase() });
 
     // --- 3. Create Pending User ---
-    const nanoid = customAlphabet('1234567890', 6);
-    const otp = nanoid();
-
     const pendingUser = new PendingUser({
         email: adminUser.email.toLowerCase(),
-        otpHash: otp,
+        otpHash: '000000', 
         signupData: registrationData,
     });
     
-    // --- 4. LOGIC: TRIAL ACCOUNT (No Payment & No OTP) ---
+    // --- 4. LOGIC: TRIAL ACCOUNT ---
     if (!planName || planName.toLowerCase() === 'trial') {
         pendingUser.signupData.plan = 'Trial'; 
-        
         pendingUser.paymentStatus = 'success';
         pendingUser.paymentConfirmedAt = new Date();
         await pendingUser.save();
         
-        // Finalize immediately - OTP EMAIL REMOVED
         const { tenant, user, token } = await finalizeRegistrationLogic(pendingUser);
 
         return res.status(201).json({ 
@@ -77,59 +67,48 @@ const initiateSubscription = asyncHandler(async (req, res) => {
             role: user.role,
             tenantId: user.tenantId, 
             token,
-            tenant: { 
-                plan: tenant.plan,
-                subscriptionStatus: tenant.subscriptionStatus,
-                trialEndsAt: tenant.trialEndsAt,
-                nextBillingAt: tenant.nextBillingAt,
-            },
-            message: `Account for '${tenant.name}' has been created successfully.`
+            tenant: { plan: tenant.plan, subscriptionStatus: tenant.subscriptionStatus },
+            message: `Account created successfully.`
         });
     } 
 
-    // --- 5. LOGIC: PAID ACCOUNT (Smart Payment) ---
+    // --- 5. LOGIC: PAID ACCOUNT ---
     const plan = await Plan.findOne({ name: planName });
-    if (!plan) {
-        res.status(400);
-        throw new Error('Invalid plan selected.');
-    }
+    if (!plan) throw new Error('Invalid plan selected.');
 
+    // ✅ FIX: Ensure we get the countryCode correctly from companyInfo
     const userCountryCode = companyInfo.countryCode || 'CM'; 
     const targetCurrency = COUNTRY_TO_CURRENCY[userCountryCode] || 'USD';
 
-    console.log(`[Init Reg] Country: ${userCountryCode}, Currency: ${targetCurrency}`);
+    console.log(`[Init Reg] User Country: ${userCountryCode}, Target Currency: ${targetCurrency}`);
 
     let finalPriceDetails = plan.prices.find(p => p.currency === targetCurrency) || plan.prices.find(p => p.currency === 'USD');
 
     if (!finalPriceDetails || finalPriceDetails.amount <= 0) {
-        throw new Error(`Pricing for ${plan.name} is not configured for ${targetCurrency} or USD.`);
+        throw new Error(`Pricing for ${plan.name} is not configured for your country.`);
     }
     
     const transaction_id = `PRESSFLOW-SUB-${pendingUser._id}-${crypto.randomBytes(4).toString('hex')}`;
     pendingUser.signupData.transactionId = transaction_id;
     
-    let backendBaseUrl = process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL;
-    if (!backendBaseUrl) {
-        throw new Error('BACKEND_URL (or RENDER_EXTERNAL_URL) must be configured for payment callbacks.');
-    }
-    backendBaseUrl = backendBaseUrl.replace(/\/api\/?$/, '');
+    let backendBaseUrl = (process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL || '').replace(/\/api\/?$/, '');
     const callback_url = `${backendBaseUrl}/api/webhooks/accountpe?flow=signup&transaction_id=${transaction_id}&email=${pendingUser.email}`;
 
-    // G. Save - OTP EMAIL REMOVED
     await pendingUser.save();
 
     let finalCurrency = finalPriceDetails.currency;
     let finalAmount = finalPriceDetails.amount;
 
+    // ✅ Perform Conversion to USD (PUSD)
     if (finalCurrency !== 'USD') {
         try {
-            console.log(`[Init Reg] Converting ${finalAmount} ${finalCurrency} to USD...`);
+            console.log(`[Init Reg] Converting ${finalAmount} ${finalCurrency} to USD via AccountPe...`);
             finalAmount = await convertFiatToPUSD(finalCurrency, finalAmount);
             finalCurrency = 'USD';
-            console.log(`[Init Reg] Converted Amount: ${finalAmount} USD`);
+            console.log(`[Init Reg] Successfully converted to: ${finalAmount} USD`);
         } catch (error) {
-            res.status(500);
-            throw new Error("Failed to convert currency. Please try again later.");
+            console.error("Conversion failed:", error.message);
+            throw new Error("Currency conversion service is currently unavailable. Please try again later.");
         }
     }
 
@@ -147,11 +126,8 @@ const initiateSubscription = asyncHandler(async (req, res) => {
 
     try {
         const paymentResponse = await createPaymentLink(paymentData);
-        console.log('[Payment Link Response][subscriptionController/initiate]', paymentResponse?.data);
         const paymentLink = paymentResponse?.data?.data?.payment_link || paymentResponse?.data?.payment_link;
-        if (!paymentLink) {
-            throw new Error('Payment link not found in provider response.');
-        }
+        if (!paymentLink) throw new Error('Payment provider did not return a link.');
         
         res.status(200).json({
             message: "Redirecting to payment...",
@@ -160,7 +136,7 @@ const initiateSubscription = asyncHandler(async (req, res) => {
         });
     } catch (paymentError) {
         console.error("Payment Link Creation Failed:", paymentError.response?.data || paymentError.message);
-        throw new Error("Could not create payment link. Please try again.");
+        throw new Error("Could not contact payment provider. Please check your credentials.");
     }
 });
 // @desc    Generate a payment link for an EXISTING tenant to upgrade their plan

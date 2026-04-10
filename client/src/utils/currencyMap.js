@@ -1,4 +1,4 @@
-// backend/utils/currencyMap.js
+// client/utils/currencyMap.js
 
 export const COUNTRY_TO_CURRENCY = {
     BJ: 'XOF', // Benin

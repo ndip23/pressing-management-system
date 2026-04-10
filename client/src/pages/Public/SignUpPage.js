@@ -11,10 +11,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, User, Building, Key
 import toast from 'react-hot-toast';
 import PhoneInput from '../../components/UI/PhoneInput'; 
 import {  PublicFooter } from './PublicLayout'; 
-
-const countryCurrencyMap = {
-    CM: 'FCFA', NG: 'NGN', GH: 'GHS', KE: 'KES', ZA: 'ZAR', US: 'USD', GB: 'GBP', FR: 'EUR',
-};
+import { COUNTRY_TO_CURRENCY } from '../../utils/currencyMap';
 
 // --- Step Components ---
 const Step1AdminAccount = ({ data, setData, onNext }) => {
@@ -59,25 +56,54 @@ const Step2CompanyInfo = ({ data, setData, onNext, onPrev }) => {
     const handleNext = () => {
         setError('');
         if (!data.name) { setError(t('signup.step2.errors.nameRequired')); return; }
+        // Ensure currencySymbol exists before moving on
         if (!data.currencySymbol) { setError(t('signup.step2.errors.currencyRequired')); return; }
         onNext();
     };
     
     const handleCountryChange = (countryCode) => {
-        const newCurrency = countryCurrencyMap[countryCode] || '$';
+        // 1. Get the currency from your map
+        const newCurrency = COUNTRY_TO_CURRENCY[countryCode] || 'USD';
+        
+        // 2. Set the currency for display/storage
         setData('setTopLevel', 'currencySymbol', newCurrency);
+        
+        // 3. IMPORTANT: Explicitly set the countryCode so the backend knows which country it is
         setData('companyInfo', 'countryCode', countryCode); 
     };
     
     return (
         <div className="space-y-4 animate-fade-in">
-            <div className="flex items-center space-x-3 mb-4"><div className="bg-apple-blue text-white rounded-full p-2"><Building size={20} /></div><h3 className="font-semibold text-xl dark:text-white">{t('signup.step2.title')}</h3></div>
+            <div className="flex items-center space-x-3 mb-4">
+                <div className="bg-apple-blue text-white rounded-full p-2"><Building size={20} /></div>
+                <h3 className="font-semibold text-xl dark:text-white">{t('signup.step2.title')}</h3>
+            </div>
+            
             {error && <p className="text-sm text-red-500 p-2 bg-red-100 dark:bg-red-900/30 rounded-md">{error}</p>}
+            
             <Input label={t('signup.step2.businessName')} name="name" value={data.name} onChange={e => setData('companyInfo', 'name', e.target.value)} />
             <Input label={t('signup.step2.businessAddress')} name="address" value={data.address} onChange={e => setData('companyInfo', 'address', e.target.value)} />
-            <PhoneInput label={t('signup.step2.businessPhone')} value={data.phone} onChange={(value) => setData('companyInfo', 'phone', value)} onCountryChange={handleCountryChange}/>
-            <Input label={t('signup.step2.currencySymbol')} name="currencySymbol" value={data.currencySymbol} onChange={e => setData('setTopLevel', 'currencySymbol', e.target.value)} />
-            <div className="flex justify-between pt-4"><Button variant="secondary" onClick={onPrev} iconLeft={<ArrowLeft size={16} />}>{t('signup.step2.backButton')}</Button><Button onClick={handleNext} iconRight={<ArrowRight size={16} />}>Review & Confirm</Button></div>
+            
+            {/* PhoneInput passes countryCode to onCountryChange automatically */}
+            <PhoneInput 
+                label={t('signup.step2.businessPhone')} 
+                value={data.phone} 
+                onChange={(value) => setData('companyInfo', 'phone', value)} 
+                onCountryChange={handleCountryChange} 
+            />
+            
+            <Input 
+                label={t('signup.step2.currencySymbol')} 
+                name="currencySymbol" 
+                value={data.currencySymbol} 
+                onChange={e => setData('setTopLevel', 'currencySymbol', e.target.value)} 
+                disabled={true} // It's better to disable this so it stays in sync with the country
+            />
+            
+            <div className="flex justify-between pt-4">
+                <Button variant="secondary" onClick={onPrev} iconLeft={<ArrowLeft size={16} />}>{t('signup.step2.backButton')}</Button>
+                <Button onClick={handleNext} iconRight={<ArrowRight size={16} />}>Review & Confirm</Button>
+            </div>
         </div>
     );
 };
