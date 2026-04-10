@@ -8,15 +8,13 @@ import User from '../models/User.js';
 import Settings from '../models/Settings.js';
 import Price from '../models/Price.js';
 import Plan from '../models/Plan.js';
-import { sendOtpEmail } from '../services/notificationService.js';
 import generateToken from '../utils/generateToken.js';
 import { createPaymentLink } from '../services/accountPeService.js';
 import { finalizeRegistrationLogic } from '../services/registrationService.js';
 import crypto from 'crypto';
 import DirectoryListing from '../models/DirectoryListing.js';
-import { sendContactFormEmail } from '../services/notificationService.js';
 
-// --- STEP 1: INITIATE REGISTRATION & SEND OTP ---
+// --- STEP 1: INITIATE REGISTRATION (NO OTP) ---
 const initiateRegistration = asyncHandler(async (req, res) => {
     const registrationData = req.body;
     const { adminUser, companyInfo, plan: planName } = registrationData;
@@ -32,165 +30,108 @@ const initiateRegistration = asyncHandler(async (req, res) => {
 
     await PendingUser.deleteOne({ email: adminUser.email.toLowerCase() });
 
-    const nanoid = customAlphabet('1234567890', 6);
-    const otp = nanoid();
-
     const pendingUser = new PendingUser({
         email: adminUser.email.toLowerCase(),
-        otpHash: otp,
+        otpHash: '000000', // Dummy OTP
         signupData: registrationData,
     });
     
     // --- NEW LOGIC: TRIAL vs. PAID ---
     if (planName && planName.toLowerCase() === 'trial') {
-        // --- TRIAL FLOW ---
+        // --- TRIAL FLOW (Instant Create) ---
+        pendingUser.signupData.plan = 'Trial'; 
         await pendingUser.save();
         
-        try {
-            await sendOtpEmail(adminUser.email, otp);
-        } catch (emailError) {
-            console.error(`FAILED to send OTP email:`, emailError);
-            throw new Error("Could not send verification email.");
-        }
+        // Finalize immediately - No email sent
+        const { tenant, user, token } = await finalizeRegistrationLogic(pendingUser);
 
-        res.status(200).json({ 
-            message: `A verification code has been sent to ${adminUser.email}.`,
-            paymentRequired: false
+        // Force trial status
+        const thirtyDaysFromNow = new Date();
+        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+        await Tenant.findByIdAndUpdate(tenant._id, {
+            subscriptionStatus: 'trial',
+            trialEndsAt: thirtyDaysFromNow,
+            nextBillingAt: thirtyDaysFromNow,
+            plan: 'Basic'
+        });
+
+        res.status(201).json({ 
+            paymentRequired: false,
+            _id: user._id, 
+            username: user.username, 
+            role: user.role,
+            tenantId: user.tenantId, 
+            token,
+            tenant: { plan: 'Basic', subscriptionStatus: 'trial' },
+            message: 'Account created successfully.'
         });
     } else {
         // --- PAID PLAN FLOW ---
         const plan = await Plan.findOne({ name: planName });
         if (!plan) throw new Error('Invalid plan selected.');
 
-        // --- STATIC CURRENCY FOR NOW (XAF) ---
         const paymentCurrency = 'XAF';
-        const priceDetails = plan.prices.find(p => p.currency === paymentCurrency);
-        const fallbackPriceDetails = plan.prices.find(p => p.currency === 'USD');
-        const finalPriceDetails = priceDetails || fallbackPriceDetails;
+        const priceDetails = plan.prices.find(p => p.currency === paymentCurrency) || plan.prices.find(p => p.currency === 'USD');
 
-        if (!finalPriceDetails || finalPriceDetails.amount <= 0) {
-            throw new Error(`Pricing for ${plan.name} not configured for ${paymentCurrency} or USD.`);
+        if (!priceDetails || priceDetails.amount <= 0) {
+            throw new Error(`Pricing for ${plan.name} not configured.`);
         }
         
         const transaction_id = `PRESSFLOW-SUB-${pendingUser._id}-${crypto.randomBytes(4).toString('hex')}`;
         pendingUser.signupData.transactionId = transaction_id;
-        let backendBaseUrl = process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL;
-        if (!backendBaseUrl) {
-            throw new Error('BACKEND_URL (or RENDER_EXTERNAL_URL) must be configured for payment callbacks.');
-        }
-        // Avoid double "/api" when env var already includes it.
-        backendBaseUrl = backendBaseUrl.replace(/\/api\/?$/, '');
+        
+        let backendBaseUrl = (process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL || '').replace(/\/api\/?$/, '');
         const callback_url  = `${backendBaseUrl}/api/webhooks/accountpe?flow=signup&transaction_id=${transaction_id}&email=${pendingUser.email}`;
 
-// --- ADD THIS LOG for definitive proof ---
-        console.log(`[Payment Flow] Sending this redirect_url to AccountPe: ${callback_url }`);
         await pendingUser.save();
-        await sendOtpEmail(adminUser.email, otp);
+        // NO OTP EMAIL SENT HERE
 
         const paymentData = {
             country_code: "CM",
             name: pendingUser.signupData.adminUser.username,
             email: pendingUser.email,
-            amount: finalPriceDetails.amount, // <-- Now sends the correct amount (e.g., 36000)
-            currency: finalPriceDetails.currency,
+            amount: priceDetails.amount,
+            currency: priceDetails.currency,
             transaction_id,
             description: `Subscription to PressFlow ${plan.name} Plan`,
             pass_digital_charge: true,
             callback_url : callback_url 
         };
 
-        try {
-            const paymentResponse = await createPaymentLink(paymentData);
-            console.log('[Payment Link Response][publicController]', paymentResponse?.data);
-            const paymentLink =
-                paymentResponse?.data?.data?.payment_link ||
-                paymentResponse?.data?.payment_link;
-            if (!paymentLink) {
-                throw new Error('Payment link not found in provider response.');
-            }
-            res.status(200).json({
-                message: "OTP sent. Redirecting to payment.",
-                paymentRequired: true,
-                paymentLink
-            });
-        } catch (paymentError) {
-            console.error("Payment Link Creation Failed:", paymentError);
-            throw new Error("Could not create payment link.");
-        }
+        const paymentResponse = await createPaymentLink(paymentData);
+        res.status(200).json({
+            message: "Redirecting to payment...",
+            paymentRequired: true,
+            paymentLink: paymentResponse?.data?.data?.payment_link || paymentResponse?.data?.payment_link
+        });
     }
 });
 
+// --- STEP 2: FINALIZE REGISTRATION (Only used for Paid Flows) ---
 const finalizeRegistration = asyncHandler(async (req, res) => {
-    const { email, otp } = req.body;
-    if (!email || !otp) {
-        res.status(400);
-        throw new Error('Email and OTP are required.');
-    }
-
-    // 1. Find the pending user
+    // This is now only for after-payment verification
+    const { email } = req.body;
     const pendingUser = await PendingUser.findOne({ email: email.toLowerCase() });
+    
     if (!pendingUser) {
         res.status(404);
-        throw new Error('Invalid registration request or expired.');
-    }
-    
-    // 2. Check OTP
-    const isMatch = await pendingUser.matchOtp(otp);
-    if (!isMatch) {
-        res.status(400);
-        throw new Error('Invalid verification code.');
+        throw new Error('Invalid registration request.');
     }
 
-    // --- 🌟 TRIAL LOGIC START 🌟 ---
-    let isTrialAccount = false;
-
-    // Check if the user signed up via the direct "Trial" flow
-    if (pendingUser.signupData.plan === 'Trial') {
-        isTrialAccount = true;
-        
-        // ✅ CHANGE: Swap 'Trial' for 'Basic' so the database finds the plan
-        pendingUser.signupData.plan = 'Basic'; 
-    }
-
-    // 3. Create the Tenant & User (The logic will now look for "Basic" plan)
     const { tenant, user, token } = await finalizeRegistrationLogic(pendingUser);
 
-    // 4. If it was a trial, force the subscription status
-    if (isTrialAccount) {
-        const thirtyDaysFromNow = new Date();
-        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-
-        // Update the tenant to activate the 30-day trial on the Basic plan
-        await Tenant.findByIdAndUpdate(tenant._id, {
-            subscriptionStatus: 'trial',
-            trialEndsAt: thirtyDaysFromNow,
-            nextBillingAt: thirtyDaysFromNow,
-            plan: 'Basic' // Explicitly confirm Basic plan
-        });
-
-        // Update local object for the response
-        tenant.subscriptionStatus = 'trial';
-        tenant.trialEndsAt = thirtyDaysFromNow;
-        tenant.plan = 'Basic';
-    }
-    // --- TRIAL LOGIC END ---
-
-    // 5. Send Success Response
     res.status(201).json({
         _id: user._id, 
         username: user.username, 
         role: user.role,
         tenantId: user.tenantId, 
         token,
-        tenant: {
-            plan: tenant.plan, // Will send "Basic"
-            subscriptionStatus: tenant.subscriptionStatus, // Will send "trial"
-            trialEndsAt: tenant.trialEndsAt,
-            nextBillingAt: tenant.nextBillingAt,
-        },
-        message: `Account created successfully! ${isTrialAccount ? '30-Day Basic Trial Active.' : ''}`
+        tenant: { plan: tenant.plan, subscriptionStatus: tenant.subscriptionStatus },
+        message: 'Account finalized successfully.'
     });
 });
+
+export { initiateRegistration, finalizeRegistration };
 // @desc    Get a list of publicly listed businesses for the directory
 // @route   GET /api/public/directory
 // @access  Public
