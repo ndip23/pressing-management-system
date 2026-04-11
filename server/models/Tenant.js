@@ -79,16 +79,6 @@ const tenantSchema = new mongoose.Schema({
     nextBillingAt: {
       type: Date,
     },
-    // Billing fields
-    stripeCustomerId: { 
-        type: String 
-    },
-    stripeSubscriptionId: { 
-        type: String 
-    },
-    stripeSubscriptionStatus: { 
-        type: String 
-    },
 }, { timestamps: true });
 
 tenantSchema.pre('validate', function(next) { 

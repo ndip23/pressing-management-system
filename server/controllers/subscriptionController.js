@@ -91,12 +91,22 @@ const initiateSubscription = asyncHandler(async (req, res) => {
     if (finalCurrency !== 'USD') {
         try {
             console.log(`[Init Reg] Converting ${usdPrice} USD to ${finalCurrency} for ${userCountryCode}...`);
-            finalAmount = await convertPUSDToFiat(userCountryCode, usdPrice);
+            let converted = await convertPUSDToFiat(userCountryCode, usdPrice);
+            
+            // 🔥 CRITICAL FIX: Ensure the amount is a valid whole number
+            // If the API returns a float (like 18500.00), Math.round it.
+            // If the API returns a tiny number (like 29.73), multiply by 100 or 1000 
+            // depending on what your dashboard logs show the 'rate' vs 'total' is.
+            finalAmount = Math.round(Number(converted)); 
+            
             console.log(`[Init Reg] Final local amount to charge: ${finalAmount} ${finalCurrency}`);
         } catch (error) {
             console.error("Conversion failed:", error.message);
             throw new Error("Currency conversion service is currently unavailable. Please try again later.");
         }
+    } else {
+        // If USD, ensure it's a number
+        finalAmount = Number(usdPrice);
     }
 
     const transaction_id = `PRESSFLOW-SUB-${pendingUser._id}-${crypto.randomBytes(4).toString('hex')}`;
@@ -110,7 +120,7 @@ const initiateSubscription = asyncHandler(async (req, res) => {
     const paymentData = {
         country_code: userCountryCode,
         currency: finalCurrency,
-        amount: finalAmount,
+        amount: finalAmount, // Now sending the rounded local integer
         name: adminUser.username,
         email: adminUser.email,
         transaction_id,
@@ -121,7 +131,6 @@ const initiateSubscription = asyncHandler(async (req, res) => {
 
     try {
         const paymentResponse = await createPaymentLink(paymentData);
-        console.log('[Payment Link Response]', paymentResponse?.data);
         const paymentLink = paymentResponse?.data?.data?.payment_link || paymentResponse?.data?.payment_link;
         if (!paymentLink) throw new Error('Payment provider did not return a link.');
         
