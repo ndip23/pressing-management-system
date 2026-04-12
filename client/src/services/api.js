@@ -53,7 +53,11 @@ api.interceptors.response.use(
   },
 );
 
-const PublicAPI = axios.create({ baseURL: API_URL });
+const PublicAPI = axios.create({ 
+    baseURL: API_URL,
+    headers: { 'Content-Type': 'application/json' },
+    withCredentials: true 
+});
 
 export const registerTenantWithSetup = async setupData => {
   return api.post('/public/register-with-setup', setupData);

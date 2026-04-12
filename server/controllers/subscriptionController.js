@@ -116,8 +116,8 @@ const initiateSubscription = asyncHandler(async (req, res) => {
 
     const paymentData = {
         country_code: userCountryCode,
-        currency: finalCurrency,
-        amount: finalAmount, // Now sends e.g., 18500
+        currency: targetCurrency, 
+        amount: usdPrice,   // Now sends e.g., 18500
         name: adminUser.username,
         email: adminUser.email,
         transaction_id,
