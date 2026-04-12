@@ -73,36 +73,34 @@ const initiateSubscription = asyncHandler(async (req, res) => {
         });
     } 
 
-    // --- 5. LOGIC: PAID ACCOUNT (Conversion Logic) ---
-   // --- 5. LOGIC: PAID ACCOUNT (Updated Conversion Logic) ---
+    // --- 5. LOGIC: PAID ACCOUNT (Updated Conversion) ---
     const plan = await Plan.findOne({ name: planName });
     if (!plan) throw new Error('Invalid plan selected.');
 
     const userCountryCode = companyInfo.countryCode || 'CM'; 
     const targetCurrency = COUNTRY_TO_CURRENCY[userCountryCode] || 'USD';
-
-    // 1. Get the base USD price ($29) from the plan
+    
+    // Get the base USD price ($29) from the plan
     const usdPrice = plan.prices.find(p => p.currency === 'USD')?.amount;
     if (!usdPrice) throw new Error(`USD Pricing for ${plan.name} is not configured.`);
 
     let finalAmount = usdPrice;
     let finalCurrency = targetCurrency;
 
-    // 2. Perform Conversion: USD -> Local Currency
+    // 🔥 DYNAMIC MATH: Calculate Local Amount
     if (finalCurrency !== 'USD') {
         try {
-            console.log(`[Init Reg] Fetching rate for ${userCountryCode} to convert ${usdPrice} USD...`);
-            
-            // 🔥 FIX: We fetch the RATE for 1 USD, then multiply it by our plan price
+            console.log(`[Init Reg] Fetching rate for ${userCountryCode}...`);
+            // This API returns the rate for 1 USD to local currency
             const rate = await convertPUSDToFiat(userCountryCode, 1); 
             
-            // Round the total to a whole number
-            finalAmount = Math.ceil(Number(usdPrice) * Number(rate)); 
+            // Multiply the $29 by the rate
+            finalAmount = Math.ceil(usdPrice * rate); 
             
-            console.log(`[Init Reg] Conversion: $${usdPrice} * Rate ${rate} = ${finalAmount} ${finalCurrency}`);
+            console.log(`[Init Reg] Price: $${usdPrice} * Rate ${rate} = ${finalAmount} ${finalCurrency}`);
         } catch (error) {
             console.error("Conversion failed:", error.message);
-            throw new Error("Currency conversion service is currently unavailable.");
+            throw new Error("Currency conversion failed. Please try again later.");
         }
     } else {
         finalAmount = Number(usdPrice);
@@ -119,7 +117,7 @@ const initiateSubscription = asyncHandler(async (req, res) => {
     const paymentData = {
         country_code: userCountryCode,
         currency: finalCurrency,
-        amount: finalAmount, // Now correctly calculated as (USD * Rate)
+        amount: finalAmount, // Now sends e.g., 18500
         name: adminUser.username,
         email: adminUser.email,
         transaction_id,
