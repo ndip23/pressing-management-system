@@ -7,24 +7,7 @@ connectDB();
 const defaultPlans = [
     {
         name: 'Basic',
-        prices: [
-            // Major International
-            { currency: 'USD', amount: 29 },
-            { currency: 'EUR', amount: 27 },
-            { currency: 'GBP', amount: 23 },
-            { currency: 'CAD', amount: 39 },
-            // CEMAC Zone (Central Africa)
-            { currency: 'XAF', amount: 18000 },
-            // UEMOA Zone (West Africa)
-            { currency: 'XOF', amount: 18000 },
-            // Other Key African Currencies
-            { currency: 'NGN', amount: 25000 }, // Nigeria
-            { currency: 'GHS', amount: 350 },  // Ghana
-            { currency: 'KES', amount: 3800 }, // Kenya
-            { currency: 'ZAR', amount: 550 },  // South Africa
-            { currency: 'ZWL', amount: 0 },   // Zimbabwe
-            { currency: 'PHP', amount: 110 }, // Philippines
-        ],
+   prices: [{ currency: 'USD', amount: 29 }],
         features: [
             'Register and manage your clients manually',
             'Generate receipts for every transaction',
@@ -41,25 +24,7 @@ const defaultPlans = [
     },
     {
         name: 'Starter',
-        prices: [
-             // Major International
-            { currency: 'USD', amount: 29 },
-            { currency: 'EUR', amount: 27 },
-            { currency: 'GBP', amount: 23 },
-            { currency: 'CAD', amount: 39 },
-            // CEMAC Zone (Central Africa)
-            { currency: 'XAF', amount: 18000 },
-            // UEMOA Zone (West Africa)
-            { currency: 'XOF', amount: 18000 },
-            // Other Key African Currencies
-            { currency: 'NGN', amount: 25000 }, // Nigeria
-            { currency: 'GHS', amount: 350 },  // Ghana
-            { currency: 'KES', amount: 3800 }, // Kenya
-            { currency: 'ZAR', amount: 550 },  // South Africa
-            { currency: 'ZWL', amount: 0 },   // Zimbabwe
-             // Asia
-            { currency: 'PHP', amount: 560 }, // Philippines
-        ],
+      prices: [{ currency: 'USD', amount: 29 }],
         features: [
             'Get local traffic',
             'Home pickups & deliveries with tracking',
@@ -79,25 +44,7 @@ const defaultPlans = [
     },
     {
         name: 'Growth',
-        prices: [
-   // Major International
-            { currency: 'USD', amount: 29 },
-            { currency: 'EUR', amount: 27 },
-            { currency: 'GBP', amount: 23 },
-            { currency: 'CAD', amount: 39 },
-            // CEMAC Zone (Central Africa)
-            { currency: 'XAF', amount: 18000 },
-            // UEMOA Zone (West Africa)
-            { currency: 'XOF', amount: 18000 },
-            // Other Key African Currencies
-            { currency: 'NGN', amount: 25000 }, // Nigeria
-            { currency: 'GHS', amount: 350 },  // Ghana
-            { currency: 'KES', amount: 3800 }, // Kenya
-            { currency: 'ZAR', amount: 550 },  // South Africa
-            { currency: 'ZWL', amount: 0 },   // Zimbabwe
-             // Asia
-            { currency: 'PHP', amount: 1400 }, // Philippines
-        ],
+     prices: [{ currency: 'USD', amount: 29 }],
         features: [
             'Everything in Starter Plan',
             '3x more customer traffic',
@@ -115,25 +62,7 @@ const defaultPlans = [
     },
     {
         name: 'Pro',
-        prices: [
-            // Major International
-            { currency: 'USD', amount: 29 },
-            { currency: 'EUR', amount: 27 },
-            { currency: 'GBP', amount: 23 },
-            { currency: 'CAD', amount: 39 },
-            // CEMAC Zone (Central Africa)
-            { currency: 'XAF', amount: 18000 },
-            // UEMOA Zone (West Africa)
-            { currency: 'XOF', amount: 18000 },
-            // Other Key African Currencies
-            { currency: 'NGN', amount: 25000 }, // Nigeria
-            { currency: 'GHS', amount: 350 },  // Ghana
-            { currency: 'KES', amount: 3800 }, // Kenya
-            { currency: 'ZAR', amount: 550 },  // South Africa
-            { currency: 'ZWL', amount: 0 },   // Zimbabwe
-            // Asia
-            { currency: 'PHP', amount: 2800 }, // Philippines
-        ],
+    prices: [{ currency: 'USD', amount: 29 }],
         features: [
             'Everything in Growth Plan',
             '6x more customer traffic & premium placement',

@@ -20,6 +20,7 @@ console.log(`[api.js] API requests will be sent to: ${API_URL}`);
 const api = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
+   withCredentials: true
 });
 
 // --- Interceptors ---
