@@ -8,7 +8,6 @@ import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
 import Input from '../../components/UI/Input';
 import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, User, Building, KeyRound, Eye, EyeOff } from 'lucide-react';
-import toast from 'react-hot-toast';
 import PhoneInput from '../../components/UI/PhoneInput'; 
 import {  PublicFooter } from './PublicLayout'; 
 import { COUNTRY_TO_CURRENCY, SUPPORTED_COUNTRIES } from '../../utils/currencyMap';

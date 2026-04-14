@@ -4,7 +4,6 @@ import { getMyTenantProfileApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import Spinner from '../../components/UI/Spinner';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 const VerifyUpgradePage = () => {
     const navigate = useNavigate();

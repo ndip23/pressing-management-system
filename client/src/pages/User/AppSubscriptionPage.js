@@ -1,6 +1,5 @@
 // client/src/pages/User/AppSubscriptionPage.js
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { getPublicPlansApi, changeSubscriptionPlanApi } from '../../services/api';
 import Card from '../../components/UI/Card';
@@ -11,7 +10,6 @@ import toast from 'react-hot-toast';
 import { COUNTRY_TO_CURRENCY } from '../../utils/currencyMap';
 
 const AppSubscriptionPage = () => {
-    const { t } = useTranslation();
     const { user } = useAuth();
     const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
