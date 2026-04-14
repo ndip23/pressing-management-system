@@ -2,6 +2,7 @@
 
 import asyncHandler from '../middleware/asyncHandler.js';
 import Plan from '../models/Plan.js';
+import { COUNTRY_TO_CURRENCY } from '../utils/currencyMap.js';
 
 // @desc    Get all ACTIVE plans for the public pricing page
 // @route   GET /api/plans
@@ -97,6 +98,57 @@ const deletePlan = asyncHandler(async (req, res) => {
     throw new Error('Plan not found');
   }
 });
+// @desc    Get plan by slug
+// @route   GET /api/plans/:slug
+// @access  Public
+const getPlanBySlug = asyncHandler(async (req, res) => {
+    // Use a regex to make the search case-insensitive ('i' flag)
+    // This allows searching for "starter" to find "Starter"
+    const plan = await Plan.findOne({ 
+        name: { $regex: new RegExp(`^${req.params.slug}$`, 'i') } 
+    });
+
+    if (plan) {
+        res.json({ success: true, data: plan });
+    } else {
+        res.status(404);
+        throw new Error('Plan not found');
+    }
+});
+
+// @desc    Get converted price for a plan based on country code
+// @route   GET /api/plans/:slug/price/:countryCode
+// @access  Public
+const getPlanPrice = asyncHandler(async (req, res) => {
+    const { slug, countryCode } = req.params;
+    
+    const plan = await Plan.findOne({ name: slug });
+    if (!plan) {
+        res.status(404);
+        throw new Error('Plan not found');
+    }
+
+    const currency = COUNTRY_TO_CURRENCY[countryCode.toUpperCase()] || 'USD';
+    const price = plan.prices.find(p => p.currency === currency) || plan.prices.find(p => p.currency === 'USD');
+
+    if (!price) {
+        res.status(404);
+        throw new Error('Price not configured for this region');
+    }
+
+    // You mentioned you want to return the 'rate'. 
+    // If you are just calculating locally, return the amount and the rate is essentially 1 
+    // relative to your database entry.
+    res.json({
+        success: true,
+        data: {
+            amount: price.amount,
+            currency: price.currency,
+            rate: 1 // Since you are using fixed prices in DB, rate is 1.0
+        }
+    });
+});
+
 
 export {
   getPlans,
@@ -105,4 +157,6 @@ export {
   createPlan,
   updatePlan,
   deletePlan,
+  getPlanBySlug,
+  getPlanPrice
 };

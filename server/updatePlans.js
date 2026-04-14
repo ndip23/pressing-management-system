@@ -7,7 +7,18 @@ connectDB();
 const defaultPlans = [
     {
         name: 'Basic',
-   prices: [{ currency: 'USD', amount: 29 }],
+        prices: [
+            { currency: 'USD', amount: 29 },
+            { currency: 'XAF', amount: 18000 },
+            { currency: 'XOF', amount: 18000 },
+            { currency: 'KES', amount: 3800 },
+
+            // Added from your currency map
+            { currency: 'GNF', amount: 250000 },
+            { currency: 'INR', amount: 2400 },
+            { currency: 'TZS', amount: 70000 },
+            { currency: 'UGX', amount: 110000 }
+        ],
         features: [
             'Register and manage your clients manually',
             'Generate receipts for every transaction',
@@ -16,69 +27,100 @@ const defaultPlans = [
             'Includes a 1-month free trial'
         ],
         limits: {
-            maxStaff: 2, // Only the owner
-            maxOrdersPerMonth: 50,
+            maxStaff: 2,
+            maxOrdersPerMonth: 50, // ✅ Limit: 50
         },
         isActive: true,
         isFeatured: false,
     },
     {
         name: 'Starter',
-      prices: [{ currency: 'USD', amount: 29 }],
+        prices: [
+            { currency: 'USD', amount: 29 },
+            { currency: 'XAF', amount: 18000 },
+            { currency: 'XOF', amount: 18000 },
+            { currency: 'KES', amount: 3800 },
+
+            // Added from your currency map
+            { currency: 'GNF', amount: 250000 },
+            { currency: 'INR', amount: 2400 },
+            { currency: 'TZS', amount: 70000 },
+            { currency: 'UGX', amount: 110000 }
+        ],
         features: [
             'Get local traffic',
-            'Home pickups & deliveries with tracking',
-            'In-app messaging with clients',
-            'Bulk SMS & email promotions',
+            'Home pickups & deliveries',
+            'In-app messaging',
+            'Bulk SMS & email',
             'Up to 2 worker accounts',
-            'Real-time activity tracking',
-            'Daily, weekly, monthly sales reports',
-            'Automated customer retention tools'
+            'Real-time tracking',
+            'Reports'
         ],
         limits: {
             maxStaff: 5,
-            maxOrdersPerMonth: 250,
+            maxOrdersPerMonth: 250, // ✅ Limit: 250
         },
         isActive: true,
         isFeatured: false,
     },
     {
         name: 'Growth',
-     prices: [{ currency: 'USD', amount: 29 }],
+        prices: [
+            { currency: 'USD', amount: 29 },
+            { currency: 'XAF', amount: 18000 },
+            { currency: 'XOF', amount: 18000 },
+            { currency: 'KES', amount: 3800 },
+
+            // Added from your currency map
+            { currency: 'GNF', amount: 250000 },
+            { currency: 'INR', amount: 2400 },
+            { currency: 'TZS', amount: 70000 },
+            { currency: 'UGX', amount: 110000 }
+        ],
         features: [
-            'Everything in Starter Plan',
-            '3x more customer traffic',
-            'Priority directory listing',
+            'Everything in Starter',
+            '3x traffic',
+            'Priority listing',
             'Up to 5 worker accounts',
-            'Advanced analytics dashboard',
-            'Automated client reminders'
+            'Advanced analytics'
         ],
         limits: {
             maxStaff: 7,
-            maxOrdersPerMonth: 500,
+            maxOrdersPerMonth: -1, // ✅ Unlimited
         },
         isActive: true,
-        isFeatured: true, // This is the most popular plan
+        isFeatured: true,
     },
     {
         name: 'Pro',
-    prices: [{ currency: 'USD', amount: 29 }],
+        prices: [
+            { currency: 'USD', amount: 29 },
+            { currency: 'XAF', amount: 18000 },
+            { currency: 'XOF', amount: 18000 },
+            { currency: 'KES', amount: 3800 },
+
+            // Added from your currency map
+            { currency: 'GNF', amount: 250000 },
+            { currency: 'INR', amount: 2400 },
+            { currency: 'TZS', amount: 70000 },
+            { currency: 'UGX', amount: 110000 }
+        ],
         features: [
-            'Everything in Growth Plan',
-            '6x more customer traffic & premium placement',
+            'Everything in Growth',
+            '6x traffic',
             'Up to 15 worker accounts',
-            'Detailed activity tracking to prevent fraud',
-            'One-click access to all sales reports',
-            'Dedicated priority support'
+            'Fraud prevention',
+            'Priority support'
         ],
         limits: {
             maxStaff: 15,
-            maxOrdersPerMonth: -1, // No limit
+            maxOrdersPerMonth: -1, // ✅ Unlimited
         },
         isActive: true,
         isFeatured: false,
     },
 ];
+;
 const runUpdate = async () => {
     try {
         console.log('⏳ Updating Plans in Database...');

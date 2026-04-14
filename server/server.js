@@ -4,7 +4,8 @@ import express from "express";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import cors from "cors";
-import path from "path"; // Needed for ES Modules to correctly resolve __dirname
+import path from "path";
+console.log("HELLO FROM BACKEND");
 
 // Load environment variables at the very top
 dotenv.config();

@@ -193,31 +193,28 @@ const SignUpPage = () => {
     // ONLY 3 STEPS NOW
     const nextStep = () => setStep(prev => Math.min(prev + 1, 3)); 
     const prevStep = () => setStep(prev => Math.max(prev - 1, 1));
+const handleInitiateRegistration = async () => {
+    setIsSubmitting(true);
+    setError('');
+    try {
+        // ✅ Explicitly set the exact key
+        localStorage.setItem('registration_data', JSON.stringify(formData));
+        
+        const { data } = await initiateRegistrationApi(formData);
 
-    const handleInitiateRegistration = async () => {
-        setIsSubmitting(true);
-        setError('');
-        try {
-            const { data } = await initiateRegistrationApi(formData);
-
-            if (data.paymentRequired) {
-                if (!data.paymentLink) {
-                    throw new Error("Payment link was not returned by the server.");
-                }
-                window.location.href = data.paymentLink;
-            } else {
-                // If Trial, instant login bypasses everything
-                login(data);
-                toast.success('Account created successfully!');
-                navigate('/app/dashboard');
-            }
-        } catch (err) {
-            setError(err.response?.data?.message || t('signup.errors.registrationFailed'));
-            setStep(1);
-        } finally {
-            setIsSubmitting(false);
+        if (data.paymentRequired) {
+            navigate(`/payment?plan=${formData.plan.toLowerCase()}&email=${formData.adminUser.email}`);
+        } else {
+            login(data);
+            navigate('/app/dashboard');
         }
-    };
+    } catch (err) {
+        setError(err.response?.data?.message || 'Registration failed');
+        setStep(1);
+    } finally {
+        setIsSubmitting(false);
+    }
+};
     
     const renderStep = () => {
         switch (step) {

@@ -1,17 +1,12 @@
 // client/src/services/api.js
 import axios from 'axios';
 const getBaseUrl = () => {
-  // 1. If running on your computer
-  if (
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1'
-  ) {
-    return 'http://localhost:5000/api';
+  // If we are on production domains, point to the live API
+  if (window.location.hostname === 'sys.pressmark.site' || window.location.hostname === 'pressmark.site') {
+    return 'https://api.pressmark.site/api'; 
   }
-  // 2. If running on the live internet
-  else {
-    return 'https://pressmark-api.onrender.com/api';
-  }
+  // Otherwise default to local
+  return 'http://localhost:5000/api';
 };
 
 const API_URL = getBaseUrl();
@@ -184,7 +179,13 @@ export const getBusinessBySlugApi = async slug =>
 export const getMyTenantProfileApi = async () => {
   return api.get('/tenant-profile');
 };
+export const getPlanBySlug = async (slug) => {
+    return PublicAPI.get(`/plans/${slug}`); 
+};
 
+export const getPlanPrice = async (planSlug, countryCode) => {
+    return PublicAPI.get(`/plans/${planSlug}/price/${countryCode}`);
+};
 export const updateMyTenantProfileApi = async profileData => {
   return api.put('/tenant-profile', profileData);
 };
@@ -194,9 +195,8 @@ export const fetchInboundMessagesApi = async (page = 1, pageSize = 25) => {
 export const recordPaymentApi = async (orderId, paymentData) => {
   return api.post(`/orders/${orderId}/payments`, paymentData);
 };
-export const getAllPlansAdminApi = () => directoryAdminApi.get('/plans/all');
-export const updatePlanApi = (id, planData) =>
-  directoryAdminApi.put(`/plans/${id}`, planData);
+export const getAllPlansAdminApi = () => directoryAdminApi.get('/plans/admin/all');
+export const updatePlanApi = (id, planData) => directoryAdminApi.put(`/plans/admin/${id}`, planData);
 // --- DIRECTORY ADMIN API ---
 const directoryAdminApi = axios.create({ baseURL: API_URL });
 

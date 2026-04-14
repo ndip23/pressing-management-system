@@ -8,34 +8,42 @@ import {
   createPlan,
   updatePlan,
   deletePlan,
+  getPlanBySlug,
+  getPlanPrice
 } from '../controllers/planController.js';
 import { protectDirectoryAdmin } from '../middleware/directoryAdminMiddleware.js';
 
 const router = express.Router();
 
-// @route   /api/plans
-// @desc    Routes for subscription plans
+// ==========================================
+// 1. PUBLIC ROUTES (No Authentication Needed)
+// ==========================================
+// These MUST be defined first.
 
-// --- PUBLIC ROUTES ---
 // Get all active plans for the public pricing page
-router.route('/').get(getPlans);
+router.get('/', getPlans);
 
-// --- ADMIN-ONLY ROUTES ---
-// The protectDirectoryAdmin middleware will be applied to all subsequent routes in this chain.
-router.use(protectDirectoryAdmin);
+// Get a specific plan by its name/slug (e.g., /api/plans/basic)
+router.get('/:slug', getPlanBySlug);
 
-// Get ALL plans (including inactive ones) for the admin panel
-router.route('/all').get(getAllPlansAdmin);
+// Get the specific price for a country (e.g., /api/plans/basic/price/CM)
+router.get('/:slug/price/:countryCode', getPlanPrice);
 
-// Get a single plan by ID, create a new plan, or delete a plan
-router
-  .route('/:id')
-  .get(getPlanById)
-  .put(updatePlan)
-  .delete(deletePlan);
+
+// ==========================================
+// 2. PROTECTED ADMIN ROUTES
+// ==========================================
+// Apply the protection middleware ONLY to the admin routes
+
+// We define a specific path for the "all" admin list
+router.get('/admin/all', protectDirectoryAdmin, getAllPlansAdmin);
 
 // Create a new plan
-router.route('/').post(createPlan);
+router.post('/', protectDirectoryAdmin, createPlan);
 
+// Manage a specific plan by its MongoDB _id
+router.get('/admin/:id', protectDirectoryAdmin, getPlanById);
+router.put('/admin/:id', protectDirectoryAdmin, updatePlan);
+router.delete('/admin/:id', protectDirectoryAdmin, deletePlan);
 
 export default router;

@@ -125,27 +125,29 @@ const accountPeWebhook = asyncHandler(async (req, res) => {
     console.log(`[Webhook] Received for transaction: ${transactionId}, status: ${status}`);
 
     if (isPaymentSuccessful(status)) {
+        // --- CASE 1: NEW SIGNUP ---
         if (transactionId?.startsWith('PRESSFLOW-SUB-')) {
-            // This is for a new user registration. Mark payment confirmed; finalize on verify endpoint.
             const pendingUser = await PendingUser.findOne({ 'signupData.transactionId': transactionId });
             if (pendingUser) {
                 pendingUser.paymentStatus = 'success';
                 pendingUser.paymentConfirmedAt = new Date();
                 await pendingUser.save();
                 console.log(`[Webhook] Marked payment confirmed for ${pendingUser.email}`);
-            } else {
-                console.error(`[Webhook] No pending user found for SUB transaction: ${transactionId}`);
             }
-        } else if (transactionId?.startsWith('PRESSFLOW-UPGRADE-')) {
-            // This is for an existing user upgrade
-            // You would need to find the tenant based on the saved transactionId
-            // For now, we'll extract the tenant ID from the transaction string
-            const tenantId = transactionId.split('-')[2]; 
+        } 
+        // --- CASE 2: UPGRADE ---
+        else if (transactionId?.startsWith('PRESSFLOW-UPGRADE-')) {
+            // Transaction ID format: PRESSFLOW-UPGRADE-tenantId-planName-random
+            const parts = transactionId.split('-');
+            const tenantId = parts[2]; 
+            const newPlanName = parts[3]; 
+            
+            // ✅ FIX: Define tenant AFTER getting the ID
             const tenant = await Tenant.findById(tenantId);
-            const newPlanName = "Pro"; // TODO: Store plan on the payment intent and use it here.
             
             if (tenant) {
-                console.log(`Upgrading subscription for ${tenant.name}`);
+                console.log(`[Webhook] Upgrading tenant ${tenant.name} (${tenantId}) to ${newPlanName}`);
+                
                 const nextBillingDate = new Date();
                 nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
 
@@ -154,8 +156,9 @@ const accountPeWebhook = asyncHandler(async (req, res) => {
                 tenant.trialEndsAt = undefined;
                 tenant.nextBillingAt = nextBillingDate;
                 await tenant.save();
+                console.log(`[Webhook] Tenant ${tenant.name} upgraded successfully.`);
             } else {
-                console.error(`[Webhook] No tenant found for UPGRADE transaction: ${transactionId}`);
+                console.error(`[Webhook] ERROR: No tenant found for ID: ${tenantId}`);
             }
         }
     }
@@ -172,11 +175,11 @@ const accountPeRedirect = asyncHandler(async (req, res) => {
     }
 
     if (flow === 'upgrade') {
-        const redirectUrl = `${frontendBase}/#/verify-upgrade?transaction_id=${transaction_id || ''}`;
+        const redirectUrl = `${frontendBase}/verify-upgrade?transaction_id=${transaction_id || ''}`;
         return res.redirect(302, redirectUrl);
     }
 
-    const redirectUrl = `${frontendBase}/#/verify-payment?transaction_id=${transaction_id || ''}&email=${email || ''}`;
+    const redirectUrl = `${frontendBase}/verify-payment?transaction_id=${transaction_id || ''}&email=${email || ''}`;
     return res.redirect(302, redirectUrl);
 });
 

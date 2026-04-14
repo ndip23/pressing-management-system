@@ -66,24 +66,24 @@ const getAuthToken = async () => {
 /**
  * Converts USD (PUSD) amount to Local Fiat Currency using AccountPe
  */
-export const convertPUSDToFiat = async (countryCode, usdAmount) => {
+export const convertPUSDToFiat = async (countryCode, usdPrice) => {
     try {
-        // According to your screenshot, this API takes country_code and amount
-        // It converts the USD amount into the local equivalent
+        // Send amount: 1 to get the base rate for 1 USD
         const response = await payoutApi.post('/pusd_to_fiat_rate', {
             country_code: countryCode,
-            amount: Number(usdAmount)
+            amount: 1 
         }, { httpsAgent });
 
-        console.log('[AccountPe Conversion Result]:', response.data);
+        console.log('[AccountPe] Rate Response:', response.data);
 
-        // Update this line based on your log output (e.g. response.data.converted_amount)
-        const convertedAmount = response.data?.data?.amount || response.data?.amount;
+        // Extract the rate. If the API returns the total for that amount directly, use it.
+        // If it returns a rate (e.g., 615), use that.
+        const rate = response.data?.data?.amount || response.data?.amount || 615;
         
-        if (!convertedAmount) throw new Error('Could not read converted amount.');
-        return convertedAmount;
+        return Number(rate);
     } catch (error) {
-        throw new Error("Currency conversion failed.");
+        console.error("Conversion API Error:", error.message);
+        throw new Error("Currency conversion service is currently unavailable.");
     }
 };
 /**

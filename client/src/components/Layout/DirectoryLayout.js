@@ -56,14 +56,14 @@ export const DirectoryFooter = () => (
                         <li><Link to="/directory" className="text-sky-200 hover:text-white hover:underline">Search Directory</Link></li>
                         {/* ✅ POINTING TO SUBDOMAIN */}
                         <li><a href="https://sys.pressmark.site" className="text-sky-200 hover:text-white hover:underline">Get The Software</a></li>
-                        <li><a href="https://sys.pressmark.site/#/features" className="text-sky-200 hover:text-white hover:underline">Software Features</a></li>
+                        <li><a href="https://sys.pressmark.site/features" className="text-sky-200 hover:text-white hover:underline">Software Features</a></li>
                     </ul>
                 </div>
 
                 <div className="md:text-right">
                     <h4 className="font-bold text-lg mb-3">Resources</h4>
                     <ul className="space-y-2 text-sm">
-                        <li><a href="https://sys.pressmark.site/#/contact" className="text-sky-200 hover:text-white hover:underline">Contact Us</a></li>
+                        <li><a href="https://sys.pressmark.site/contact" className="text-sky-200 hover:text-white hover:underline">Contact Us</a></li>
                     </ul>
                 </div>
             </div>

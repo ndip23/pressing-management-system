@@ -1,5 +1,3 @@
-// client/src/pages/Public/VerifyPaymentPage.jsx
-
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { verifyPaymentAndFinalizeApi } from '../../services/api';
@@ -16,44 +14,47 @@ const VerifyPaymentPage = () => {
     const [error, setError] = useState('');
     const [isSuccess, setIsSuccess] = useState(false);
     const [needsLogin, setNeedsLogin] = useState(false);
+// client/src/pages/Public/VerifyPaymentPage.jsx
 
-    useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const transactionId = params.get('transaction_id');
-        const email = params.get('email');
+useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const transactionId = params.get('transaction_id');
+    const email = params.get('email');
 
-        if (!transactionId) {
-            setError("Invalid verification link. No transaction ID found.");
-            return;
-        }
+    if (!transactionId) {
+        setError("Invalid verification link.");
+        return;
+    }
 
-        const verify = async () => {
-            try {
-                const { data } = await verifyPaymentAndFinalizeApi({ transaction_id: transactionId, email });
-                setStatusMessage("Payment confirmed! Your account is ready.");
-                setIsSuccess(true);
-                if (data?.token) {
-                    await loginWithToken(data.token);
-                    toast.success(data.message || "Payment confirmed!");
-                    // Redirect to the dashboard after a short delay to allow the user to read the message
-                    setTimeout(() => {
-                        navigate('/app/dashboard');
-                    }, 3000);
-                } else {
-                    setNeedsLogin(true);
-                    setStatusMessage('Payment confirmed. Please log in to continue.');
-                }
+    const verifyWithRetry = async (attempt = 0) => {
+        try {
+            // Call the backend to verify the transaction
+            const { data } = await verifyPaymentAndFinalizeApi({ transaction_id: transactionId, email });
+            
+            setStatusMessage("Payment confirmed! Creating your account...");
+            
+            // Login the user
+            await loginWithToken(data.token);
+            setIsSuccess(true);
+            toast.success("Account created successfully!");
+            
+            // Hard redirect to dashboard
+            setTimeout(() => {
+                window.location.href = '/app/dashboard';
+            }, 1500);
 
-            } catch (err) {
-                setError(err.response?.data?.message || "Failed to verify your payment. Please contact support.");
+        } catch (err) {
+            // If verification fails, retry up to 5 times (in case the webhook is lagging)
+            if (attempt < 5) {
+                setTimeout(() => verifyWithRetry(attempt + 1), 2000); // Wait 2 seconds
+            } else {
+                setError("Payment verification timed out. Please contact support if you have paid.");
             }
-        };
+        }
+    };
 
-        // Run the verification once on component mount
-        verify();
-
-    }, [location.search, navigate, loginWithToken]); // Dependencies
-
+    verifyWithRetry();
+}, [location.search, navigate, loginWithToken]);
     return (
         <div className="min-h-screen bg-apple-gray-50 dark:bg-apple-gray-950 flex flex-col items-center justify-center text-center p-4">
             {error ? (
@@ -61,9 +62,7 @@ const VerifyPaymentPage = () => {
                     <AlertTriangle size={48} className="text-red-500 mb-4" />
                     <h1 className="text-2xl font-bold text-red-500">Verification Failed</h1>
                     <p className="mt-2 text-gray-600 dark:text-apple-gray-400">{error}</p>
-                    <Link to="/contact" className="mt-6 text-apple-blue underline font-semibold">
-                        Contact Support
-                    </Link>
+                    <Link to="/contact" className="mt-6 text-apple-blue underline font-semibold">Contact Support</Link>
                 </div>
             ) : isSuccess ? (
                 <div className="flex flex-col items-center max-w-md">
@@ -74,14 +73,13 @@ const VerifyPaymentPage = () => {
                             Please <Link to="/login" className="text-apple-blue underline font-semibold">log in</Link> to continue.
                         </p>
                     ) : (
-                        <p className="mt-2 text-gray-600 dark:text-apple-gray-400">Redirecting you to your dashboard now...</p>
+                        <p className="mt-2 text-gray-600 dark:text-apple-gray-400">Redirecting to dashboard...</p>
                     )}
                 </div>
             ) : (
                 <div className="flex flex-col items-center max-w-md">
                     <Spinner />
                     <h1 className="text-2xl font-bold mt-4">{statusMessage}</h1>
-                    <p className="mt-2 text-gray-500">Please do not close this window.</p>
                 </div>
             )}
         </div>

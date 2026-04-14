@@ -1,10 +1,18 @@
-// client/src/pages/Public/DirectoryLayout.js
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-// --- Helper to point to the SaaS Subdomain ---
-const SAAS_URL = "https://sys.pressmark.site";
+// --- Helper to point to the SaaS URL ---
+const getSaasUrl = (path = '') => {
+    // If you are on production, use the subdomain
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        return `https://sys.pressmark.site${path}`;
+    }
+    
+    // ✅ FIX: Remove the '/#' prefix. If using BrowserRouter, you don't need it!
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return cleanPath; 
+};
 
 export const DirectoryHeader = () => {
     const { t } = useTranslation();
@@ -30,8 +38,8 @@ export const DirectoryHeader = () => {
                 <div className="hidden md:flex space-x-8 items-center">
                     <Link to="/directory" className={getLinkClass('/directory')}>{t("directory.nav.findService")}</Link>
                     
-                    {/* ✅ EXTERNAL LINK TO SUBDOMAIN */}
-                    <a href={`${SAAS_URL}/`} className="text-sm font-medium text-apple-gray-600 hover:text-apple-blue transition-colors">
+                    {/* External Link using Helper */}
+                    <a href={getSaasUrl('/')} className="text-sm font-medium text-apple-gray-600 hover:text-apple-blue transition-colors">
                         {t("directory.nav.getSoftware")}
                     </a>
                 </div>
@@ -55,24 +63,26 @@ export const DirectoryFooter = () => {
                         <h4 className="font-bold text-lg mb-3">{t("directory.footer.quickLinks")}</h4>
                         <ul className="space-y-2 text-sm">
                             <li><Link to="/directory" className="text-sky-200 hover:text-white hover:underline">{t("directory.footer.searchDirectory")}</Link></li>
-                            {/* ✅ EXTERNAL LINKS */}
-                            <li><a href={`${SAAS_URL}/signup`} className="text-sky-200 hover:text-white hover:underline">{t("directory.footer.getSoftware")}</a></li>
-                            <li><a href={`${SAAS_URL}/features`} className="text-sky-200 hover:text-white hover:underline">{t("directory.footer.features")}</a></li>
+                            <li><a href={getSaasUrl('/signup')} className="text-sky-200 hover:text-white hover:underline">{t("directory.footer.getSoftware")}</a></li>
+                            <li><a href={getSaasUrl('/features')} className="text-sky-200 hover:text-white hover:underline">{t("directory.footer.features")}</a></li>
                         </ul>
                     </div>
 
                     <div className="md:text-right">
                         <h4 className="font-bold text-lg mb-3">{t("directory.footer.resources")}</h4>
                         <ul className="space-y-2 text-sm">
-                            <li><a href={`${SAAS_URL}/privacy`} className="text-sky-200 hover:text-white hover:underline">{t("directory.footer.privacy")}</a></li>
-                            <li><a href={`${SAAS_URL}/terms`} className="text-sky-200 hover:text-white hover:underline">{t("directory.footer.terms")}</a></li>
-                            <li><a href={`${SAAS_URL}/contact`} className="text-sky-200 hover:text-white hover:underline">{t("directory.footer.contact")}</a></li>
+                            <li><a href={getSaasUrl('/privacy')} className="text-sky-200 hover:text-white hover:underline">{t("directory.footer.privacy")}</a></li>
+                            <li><a href={getSaasUrl('/terms')} className="text-sky-200 hover:text-white hover:underline">{t("directory.footer.terms")}</a></li>
+                            <li><a href={getSaasUrl('/contact')} className="text-sky-200 hover:text-white hover:underline">{t("directory.footer.contact")}</a></li>
                         </ul>
                     </div>
                 </div>
                 <div className="mt-10 pt-6 border-t border-sky-700 text-center text-xs text-sky-300">
                     <p>&copy; {new Date().getFullYear()} PressMark. {t("directory.footer.rights")}</p>
-                    <Link to="/directory-admin/login" className="mt-2 inline-block hover:text-white hover:underline">{t("directory.footer.adminPortal")}</Link>
+                    {/* Admin portal stays local */}
+                    <Link to="/directory-admin/login" className="mt-2 inline-block hover:text-white hover:underline">
+                        {t("directory.footer.adminPortal")}
+                    </Link>
                 </div>
             </div>
         </footer>

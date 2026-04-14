@@ -13,7 +13,8 @@ import {
     KeyRound,
     Tags,
     Inbox,
-    LogOut
+    LogOut,
+    Zap
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext'; // To conditionally show Admin section
 import Button from '../UI/Button';
@@ -88,6 +89,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                     <NavItem to="/app/customers" icon={Users}>{t('sidebar.navigation.customers')}</NavItem>
                     <NavItem to="/app/payments" icon={CreditCard}>{t('sidebar.navigation.payments')}</NavItem>
                     <NavItem to="/app/inbox" icon={Inbox}>{t('sidebar.navigation.inbox')}</NavItem>
+                    <NavItem to="/app/subscription" icon={Zap}>Subscription</NavItem>
                     {/* If you still wanted a placeholder for Payments, it would go here */}
                     {/* <NavItem to="/payments" icon={CreditCard} disabled={true}>Payments (Soon)</NavItem> */}
 
