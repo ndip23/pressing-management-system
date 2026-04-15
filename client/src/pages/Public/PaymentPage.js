@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getPlanBySlug, getPlanPrice, initiatePaidSubscriptionApi } from '../../services/api';
-import { COUNTRY_TO_CURRENCY, SUPPORTED_COUNTRIES } from '../../utils/currencyMap';
+import { COUNTRY_TO_CURRENCY, SUPPORTED_COUNTRIES, COUNTRY_NAMES } from '../../utils/currencyMap';
 import Button from '../../components/UI/Button';
 import Card from '../../components/UI/Card';
 import Spinner from '../../components/UI/Spinner';
