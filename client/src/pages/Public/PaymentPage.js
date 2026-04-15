@@ -122,7 +122,7 @@ const PaymentPage = () => {
                         value={selectedRegion}
                     >
                         {SUPPORTED_COUNTRIES.map(code => (
-                            <option key={code} value={code}>{code}</option>
+                            <option key={code} value={code}> {COUNTRY_NAMES[code]} ({code})</option>
                         ))}
                     </select>
                 </div>
