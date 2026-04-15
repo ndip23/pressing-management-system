@@ -12,7 +12,6 @@ import { customAlphabet } from 'nanoid';
 import { sendOtpEmail } from '../services/notificationService.js';
 import { finalizeRegistrationLogic } from '../services/registrationService.js';
 import generateToken from '../utils/generateToken.js';
-console.log("SUBSCRIPTION CONTROLLER FILE IS LOADED");
 
 const extractPaymentAttributes = (payload) => {
     return payload?.data?.data?.attributes || null;
@@ -87,7 +86,6 @@ const initiateSubscription = asyncHandler(async (req, res) => {
     };
 
     try {
-        console.log("[Payment Data being sent to AccountPe]:", paymentData);
 
         const paymentResponse = await createPaymentLink(paymentData);
 
@@ -164,7 +162,6 @@ const changeSubscriptionPlan = asyncHandler(async (req, res) => {
     };
 
     try {
-        console.log(`[Upgrade] Sending Payment Data:`, paymentData);
         const paymentResponse = await createPaymentLink(paymentData);
         
         const paymentLink = paymentResponse?.data?.data?.payment_link || paymentResponse?.data?.payment_link;

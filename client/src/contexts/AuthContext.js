@@ -30,7 +30,6 @@ export const AuthProvider = ({ children }) => {
             try {
                 const decoded = jwtDecode(jwtToken);
                 if (decoded.exp * 1000 < Date.now()) {
-                    console.log("Token expired on load");
                     await logout();
                     return;
                 }
@@ -67,7 +66,6 @@ export const AuthProvider = ({ children }) => {
     const login = async (username, password) => {
         try {
             const { data } = await apiLoginUser({ username, password });
-            console.log("RESPONSE FROM BACKEND:", data);
             await fetchAndSetUser(data.token);
             return true;
         } catch (error) {
