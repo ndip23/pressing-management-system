@@ -1,6 +1,7 @@
 import express from 'express';
 import { initiateSubscription, changeSubscriptionPlan, verifyPaymentAndFinalize } from '../controllers/subscriptionController.js';
 import { protect } from '../middleware/authMiddleware.js';
+import asyncHandler from 'express-async-handler';
 const router = express.Router();
 
 router.route('/initiate').post(initiateSubscription);
