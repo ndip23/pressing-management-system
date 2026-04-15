@@ -1,12 +1,17 @@
 // client/src/services/api.js
 import axios from 'axios';
 const getBaseUrl = () => {
-  // If we are on production domains, point to the live API
-  if (window.location.hostname === 'sys.pressmark.site' || window.location.hostname === 'pressmark.site') {
-    return 'https://api.pressmark.site/api'; 
+  // 1. If running on your computer
+  if (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1'
+  ) {
+    return 'http://localhost:5000/api';
   }
-  // Otherwise default to local
-  return 'http://localhost:5000/api';
+  // 2. If running on the live internet
+  else {
+    return 'https://pressmark-api.onrender.com/api';
+  }
 };
 
 const API_URL = getBaseUrl();
