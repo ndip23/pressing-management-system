@@ -55,7 +55,7 @@ export const DirectoryFooter = () => (
                     <ul className="space-y-2 text-sm">
                         <li><Link to="/directory" className="text-sky-200 hover:text-white hover:underline">Search Directory</Link></li>
                         {/* ✅ POINTING TO SUBDOMAIN */}
-                        <li><a href="https://sys.pressmark.site" className="text-sky-200 hover:text-white hover:underline">Get The Software</a></li>
+                        <li><a href="https://sys.pressmark.site/pricing" className="text-sky-200 hover:text-white hover:underline">Get The Software</a></li>
                         <li><a href="https://sys.pressmark.site/features" className="text-sky-200 hover:text-white hover:underline">Software Features</a></li>
                     </ul>
                 </div>
