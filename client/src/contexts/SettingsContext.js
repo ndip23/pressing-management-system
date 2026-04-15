@@ -32,10 +32,8 @@ export const SettingsProvider = ({ children }) => {
 
         setLoadingSettings(true);
         try {
-            console.log("[SettingsContext] Authenticated user detected. Fetching app settings...");
             const { data } = await fetchAppSettings();
             setSettings(data);
-            console.log("[SettingsContext] Settings loaded successfully:", data);
         } catch (error) {
             console.error("Failed to load app settings into context:", error);
             // In case of error, you might want to set some sensible defaults
