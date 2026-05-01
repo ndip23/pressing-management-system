@@ -5,7 +5,7 @@ import { getPublicDirectoryApi } from '../../services/api';
 import Spinner from '../../components/UI/Spinner';
 import Input from '../../components/UI/Input';
 import Button from '../../components/UI/Button';
-import { MapPin, Search, Aperture, Phone } from 'lucide-react';
+import { MapPin, Search, Aperture, Phone, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // --- ✅ UPGRADED i18n BusinessCard Component ---
 const BusinessCard = ({ business }) => {
@@ -95,8 +95,19 @@ const DirectoryPage = () => {
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [cityInput, setCityInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [cityFilter, setCityFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 9,
+    total: 0,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
 
   useEffect(() => {
     const loadBusinesses = async () => {
@@ -107,9 +118,19 @@ const DirectoryPage = () => {
         const filters = {};
         if (searchTerm) filters.search = searchTerm;
         if (cityFilter) filters.city = cityFilter;
+        filters.page = page;
+        filters.pageSize = pagination.pageSize;
 
         const { data } = await getPublicDirectoryApi(filters);
-        setBusinesses(data || []);
+        setBusinesses(data?.items || []);
+        setPagination(data?.pagination || {
+          page: 1,
+          pageSize: 9,
+          total: 0,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPrevPage: false,
+        });
       } catch (err) {
         setError(t('directoryPage.states.error'));
       } finally {
@@ -117,9 +138,23 @@ const DirectoryPage = () => {
       }
     };
 
-    const handler = setTimeout(loadBusinesses, 500);
-    return () => clearTimeout(handler);
-  }, [searchTerm, cityFilter, t]);
+    loadBusinesses();
+  }, [searchTerm, cityFilter, page, pagination.pageSize, t]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setPage(1);
+    setSearchTerm(searchInput.trim());
+    setCityFilter(cityInput.trim());
+  };
+
+  const handleClearFilters = () => {
+    setSearchInput('');
+    setCityInput('');
+    setSearchTerm('');
+    setCityFilter('');
+    setPage(1);
+  };
 
   return (
     <>
@@ -134,12 +169,12 @@ const DirectoryPage = () => {
             {t('directoryPage.hero.subtitle')}
           </p>
 
-          <div className="mt-8 max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white/10 p-4 rounded-xl">
+          <form onSubmit={handleSearchSubmit} className="mt-8 max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-white/10 p-4 rounded-xl">
             <Input
               id="search"
               placeholder={t('directoryPage.search.businessPlaceholder')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               prefixIcon={<Search size={18} />}
               inputClassName="bg-white/20 text-white"
             />
@@ -147,12 +182,20 @@ const DirectoryPage = () => {
             <Input
               id="city"
               placeholder={t('directoryPage.search.cityPlaceholder')}
-              value={cityFilter}
-              onChange={(e) => setCityFilter(e.target.value)}
+              value={cityInput}
+              onChange={(e) => setCityInput(e.target.value)}
               prefixIcon={<MapPin size={18} />}
               inputClassName="bg-white/20 text-white"
             />
-          </div>
+
+            <Button type="submit" variant="primary" className="w-full">
+              Search
+            </Button>
+
+            <Button type="button" variant="secondary" className="w-full" onClick={handleClearFilters}>
+              Clear
+            </Button>
+          </form>
         </div>
       </section>
 
@@ -176,11 +219,48 @@ const DirectoryPage = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {businesses.map((business) => (
-                <BusinessCard key={business._id || business.slug} business={business} />
-              ))}
-            </div>
+            <>
+              <div className="flex items-center justify-between gap-4 mb-6">
+                <p className="text-sm text-apple-gray-500 dark:text-apple-gray-400">
+                  Showing {businesses.length} of {pagination.total} businesses
+                </p>
+                <p className="text-sm text-apple-gray-500 dark:text-apple-gray-400">
+                  Page {pagination.page} of {pagination.totalPages}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {businesses.map((business) => (
+                  <BusinessCard key={business._id || business.slug} business={business} />
+                ))}
+              </div>
+
+              <div className="mt-10 flex items-center justify-center gap-3">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={!pagination.hasPrevPage || loading}
+                  iconLeft={<ChevronLeft size={16} />}
+                >
+                  Previous
+                </Button>
+
+                <span className="text-sm text-apple-gray-600 dark:text-apple-gray-300">
+                  {pagination.page} / {pagination.totalPages}
+                </span>
+
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setPage((prev) => prev + 1)}
+                  disabled={!pagination.hasNextPage || loading}
+                  iconLeft={<ChevronRight size={16} />}
+                >
+                  Next
+                </Button>
+              </div>
+            </>
           )}
         </div>
       </section>

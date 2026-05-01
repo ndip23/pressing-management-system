@@ -52,6 +52,8 @@ const directoryListingSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
+directoryListingSchema.index({ isActive: 1, city: 1, name: 1 });
+
 // Mongoose Middleware to auto-generate a unique slug from the name
 directoryListingSchema.pre('save', function(next) {
     if (this.isModified('name') || this.isNew) {

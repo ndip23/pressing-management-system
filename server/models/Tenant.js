@@ -81,6 +81,8 @@ const tenantSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
+tenantSchema.index({ isActive: 1, isListedInDirectory: 1, city: 1, name: 1 });
+
 tenantSchema.pre('validate', function(next) { 
     
     if (this.isModified('name') || this.isNew) {

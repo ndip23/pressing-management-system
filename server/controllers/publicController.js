@@ -14,6 +14,9 @@ import { finalizeRegistrationLogic } from '../services/registrationService.js';
 import crypto from 'crypto';
 import DirectoryListing from '../models/DirectoryListing.js';
 
+const DIRECTORY_CACHE_TTL_MS = 60 * 1000;
+const directoryCache = new Map();
+
 // --- STEP 1: INITIATE REGISTRATION (NO OTP) ---
 const initiateRegistration = asyncHandler(async (req, res) => {
     const registrationData = req.body;
@@ -135,49 +138,105 @@ const finalizeRegistration = asyncHandler(async (req, res) => {
 // @access  Public
 const getPublicDirectory = asyncHandler(async (req, res) => {
     const { city, search } = req.query;
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const pageSize = Math.min(Math.max(parseInt(req.query.pageSize, 10) || 9, 1), 24);
+    const cacheKey = JSON.stringify({
+        city: city || '',
+        search: search || '',
+        page,
+        pageSize,
+    });
+    const cached = directoryCache.get(cacheKey);
+    const now = Date.now();
 
-    // --- THIS IS THE FIX ---
-    // Create a base query that will be used for BOTH collections
-    let baseQuery = {};
-    if (city) {
-        baseQuery.city = { $regex: city, $options: 'i' };
-    }
-    if (search) {
-        baseQuery.name = { $regex: search, $options: 'i' };
+    if (cached && cached.expiresAt > now) {
+        return res.json(cached.payload);
     }
 
-    // Create specific queries by extending the base query
-    const tenantQuery = {
-        ...baseQuery,
+    if (cached && cached.expiresAt <= now) {
+        directoryCache.delete(cacheKey);
+    }
+
+    const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const nameRegex = search ? new RegExp(escapeRegex(search.trim()), 'i') : null;
+    const cityRegex = city ? new RegExp(escapeRegex(city.trim()), 'i') : null;
+
+    const tenantMatch = {
         isActive: true,
         isListedInDirectory: true,
+        ...(nameRegex ? { name: nameRegex } : {}),
+        ...(cityRegex ? { city: cityRegex } : {}),
     };
 
-    const listingQuery = {
-        ...baseQuery,
+    const listingMatch = {
         isActive: true,
+        ...(nameRegex ? { name: nameRegex } : {}),
+        ...(cityRegex ? { city: cityRegex } : {}),
     };
-    // --- END OF FIX ---
 
+    const skip = (page - 1) * pageSize;
+    const projection = {
+        _id: 1,
+        name: 1,
+        slug: 1,
+        description: 1,
+        publicAddress: 1,
+        publicPhone: 1,
+        publicEmail: 1,
+        city: 1,
+        country: 1,
+        logoUrl: 1,
+    };
 
-    const publicFields = 'name slug description publicAddress publicPhone publicEmail city country logoUrl';
-
-    console.log("[Public Directory] Querying Tenants with:", tenantQuery);
-    console.log("[Public Directory] Querying Manual Listings with:", listingQuery);
-
-    // Run queries for both collections in parallel with the correct filters
-    const [softwareCustomers, manualListings] = await Promise.all([
-        Tenant.find(tenantQuery).select(publicFields).lean(),
-        DirectoryListing.find(listingQuery).select(publicFields).lean()
+    const aggregation = await Tenant.aggregate([
+        { $match: tenantMatch },
+        { $project: projection },
+        {
+            $unionWith: {
+                coll: DirectoryListing.collection.name,
+                pipeline: [
+                    { $match: listingMatch },
+                    { $project: projection },
+                ],
+            },
+        },
+        { $sort: { name: 1 } },
+        {
+            $facet: {
+                items: [{ $skip: skip }, { $limit: pageSize }],
+                metadata: [{ $count: 'total' }],
+            },
+        },
     ]);
-    
-    // Combine, sort, and send the results
-    const combinedResults = [...softwareCustomers, ...manualListings]
-        .sort((a, b) => a.name.localeCompare(b.name));
 
-    console.log(`[Public Directory] Found ${softwareCustomers.length} software customers and ${manualListings.length} manual listings. Total: ${combinedResults.length}`);
+    const total = aggregation?.[0]?.metadata?.[0]?.total || 0;
+    const totalPages = Math.max(Math.ceil(total / pageSize), 1);
+    const safePage = page;
+    const items = aggregation?.[0]?.items || [];
 
-    res.json(combinedResults);
+    const payload = {
+        items,
+        pagination: {
+            page: safePage,
+            pageSize,
+            total,
+            totalPages,
+            hasNextPage: safePage < totalPages,
+            hasPrevPage: safePage > 1,
+        },
+    };
+
+    directoryCache.set(cacheKey, {
+        payload,
+        expiresAt: now + DIRECTORY_CACHE_TTL_MS,
+    });
+
+    if (directoryCache.size > 500) {
+        const oldestKey = directoryCache.keys().next().value;
+        directoryCache.delete(oldestKey);
+    }
+
+    res.json(payload);
 });
 
 // @desc    Get a single business profile by slug (checking both collections)

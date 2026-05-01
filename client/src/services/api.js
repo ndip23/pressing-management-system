@@ -85,7 +85,7 @@ export const sendContactFormApi = data =>
 
 export const getBusinessGalleryApi = async (tenantId) => {
     // We add a cache-control header
-    return api.get(`/gallery/${tenantId}`, {
+    return PublicAPI.get(`/gallery/${tenantId}`, {
         headers: { 'Cache-Control': 'max-age=3600' } // Cache for 1 hour
     });
 };
@@ -193,10 +193,10 @@ export const uploadMyProfilePicture = async formData => {
   });
 };
 export const getPublicDirectoryApi = async filters => {
-  return api.get('/public/directory', { params: filters });
+  return PublicAPI.get('/public/directory', { params: filters });
 };
 export const getBusinessBySlugApi = async slug =>
-  api.get(`/public/directory/${slug}`);
+  PublicAPI.get(`/public/directory/${slug}`);
 export const getMyTenantProfileApi = async () => {
   return api.get('/tenant-profile');
 };
