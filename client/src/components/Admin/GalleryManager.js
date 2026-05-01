@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { uploadGalleryImageApi, getBusinessGalleryApi, deleteGalleryImageApi } from '../../services/api';
 import { Trash2, UploadCloud, Plus } from 'lucide-react';
-import Button from '../UI/Button';
-import Spinner from '../UI/Spinner';
 import toast from 'react-hot-toast';
 
 const GalleryManager = ({ tenantId }) => {
