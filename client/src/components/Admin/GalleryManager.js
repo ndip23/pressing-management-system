@@ -1,8 +1,7 @@
 // client/src/components/Admin/GalleryManager.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react'; // ✅ Added useCallback
 import { uploadGalleryImageApi, getBusinessGalleryApi, deleteGalleryImageApi } from '../../services/api';
-import { Trash2, Plus, UploadCloud } from 'lucide-react'; // ✅ Added UploadCloud here
-import Button from '../UI/Button';
+import { Trash2, UploadCloud } from 'lucide-react'; // ✅ Added UploadCloud here
 import Spinner from '../UI/Spinner';
 import toast from 'react-hot-toast';
 
