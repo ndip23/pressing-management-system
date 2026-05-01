@@ -8,6 +8,8 @@ import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
 import Select from '../../components/UI/Select'; 
 import { Save, Settings as SettingsIcon, AlertTriangle, CheckCircle2, UploadCloud } from 'lucide-react';
+import GalleryManager from '../../components/Admin/GalleryManager';
+
 const PublicProfileManager = () => {
     const { t } = useTranslation();
     const [profile, setProfile] = useState({
@@ -152,6 +154,9 @@ const PublicProfileManager = () => {
                             </div>
                         </div>
                         {/* --- END OF MODIFIED LOGO SECTION --- */}
+                         <div className="md:col-span-2 border-t pt-6 mt-4">
+                            <GalleryManager tenantId={profile._id} />
+                        </div>
                         
                         <div className="md:col-span-2 flex items-center space-x-3 mt-2">
                             <input
@@ -311,7 +316,7 @@ const SettingsPage = () => {
                         <div className="md:col-span-2"> <Input label={t('settings.companyInfo.logoUrl')} id="companyLogoUrl" value={settings.companyInfo?.logoUrl || ''} onChange={(e) => handleDeepChange(['companyInfo', 'logoUrl'], e.target.value)} /> </div>
                     </div>
                 </Card>
-
+                 
                 <Card title={t('settings.notifications.title')} className="mb-8 shadow-apple-md">
                     <Input label={t('settings.notifications.defaultSubject')} id="defaultSubject" value={settings.notificationTemplates?.subject || ''} onChange={(e) => handleDeepChange(['notificationTemplates', 'subject'], e.target.value)} className="mb-6" helperText={t('settings.notifications.subjectHelper')} />
                     <div className="mb-6">

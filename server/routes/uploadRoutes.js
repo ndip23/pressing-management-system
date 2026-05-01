@@ -1,30 +1,27 @@
 // server/routes/uploadRoutes.js
-
 import express from 'express';
 import { uploadImage } from '../controllers/uploadController.js';
-import upload from '../middleware/uploadMiddleware.js';
-// --- END OF FIX ---
+// ✅ Import the specific instances
+import { uploadProfile, uploadLogo } from '../middleware/uploadMiddleware.js'; 
 
 import { protect } from '../middleware/authMiddleware.js';
 import { protectDirectoryAdmin } from '../middleware/directoryAdminMiddleware.js';
 
 const router = express.Router();
 
-// Route for a logged-in Tenant Admin to upload THEIR OWN business logo
+// Route for Tenant Admin to upload business logo (Use uploadLogo)
 router.post(
     '/tenant-logo',
     protect, 
-    // Use the correctly imported 'upload' middleware
-    upload.single('logoImage'), 
+    uploadLogo.single('logoImage'), // ✅ Use uploadLogo instance
     uploadImage
 );
 
-// Route for the Directory Super Admin to upload logos for manual listings
+// Route for Directory Admin to upload listing logos (Use uploadLogo)
 router.post(
     '/listing-logo',
     protectDirectoryAdmin,
-    // Use the correctly imported 'upload' middleware here as well
-    upload.single('logoImage'),
+    uploadLogo.single('logoImage'), // ✅ Use uploadLogo instance
     uploadImage
 );
 

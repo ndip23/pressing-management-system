@@ -33,6 +33,7 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import currencyRoutes from "./routes/currencyRoutes.js";
 import planRoutes from "./routes/planRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
+import galleryRoutes from "./routes/galleryRoutes.js"
 
 // Import Schedulers
 import { startOrderChecks } from "./schedulers/orderChecker.js";
@@ -98,6 +99,7 @@ app.use("/api/uploads", uploadRoutes);
 app.use("/api/currency", currencyRoutes);
 app.use("/api/plans", planRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use('/api/gallery', galleryRoutes);
 
 // --- Root Route for Health Check ---
 app.get("/api/test", (req, res) => res.json({ message: "API is running!" }));

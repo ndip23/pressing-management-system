@@ -83,6 +83,22 @@ export const initiateRegistrationApi = async setupData => {
 export const sendContactFormApi = data =>
   PublicAPI.post('/api/public/contact-form', data);
 
+export const getBusinessGalleryApi = async (tenantId) => {
+    // We add a cache-control header
+    return api.get(`/gallery/${tenantId}`, {
+        headers: { 'Cache-Control': 'max-age=3600' } // Cache for 1 hour
+    });
+};
+
+export const uploadGalleryImageApi = async (formData) => {
+    return api.post('/gallery/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+};
+
+export const deleteGalleryImageApi = (imageId) => 
+    api.delete(`/gallery/${imageId}`);
+
 export const finalizeRegistrationApi = async verificationData => {
   // verificationData = { email, otp }
   return api.post('/public/finalize-registration', verificationData);
