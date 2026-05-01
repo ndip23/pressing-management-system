@@ -8,7 +8,7 @@ import { CheckCircle2, AlertTriangle } from 'lucide-react';
 const VerifyUpgradePage = () => {
     const navigate = useNavigate();
     const location = useLocation(); // ✅ Added to read URL params
-    const { login, user } = useAuth();
+    const { updateUserInContext, user } = useAuth();
     const [status, setStatus] = useState('Verifying your upgrade...');
     const [error, setError] = useState('');
     const [isSuccess, setIsSuccess] = useState(false);
@@ -28,8 +28,8 @@ const VerifyUpgradePage = () => {
                     const { data: newProfile } = await getMyTenantProfileApi();
                     
                     // Compare profile plan with URL plan
-                    if (newProfile.plan === planNameFromUrl) {
-                        login(newProfile, localStorage.getItem('token'));
+                    if (!planNameFromUrl || newProfile.plan === planNameFromUrl) {
+                        updateUserInContext({ tenant: newProfile });
                         setIsSuccess(true);
                         setStatus("Upgrade verified!");
                         setTimeout(() => window.location.href = '/app/dashboard', 1500);
@@ -51,7 +51,7 @@ const VerifyUpgradePage = () => {
             setError("No active session found.");
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user, login, navigate, planNameFromUrl]); // ✅ Dependencies updated
+    }, [user, updateUserInContext, navigate, planNameFromUrl]); // ✅ Dependencies updated
 
     return (
         <div className="min-h-screen bg-apple-gray-50 dark:bg-apple-gray-950 flex flex-col items-center justify-center text-center p-4">

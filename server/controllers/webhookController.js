@@ -175,7 +175,12 @@ const accountPeRedirect = asyncHandler(async (req, res) => {
     }
 
     if (flow === 'upgrade') {
-        const redirectUrl = `${frontendBase}/verify-upgrade?transaction_id=${transaction_id || ''}`;
+        let planName = '';
+        if (typeof transaction_id === 'string' && transaction_id.startsWith('PRESSFLOW-UPGRADE-')) {
+            const parts = transaction_id.split('-');
+            planName = parts[3] || '';
+        }
+        const redirectUrl = `${frontendBase}/verify-upgrade?transaction_id=${transaction_id || ''}&plan=${encodeURIComponent(planName)}`;
         return res.redirect(302, redirectUrl);
     }
 
