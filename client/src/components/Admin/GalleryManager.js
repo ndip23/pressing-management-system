@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+// client/src/components/Admin/GalleryManager.jsx
+import React, { useState, useEffect, useRef, useCallback } from 'react'; // ✅ Added useCallback
 import { uploadGalleryImageApi, getBusinessGalleryApi, deleteGalleryImageApi } from '../../services/api';
-import { Trash2, UploadCloud, Plus } from 'lucide-react';
+import { Trash2, Plus, UploadCloud } from 'lucide-react'; // ✅ Added UploadCloud here
+import Button from '../UI/Button';
 import Spinner from '../UI/Spinner';
 import toast from 'react-hot-toast';
 
@@ -10,7 +12,8 @@ const GalleryManager = ({ tenantId }) => {
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef(null);
 
-    const loadGallery = async () => {
+    // ✅ Wrap loadGallery in useCallback to prevent dependency loops
+    const loadGallery = useCallback(async () => {
         try {
             const { data } = await getBusinessGalleryApi(tenantId);
             setGallery(data || []);
@@ -19,11 +22,11 @@ const GalleryManager = ({ tenantId }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [tenantId]);
 
     useEffect(() => {
         if (tenantId) loadGallery();
-    }, [tenantId]);
+    }, [tenantId, loadGallery]); // ✅ Now loadGallery is included as a dependency
 
     const handleUpload = async (e) => {
         const file = e.target.files[0];
@@ -31,8 +34,8 @@ const GalleryManager = ({ tenantId }) => {
 
         setUploading(true);
         const formData = new FormData();
-        formData.append('image', file); // Ensure this matches your route .single() name
-        console.log("Sending file:", file.name);
+        formData.append('image', file); 
+        
         try {
             await uploadGalleryImageApi(formData);
             toast.success("Image uploaded!");
@@ -80,7 +83,7 @@ const GalleryManager = ({ tenantId }) => {
                 >
                     {uploading ? <Spinner size="sm" /> : (
                         <>
-                            <Plus size={24} className="text-apple-gray-400" />
+                            <UploadCloud size={24} className="text-apple-gray-400" /> {/* ✅ Used UploadCloud */}
                             <span className="text-xs text-apple-gray-500 mt-2">Add Photo</span>
                         </>
                     )}
