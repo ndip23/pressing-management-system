@@ -85,8 +85,7 @@ const LandingPage = () => {
                             data-aos-delay="350"
                         >
                             <Link
-                                to="/pricing"
-                                className="bg-apple-blue text-white px-6 sm:px-8 py-3 rounded-apple font-semibold text-base sm:text-lg hover:bg-sky-600 transition-transform transform hover:scale-105 shadow-apple-lg text-center"
+                            to="/signup"
                             >
                                 {t('public.landing.hero.getStartedFree')}
                             </Link>
@@ -172,7 +171,7 @@ const LandingPage = () => {
                         {t('public.landing.cta.subtitle')}
                     </p>
                     <Link 
-                        to="/pricing" 
+                        to="/signup" 
                         data-aos="zoom-in"
                         data-aos-delay="200"
                         className="inline-block bg-apple-blue text-white px-6 sm:px-10 py-3 sm:py-4 rounded-apple font-semibold text-base sm:text-lg hover:bg-sky-600 transition-transform transform hover:scale-105 shadow-apple-xl text-center whitespace-nowrap"

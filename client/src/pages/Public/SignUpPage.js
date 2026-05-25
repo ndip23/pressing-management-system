@@ -205,7 +205,7 @@ const handleInitiateRegistration = async () => {
             navigate(`/payment?plan=${formData.plan.toLowerCase()}&email=${formData.adminUser.email}`);
         } else {
             login(data);
-            navigate('/app/dashboard');
+            navigate('/app/business-profile', { state: { fromSignup: true } });
         }
     } catch (err) {
         setError(err.response?.data?.message || 'Registration failed');

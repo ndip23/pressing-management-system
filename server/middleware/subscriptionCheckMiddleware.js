@@ -21,7 +21,7 @@ const checkSubscription = asyncHandler(async (req, res, next) => {
     // --- THIS IS THE CORE LOGIC ---
     // Check if the subscription status is 'trialing' OR 'active'.
     // If it's anything else ('past_due', 'canceled'), block the request.
-    if (tenant.subscriptionStatus === 'trial' || tenant.subscriptionStatus === 'active') {
+    if (['trial', 'active', 'trialing'].includes(tenant.subscriptionStatus)) {
         next(); // Subscription is valid, proceed to the controller.
     } else {
         res.status(403); // 403 Forbidden status code

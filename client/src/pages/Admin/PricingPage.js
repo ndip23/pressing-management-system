@@ -1,6 +1,9 @@
 // client/src/pages/Admin/PricingSettingsPage.js
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../contexts/AuthContext';
+import { useAppSettings } from '../../contexts/SettingsContext';
 import { fetchAppSettings, updateAppSettingsApi, fetchPrices, upsertPricesApi } from '../../services/api';
 import Card from '../../components/UI/Card';
 import Input from '../../components/UI/Input';
@@ -8,7 +11,7 @@ import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
 import { Save, Tags, AlertTriangle, CheckCircle2, Plus, Trash2 } from 'lucide-react';
 
-const PricingManager = () => {
+const PricingManager = ({ fromOnboarding = false, onComplete }) => {
     const { t } = useTranslation();
     const [settings, setSettings] = useState({ itemTypes: [], serviceTypes: [], defaultCurrencySymbol: '$' });
     const [priceList, setPriceList] = useState([]);
@@ -76,12 +79,23 @@ const PricingManager = () => {
         setSaving(true); setError(''); setSuccess('');
         try {
             const { itemTypes, serviceTypes } = settings;
-            // Send all three updates in parallel
+            if (!itemTypes?.length || !serviceTypes?.length) {
+                setError('Add at least one item type and one service type before continuing.');
+                return;
+            }
+            const hasPrice = priceList.some((p) => Number(p.price) > 0);
+            if (!hasPrice) {
+                setError('Set at least one price in the matrix before continuing.');
+                return;
+            }
             await Promise.all([
                 updateAppSettingsApi({ itemTypes, serviceTypes }),
                 upsertPricesApi({ priceList })
             ]);
             setSuccess(t('pricing.messages.saveSuccess'));
+            if (fromOnboarding && onComplete) {
+                onComplete();
+            }
         } catch (err) {
             setError(err.response?.data?.message || t('pricing.messages.saveError'));
             console.error("Pricing Save Error:", err);
@@ -138,7 +152,9 @@ const PricingManager = () => {
             </Card>
 
             <div className="flex justify-end mt-6">
-                <Button onClick={handleSaveChanges} isLoading={saving} iconLeft={<Save size={18} />} size="lg">{t('pricing.actions.saveAll')}</Button>
+                <Button onClick={handleSaveChanges} isLoading={saving} iconLeft={<Save size={18} />} size="lg">
+                    {fromOnboarding ? 'Save & Go to Dashboard' : t('pricing.actions.saveAll')}
+                </Button>
             </div>
         </div>
     );
@@ -146,13 +162,34 @@ const PricingManager = () => {
 
 const PricingSettingsPage = () => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { refreshUser } = useAuth();
+    const { loadSettings } = useAppSettings();
+    const fromOnboarding = location.pathname.includes('/onboarding/') || location.state?.fromOnboarding;
+
+    const handleOnboardingComplete = async () => {
+        await refreshUser();
+        loadSettings();
+        navigate('/app/dashboard', { replace: true, state: { showTour: true } });
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex items-center space-x-3 mb-6">
                 <Tags size={28} className="text-apple-blue" />
-                <h1 className="text-2xl sm:text-3xl font-semibold text-apple-gray-800 dark:text-apple-gray-100">{t('pricing.title')}</h1>
+                <div>
+                    <h1 className="text-2xl sm:text-3xl font-semibold text-apple-gray-800 dark:text-apple-gray-100">
+                        {fromOnboarding ? 'Step 3: Services & Pricing' : t('pricing.title')}
+                    </h1>
+                    {fromOnboarding && (
+                        <p className="mt-1 text-sm text-apple-gray-500 dark:text-apple-gray-400">
+                            Add your garment types, services, and prices so orders calculate correctly.
+                        </p>
+                    )}
+                </div>
             </div>
-            <PricingManager />
+            <PricingManager fromOnboarding={fromOnboarding} onComplete={handleOnboardingComplete} />
         </div>
     );
 };

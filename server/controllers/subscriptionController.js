@@ -174,6 +174,146 @@ const changeSubscriptionPlan = asyncHandler(async (req, res) => {
     }
 });
 
+const resolveWalletCountryCode = (req, tenant) => {
+    const fromRequest = String(req.body?.countryCode || req.query?.countryCode || '')
+        .trim()
+        .toUpperCase();
+    if (fromRequest && COUNTRY_TO_CURRENCY[fromRequest]) {
+        return fromRequest;
+    }
+    const stored = String(tenant?.countryCode || '').trim().toUpperCase();
+    if (stored && COUNTRY_TO_CURRENCY[stored]) {
+        return stored;
+    }
+    return 'CM';
+};
+
+const updateWalletPaymentCountry = asyncHandler(async (req, res) => {
+    const { countryCode } = req.body;
+    const normalized = String(countryCode || '').trim().toUpperCase();
+
+    if (!normalized || !COUNTRY_TO_CURRENCY[normalized]) {
+        res.status(400);
+        throw new Error('Please select a supported payment country.');
+    }
+
+    const tenant = await Tenant.findById(req.user.tenantId);
+    if (!tenant) {
+        res.status(404);
+        throw new Error('Tenant not found.');
+    }
+
+    tenant.countryCode = normalized;
+    if (!tenant.country && COUNTRY_TO_CURRENCY[normalized]) {
+        const countryNames = {
+            NG: 'Nigeria', CM: 'Cameroon', KE: 'Kenya', SN: 'Senegal', CI: "Cote D'Ivoire",
+        };
+        tenant.country = countryNames[normalized] || tenant.country;
+    }
+    await tenant.save();
+
+    res.status(200).json({
+        countryCode: tenant.countryCode,
+        currency: COUNTRY_TO_CURRENCY[tenant.countryCode],
+    });
+});
+
+const createWalletTopUpPaymentLink = asyncHandler(async (req, res) => {
+    const { amount } = req.body;
+    const parsedAmount = Number(amount);
+    const MIN_TOPUP_AMOUNT = 5.0;
+
+    if (!parsedAmount || Number.isNaN(parsedAmount) || parsedAmount < MIN_TOPUP_AMOUNT) {
+        res.status(400);
+        throw new Error(`Please enter a valid deposit amount of at least ${MIN_TOPUP_AMOUNT.toFixed(2)} USD.`);
+    }
+
+    const loggedInUser = req.user;
+    if (!loggedInUser || !loggedInUser.tenantId) {
+        res.status(400);
+        throw new Error('User is not associated with a business.');
+    }
+
+    const tenant = await Tenant.findById(loggedInUser.tenantId);
+    if (!tenant) {
+        res.status(404);
+        throw new Error('Tenant not found.');
+    }
+
+    const countryCode = resolveWalletCountryCode(req, tenant);
+    const selectedCurrency = COUNTRY_TO_CURRENCY[countryCode] || 'USD';
+
+    let paymentAmount = Number(parsedAmount.toFixed(2));
+    let paymentCurrency = 'USD';
+
+    if (selectedCurrency !== 'USD') {
+        const convertedAmount = await convertPUSDToFiat(countryCode, parsedAmount);
+        paymentAmount = Math.ceil(convertedAmount);
+        paymentCurrency = selectedCurrency;
+    }
+
+    const transaction_id = `PRESSFLOW-WALLET-${tenant._id}-${Math.round(parsedAmount * 100)}-${Date.now()}`;
+    let backendBaseUrl = (process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL || '').replace(/\/api\/?$/, '');
+    const callback_url = `${backendBaseUrl}/api/webhooks/accountpe?flow=wallet-topup&transaction_id=${transaction_id}&tenantId=${tenant._id}`;
+
+    const paymentData = {
+        country_code: countryCode,
+        currency: paymentCurrency,
+        amount: paymentAmount,
+        name: tenant.name,
+        email: loggedInUser.email,
+        transaction_id,
+        description: `Wallet top-up for ${tenant.name}`,
+        pass_digital_charge: true,
+        callback_url
+    };
+
+    try {
+        const paymentResponse = await createPaymentLink(paymentData);
+        const paymentLink = paymentResponse?.data?.data?.payment_link || paymentResponse?.data?.payment_link;
+        if (!paymentLink) throw new Error('Payment link not found in provider response.');
+        res.status(201).json({ data: { payment_link: paymentLink } });
+    } catch (error) {
+        console.error('Error creating wallet top-up payment link:', error.response?.data || error.message);
+        throw new Error('Could not create wallet top-up payment link.');
+    }
+});
+
+const getWalletTopUpEstimate = asyncHandler(async (req, res) => {
+    const amount = Number(req.query.amount);
+    if (!amount || Number.isNaN(amount) || amount <= 0) {
+        res.status(400);
+        throw new Error('Please provide a valid amount for the wallet estimate.');
+    }
+
+    const loggedInUser = req.user;
+    if (!loggedInUser?.tenantId) {
+        res.status(400);
+        throw new Error('User is not associated with a business.');
+    }
+
+    const tenant = await Tenant.findById(loggedInUser.tenantId);
+    if (!tenant) {
+        res.status(404);
+        throw new Error('Tenant not found.');
+    }
+
+    const countryCode = resolveWalletCountryCode(req, tenant);
+    const localCurrency = COUNTRY_TO_CURRENCY[countryCode] || 'USD';
+    let estimatedLocalAmount = amount;
+
+    if (localCurrency !== 'USD') {
+        estimatedLocalAmount = await convertPUSDToFiat(countryCode, amount);
+    }
+
+    res.status(200).json({
+        amountUSD: amount,
+        countryCode,
+        localCurrency,
+        estimatedLocalAmount: Number(estimatedLocalAmount.toFixed(2)),
+    });
+});
+
 const verifyPaymentAndFinalize = asyncHandler(async (req, res) => {
     const { transaction_id, email } = req.body;
 
@@ -266,4 +406,11 @@ const verifyPaymentAndFinalize = asyncHandler(async (req, res) => {
     });
 });
 
-export { initiateSubscription, changeSubscriptionPlan, verifyPaymentAndFinalize };
+export {
+    initiateSubscription,
+    changeSubscriptionPlan,
+    updateWalletPaymentCountry,
+    createWalletTopUpPaymentLink,
+    getWalletTopUpEstimate,
+    verifyPaymentAndFinalize,
+};

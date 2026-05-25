@@ -1,11 +1,22 @@
 import express from 'express';
-import { initiateSubscription, changeSubscriptionPlan, verifyPaymentAndFinalize } from '../controllers/subscriptionController.js';
+import {
+    initiateSubscription,
+    changeSubscriptionPlan,
+    updateWalletPaymentCountry,
+    createWalletTopUpPaymentLink,
+    getWalletTopUpEstimate,
+    verifyPaymentAndFinalize,
+} from '../controllers/subscriptionController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import asyncHandler from 'express-async-handler';
+import Tenant from '../models/Tenant.js';
 const router = express.Router();
 
 router.route('/initiate').post(initiateSubscription);
 router.route('/change-plan').post(protect, changeSubscriptionPlan);
+router.route('/wallet-payment-country').put(protect, updateWalletPaymentCountry);
+router.route('/wallet-topup-estimate').get(protect, getWalletTopUpEstimate);
+router.route('/wallet-topup').post(protect, createWalletTopUpPaymentLink);
 router.route('/verify-payment').post(verifyPaymentAndFinalize);
 // Add this to server/routes/subscriptionRoutes.js
 router.post('/force-verify', protect, asyncHandler(async (req, res) => {

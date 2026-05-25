@@ -28,7 +28,7 @@ const VerifyPaymentPage = () => {
                 setIsSuccess(true);
                 toast.success("Account created successfully!");
                 setTimeout(() => {
-                    window.location.href = '/app/dashboard';
+                    window.location.href = '/app';
                 }, 1500);
             } else {
                 setNeedsLogin(true);

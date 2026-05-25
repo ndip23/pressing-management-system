@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getBusinessBySlugApi, getTenantPriceListApi } from '../../services/api';
+import { getBusinessBySlugApi, getTenantPriceListApi, contactBusinessViaWhatsAppApi } from '../../services/api';
 import Spinner from '../../components/UI/Spinner';
 import Button from '../../components/UI/Button';
 import { Phone, Mail, MapPin, Globe, Facebook, Twitter } from 'lucide-react';
@@ -82,12 +82,20 @@ const BusinessDetailPage = () => {
         return { itemTypes, serviceTypes, priceTable: table };
     }, [priceList]);
 
-    const handleWhatsAppContact = () => {
+    const handleWhatsAppContact = async () => {
         if (!business?.publicPhone) return;
-        const phoneNumber = business.publicPhone.replace(/\s/g, '').replace('+', '');
-        const message = `Hello ${business.name}, I found you on PressMark and would like to inquire about your services.`;
-        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
+
+        try {
+            const { data } = await contactBusinessViaWhatsAppApi(business.slug);
+            if (data?.whatsappUrl) {
+                window.open(data.whatsappUrl, '_blank');
+            } else {
+                throw new Error('Unable to open WhatsApp contact right now.');
+            }
+        } catch (error) {
+            const message = error.response?.data?.message || error.message || 'Unable to contact this business.';
+            window.alert(message);
+        }
     };
 
     if (loading) {

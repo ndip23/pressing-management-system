@@ -29,6 +29,7 @@ const settingsSchema = new mongoose.Schema({
     companyInfo: { type: companyInfoSchema, default: () => ({}) },
     notificationTemplates: { type: notificationTemplateSchema, default: () => ({}) },
     defaultCurrencySymbol: { type: String, default: 'FCFA' }, // Changed default
+    defaultCurrencyCode: { type: String, default: 'XAF', uppercase: true, trim: true },
     // --- NEW: Preferred Channel Setting ---
     preferredNotificationChannel: {
         type: String,

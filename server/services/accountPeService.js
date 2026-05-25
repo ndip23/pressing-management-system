@@ -68,22 +68,32 @@ const getAuthToken = async () => {
  */
 export const convertPUSDToFiat = async (countryCode, usdPrice) => {
     try {
-        // Send amount: 1 to get the base rate for 1 USD
-        const response = await payoutApi.post('/pusd_to_fiat_rate', {
-            country_code: countryCode,
-            amount: 1 
-        }, { httpsAgent });
+        const response = await payoutApi.post(
+            '/pusd_to_fiat_rate',
+            {
+                country_code: countryCode,
+                amount: usdPrice,
+            },
+            { httpsAgent }
+        );
 
         console.log('[AccountPe] Rate Response:', response.data);
 
-        // Extract the rate. If the API returns the total for that amount directly, use it.
-        // If it returns a rate (e.g., 615), use that.
-        const rate = response.data?.data?.amount || response.data?.amount || 615;
-        
-        return Number(rate);
+        const localAmount = Number(
+            response.data?.data?.local_amount ||
+            response.data?.data?.amount ||
+            response.data?.local_amount ||
+            response.data?.amount
+        );
+
+        if (!localAmount || Number.isNaN(localAmount)) {
+            throw new Error('Invalid conversion amount returned by payment provider.');
+        }
+
+        return Number(localAmount.toFixed(2));
     } catch (error) {
-        console.error("Conversion API Error:", error.message);
-        throw new Error("Currency conversion service is currently unavailable.");
+        console.error('Conversion API Error:', error.message);
+        throw new Error('Currency conversion service is currently unavailable.');
     }
 };
 /**

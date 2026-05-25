@@ -4,6 +4,7 @@ import Tenant from '../models/Tenant.js';
 import Customer from '../models/Customer.js';
 import InboundMessage from '../models/InboundMessage.js';
 import PendingUser from '../models/PendingUser.js';
+import Transaction from '../models/Transaction.js';
 import crypto from 'crypto';
 // Import your notification service if you want to forward the message to the admin
 // import { sendAdminAlertEmail } from '../services/notificationService.js';
@@ -159,6 +160,42 @@ const accountPeWebhook = asyncHandler(async (req, res) => {
                 console.log(`[Webhook] Tenant ${tenant.name} upgraded successfully.`);
             } else {
                 console.error(`[Webhook] ERROR: No tenant found for ID: ${tenantId}`);
+            }
+        }
+        else if (transactionId?.startsWith('PRESSFLOW-WALLET-')) {
+            const parts = transactionId.split('-');
+            const tenantId = parts[2];
+            const amountCents = Number(parts[3]);
+            const usdAmount = Number(amountCents) / 100;
+            const tenant = await Tenant.findById(tenantId);
+
+            if (tenant && !Number.isNaN(usdAmount) && usdAmount > 0) {
+                const previousBalance = tenant.walletBalance || 0;
+                tenant.walletBalance = Number((previousBalance + usdAmount).toFixed(2));
+                tenant.walletCurrency = 'USD';
+                tenant.walletTransactions = tenant.walletTransactions || [];
+                tenant.walletTransactions.push({
+                    type: 'topup',
+                    amount: usdAmount,
+                    currency: 'USD',
+                    description: 'Wallet top-up via Swyhr Pay',
+                    balanceAfter: tenant.walletBalance,
+                    createdAt: new Date(),
+                });
+                await tenant.save();
+
+                await Transaction.create({
+                    transactionId,
+                    user: null,
+                    type: 'DEPOSIT',
+                    amount: usdAmount,
+                    balanceAfter: tenant.walletBalance,
+                    description: 'Wallet top-up completed via payment',
+                });
+
+                console.log(`[Webhook] Wallet top-up completed for tenant ${tenant.name} (${tenantId}) amount USD ${usdAmount}`);
+            } else {
+                console.error(`[Webhook] Wallet top-up failed to credit tenant. tenantId=${tenantId}, usdAmount=${usdAmount}`);
             }
         }
     }

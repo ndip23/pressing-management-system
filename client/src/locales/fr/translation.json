@@ -5,7 +5,14 @@
       "newOrder": "Nouvelle Commande",
       "customers": "Clients",
       "payments": "Paiements",
-      "inbox": "Boîte de Réception"
+      "inbox": "Boîte de Réception",
+      "businessProfile": "Profil entreprise",
+      "wallet": "Portefeuille"
+    },
+    "help": {
+      "title": "Aide",
+      "takeTour": "Visite guidée",
+      "contactSupport": "Contacter le support"
     },
     "admin": {
       "title": "Zone d'Administration",
@@ -90,6 +97,14 @@
     "validAmountRequired": "Un montant positif valide est requis.",
     "dailyPaymentsError": "Impossible de charger les données de ventes quotidiennes.",
     "ordersError": "Échec du chargement des commandes. Veuillez réessayer.",
+    "quickLinks": "Liens rapides",
+    "quickLinksDesc": "Accédez rapidement aux tâches courantes.",
+    "helpTitle": "Aide",
+    "helpDescription": "Nouveau sur PressMark ? Relancez la visite guidée à tout moment.",
+    "startTour": "Visite guidée",
+    "completeProfileTitle": "Complétez votre profil entreprise",
+    "completeProfileDesc": "Ajoutez vos coordonnées, votre ville et votre visibilité dans l'annuaire.",
+    "completeProfileAction": "Configurer le profil",
     "statusReceived": "Reçu",
     "statusInProgress": "En Cours",
     "statusReadyForPickup": "Prêt pour Récupération",
@@ -473,6 +488,92 @@
       "saveSuccess": "Paramètres sauvegardés avec succès!",
       "saveError": "Échec de la sauvegarde des paramètres. Veuillez réessayer.",
       "unexpectedResponse": "Réponse inattendue du serveur lors de la sauvegarde."
+    }
+  },
+  "businessProfile": {
+    "title": "Configuration du profil entreprise",
+    "subtitle": "Gérez votre fiche publique, vos coordonnées et la devise des commandes.",
+    "subtitleNewUser": "Complétez votre profil pour que les clients vous trouvent et vous fassent confiance.",
+    "onboardingStepTitle": "Étape 2 : Profil entreprise",
+    "subtitleOnboarding": "Présentez votre activité. Un profil complet améliore votre visibilité dans l'annuaire.",
+    "businessName": "Nom de l'entreprise",
+    "publicPhone": "Téléphone public",
+    "publicEmail": "Email public",
+    "country": "Pays",
+    "paymentCountry": "Pays de paiement",
+    "paymentCountryHelper": "Utilisé pour le paiement du portefeuille dans votre devise locale.",
+    "city": "Ville",
+    "publicAddress": "Adresse publique",
+    "description": "Description courte",
+    "descriptionPlaceholder": "Une courte présentation de votre entreprise et de vos services...",
+    "businessLogo": "Logo de l'entreprise",
+    "uploadLogo": "Télécharger le logo",
+    "uploadingLogo": "Téléchargement...",
+    "logoNote": "PNG, JPG ou WebP. Max 2 Mo.",
+    "listInDirectory": "Lister mon entreprise dans l'annuaire public",
+    "currencySection": "Devise des commandes",
+    "currencySectionHelper": "Utilisée pour les totaux de commande et les rapports. Le portefeuille reste en dollars US.",
+    "currencyCode": "Code devise",
+    "currencySymbol": "Symbole devise",
+    "saveProfile": "Enregistrer le profil",
+    "saveAndContinue": "Enregistrer et continuer",
+    "skipForNow": "Passer pour l'instant",
+    "loadError": "Échec du chargement du profil.",
+    "saveSuccess": "Profil enregistré avec succès !",
+    "saveFailed": "Échec de l'enregistrement du profil.",
+    "logoTooLarge": "Le logo doit faire moins de 2 Mo.",
+    "logoInvalidType": "Veuillez télécharger une image PNG, JPG ou WebP.",
+    "logoUploadSuccess": "Logo téléchargé avec succès !",
+    "logoUploadFailed": "Échec du téléchargement du logo.",
+    "galleryTitle": "Galerie photos"
+  },
+  "appTour": {
+    "label": "Premiers pas",
+    "skip": "Passer la visite",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "finish": "Terminer",
+    "steps": {
+      "welcome": {
+        "title": "Bienvenue sur PressMark",
+        "description": "Votre tableau de bord pour gérer commandes, clients, paiements et votre fiche publique."
+      },
+      "dashboard": {
+        "title": "Tableau de bord",
+        "description": "Consultez les commandes du jour et les actions rapides."
+      },
+      "newOrder": {
+        "title": "Nouvelle commande",
+        "description": "Créez des commandes et enregistrez les paiements."
+      },
+      "customers": {
+        "title": "Clients",
+        "description": "Gérez vos clients et leur historique."
+      },
+      "wallet": {
+        "title": "Portefeuille",
+        "description": "Rechargez en USD pour rester visible dans l'annuaire."
+      },
+      "payments": {
+        "title": "Paiements du jour",
+        "description": "Suivez les encaissements quotidiens dans votre devise."
+      },
+      "inbox": {
+        "title": "Boîte de réception",
+        "description": "Messages et notifications de votre activité."
+      },
+      "businessProfile": {
+        "title": "Profil entreprise",
+        "description": "Mettez à jour votre fiche, logo, description et devise."
+      },
+      "settings": {
+        "title": "Paramètres et tarifs",
+        "description": "Notifications, services, prix et personnel."
+      },
+      "done": {
+        "title": "C'est parti",
+        "description": "Créez votre première commande et gardez votre portefeuille alimenté."
+      }
     }
   },
   "manageUsers": {

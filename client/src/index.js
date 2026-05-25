@@ -10,6 +10,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { AdminNotificationProvider } from './contexts/NotificationContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { LocalizationProvider } from './contexts/LocalizationContext';
+import { Toaster } from 'react-hot-toast';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -19,7 +20,8 @@ root.render(
         <SettingsProvider>
           <AdminNotificationProvider>
             <LocalizationProvider>
-            <App />
+              <App />
+              <Toaster position="top-right" />
             </LocalizationProvider>
           </AdminNotificationProvider>
         </SettingsProvider>

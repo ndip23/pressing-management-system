@@ -36,6 +36,7 @@ const updateAppSettings = asyncHandler(async (req, res) => {
         companyInfo,
         notificationTemplates,
         defaultCurrencySymbol,
+        defaultCurrencyCode,
         preferredNotificationChannel,
         itemTypes, // For managing the list of items
         serviceTypes // For managing the list of services
@@ -57,6 +58,7 @@ const updateAppSettings = asyncHandler(async (req, res) => {
     
     // Update top-level fields
     if (defaultCurrencySymbol !== undefined) settingsDoc.defaultCurrencySymbol = defaultCurrencySymbol;
+    if (defaultCurrencyCode !== undefined) settingsDoc.defaultCurrencyCode = defaultCurrencyCode;
     if (preferredNotificationChannel !== undefined) settingsDoc.preferredNotificationChannel = preferredNotificationChannel;
     
     // Update arrays for item and service types

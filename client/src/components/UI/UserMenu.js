@@ -3,8 +3,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
-import { UserCircle, Settings, LogOut } from 'lucide-react';
+import { UserCircle, Settings, LogOut, CirclePlay } from 'lucide-react';
 import Button from './Button';
+import { useAppTour } from '../../contexts/AppTourContext';
 
 const UserMenu = ({ 
     className = "", 
@@ -13,6 +14,7 @@ const UserMenu = ({
 }) => {
     const { t } = useTranslation();
     const { user, logout } = useAuth();
+    const { startTour, isAvailable: isTourAvailable } = useAppTour();
     const [showUserMenu, setShowUserMenu] = useState(false);
     const userMenuRef = useRef(null);
 
@@ -137,7 +139,21 @@ const UserMenu = ({
                         <Settings size={16} className="mr-2 text-apple-gray-500" /> 
                         {t('sidebar.navigation.dashboard')}
                     </Link>
-                    
+
+                    {isTourAvailable && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                startTour();
+                                handleMenuItemClick();
+                            }}
+                            className="flex items-center w-full text-left px-4 py-2 text-sm text-apple-gray-700 dark:text-apple-gray-200 hover:bg-apple-gray-100 dark:hover:bg-apple-gray-700/50"
+                        >
+                            <CirclePlay size={16} className="mr-2 text-apple-blue" />
+                            {t('sidebar.help.takeTour')}
+                        </button>
+                    )}
+
                     {user?.role === 'admin' && (
                         <Link 
                             to="/app/admin/settings" 

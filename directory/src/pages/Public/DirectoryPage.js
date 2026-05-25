@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { getPublicDirectoryApi } from '../../services/api';
+import { getPublicDirectoryApi, contactBusinessViaWhatsAppApi } from '../../services/api';
 import Spinner from '../../components/UI/Spinner';
 import Input from '../../components/UI/Input';
 import Button from '../../components/UI/Button'; // Assuming you have this for the WhatsApp button
@@ -12,15 +12,22 @@ const BusinessCard = ({ business }) => {
     const bannerUrl = business.bannerUrl || 'https://images.unsplash.com/photo-1582735689369-7fe275765448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzNzEyNjZ8MHwxfHNlYXJjaHwxfHxMYXVuZHJ5fGVufDB8MHx8fDE3MjE2Nzg0MDR8MA&ixlib=rb-4.0.3&q=80&w=1080';
     const logoUrl = business.logoUrl;
 
-    const handleWhatsAppContact = (e) => {
+    const handleWhatsAppContact = async (e) => {
         e.preventDefault();
         e.stopPropagation();
         if (!business.publicPhone) return;
-        
-        const phoneNumber = business.publicPhone.replace(/\s/g, '').replace('+', '');
-        const message = `Hello ${business.name}, I found you on PressMark and would like to inquire about your services.`;
-        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
+
+        try {
+            const { data } = await contactBusinessViaWhatsAppApi(business.slug);
+            if (data?.whatsappUrl) {
+                window.open(data.whatsappUrl, '_blank');
+            } else {
+                throw new Error('Unable to open WhatsApp contact right now.');
+            }
+        } catch (error) {
+            const message = error.response?.data?.message || error.message || 'Unable to contact this business.';
+            window.alert(message);
+        }
     };
 
     return (

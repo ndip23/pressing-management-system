@@ -2,7 +2,7 @@
 import React, { Suspense, lazy } from 'react';
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import PixelTracker from "./components/PixelTracker";
 import { useAuth } from './contexts/AuthContext';
 import { DirectoryAuthProvider } from './contexts/DirectoryAuthContext';
@@ -11,6 +11,9 @@ import PublicLayout from './pages/Public/PublicLayout';
 import DirectoryLayout from './pages/Public/DirectoryLayout';
 import Spinner from './components/UI/Spinner';
 import DirectoryAdminRoute from './components/Auth/DirectoryAdminRoute';
+import OnboardingGate from './components/Auth/OnboardingGate';
+import OnboardingRedirect from './components/Auth/OnboardingRedirect';
+import OnboardingStepGuard from './components/Auth/OnboardingStepGuard';
 
 // --- LAZY-LOADED PAGE COMPONENTS ---
 const LoginPage = lazy(() => import('./pages/Auth/LoginPage'));
@@ -29,54 +32,54 @@ const CustomerListPage = lazy(() => import('./pages/Customers/CustomerListPage')
 const CustomerFormPage = lazy(() => import('./pages/Customers/CustomerFormPage'));
 const CustomerDetailsPage = lazy(() => import('./pages/Customers/CustomerDetailsPage'));
 const ProfilePage = lazy(() => import('./pages/User/ProfilePage'));
+const BusinessProfileSetupPage = lazy(() => import('./pages/User/BusinessProfileSetupPage'));
+const WalletTopUpPage = lazy(() => import('./pages/User/WalletTopUpPage'));
+const WalletPaymentCountryPage = lazy(() => import('./pages/User/WalletPaymentCountryPage'));
+const WalletOnboardingPromptPage = lazy(() => import('./pages/User/WalletOnboardingPromptPage'));
+const AppSubscriptionPage = lazy(() => import('./pages/User/AppSubscriptionPage'));
+const SubscriptionRequiredPage = lazy(() => import('./pages/User/SubscriptionRequiredPage'));
 const DailyPaymentsPage = lazy(() => import('./pages/Reports/DailyPaymentsPage'));
 const InboxPage = lazy(() => import('./pages/Messaging/InboxPage'));
 const SettingsPage = lazy(() => import('./pages/Admin/SettingsPage.js'));
 const ManageUsersPage = lazy(() => import('./pages/Admin/ManageUsersPage.js'));
-const PricingSettingsPage = lazy(() => import('./pages/Admin/PricingPage.js'));
 const ManageDirectoryPage = lazy(() => import('./pages/Admin/ManageDirectoryPage.js'));
+const AdminPricingPage = lazy(() => import('./pages/Admin/PricingPage'));
 const DirectoryAdminDashboard = lazy(() => import('./pages/Admin/DirectoryAdminDashboard'));
 const VerifyPaymentPage = lazy(() => import('./pages/Public/VerifyPaymentPage'));
 const VerifyUpgradePage = lazy(() => import('./pages/Public/VerifyUpgradePage'));
 const ContactPage = lazy(() => import('./pages/Public/ContactPage')); 
 const PaymentPage = lazy(() => import('./pages/Public/PaymentPage'));
-const AppSubscriptionPage = lazy(() => import('./pages/User/AppSubscriptionPage'));
-const SubscriptionRequiredPage = lazy(() => import('./pages/User/SubscriptionRequiredPage'));
 
 
-const ProtectedRoute = ({ children }) => {
-    const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = ({ children, allowInactive = false }) => {
+    const { isAuthenticated, loading, user } = useAuth();
     if (loading) return <div className="flex h-screen items-center justify-center"><Spinner size="lg"/></div>;
-    return isAuthenticated ? children : <Navigate to="/login" replace />;
-};
-
-// ✅ THE ENFORCER: Blocks access if trial is expired
-const EnforceSubscription = ({ children }) => {
-    const { user, loading } = useAuth();
-    const location = useLocation();
-
-    if (loading || !user) return children;
-
-    const status = user?.tenant?.subscriptionStatus;
-    const isExpired = status === 'trial' && new Date() > new Date(user?.tenant?.trialEndsAt);
-    const isPastDue = ['past_due', 'canceled', 'inactive'].includes(status);
-    
-    // Allow users to reach the subscription page to pay, but block everything else
-    if ((isExpired || isPastDue) && !location.pathname.includes('/app/subscription')) {
-        return <SubscriptionRequiredPage />;
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    if (!allowInactive) {
+        const tenant = user?.tenant;
+        const allowedStatuses = ['active', 'trial', 'trialing'];
+        const hasValidSubscription = tenant && allowedStatuses.includes(tenant.subscriptionStatus);
+        const hasValidTenant = tenant?.isActive !== false;
+        if (!hasValidSubscription || !hasValidTenant) {
+            return <SubscriptionRequiredPage />;
+        }
     }
-    return children;
+    return children ?? <Outlet />;
 };
+
 
 const AdminRoute = ({ children }) => {
     const { user, isAuthenticated, loading } = useAuth();
     if (loading) return <div className="flex h-screen items-center justify-center"><Spinner size="lg"/></div>;
     if (!isAuthenticated) return <Navigate to="/login" replace />;
-    return user?.role === 'admin' ? children : <Navigate to="/app/dashboard" replace />;
+    if (user?.role !== 'admin' && user?.role !== 'superadmin') {
+        return <Navigate to="/app/dashboard" replace />;
+    }
+    return children ?? <Outlet />;
 };
 
 function App() {
-    React.useEffect(() => { AOS.init({ duration: 900, offset: 100, once: false, mirror: true }); }, []);
+    React.useEffect(() => { AOS.init({ duration: 600, offset: 80, once: true, mirror: false }); }, []);
 
     return (
         <Router>
@@ -103,27 +106,43 @@ function App() {
                             <Route path="/verify-upgrade" element={<VerifyUpgradePage />} /> 
                         </Route>
 
-                        {/* --- PROTECTED APP WITH ENFORCER --- */}
-                        <Route path="/app" element={<ProtectedRoute><EnforceSubscription><MainLayout /></EnforceSubscription></ProtectedRoute>}>
-                            <Route index element={<Navigate to="dashboard" replace />} />
-                            <Route path="dashboard" element={<DashboardPage />} />
-                            <Route path="subscription" element={<AppSubscriptionPage />} /> 
-                            <Route path="orders/new" element={<CreateOrderPage />} />
-                            <Route path="orders/:id" element={<OrderDetailsPage />} />
-                            <Route path="orders/:id/edit" element={<EditOrderPage />} />
-                            <Route path="customers" element={<CustomerListPage />} />
-                            <Route path="customers/new" element={<CustomerFormPage mode="create" />} />
-                            <Route path="customers/:id/edit" element={<CustomerFormPage mode="edit" />} />
-                            <Route path="customers/:id/details" element={<CustomerDetailsPage />} />
-                            <Route path="payments" element={<DailyPaymentsPage />} />
-                            <Route path="inbox" element={<InboxPage />} />
-                            <Route path="profile" element={<ProfilePage />} />
-                            <Route path="admin" element={<AdminRoute><Outlet /></AdminRoute>}>
-                                <Route index element={<Navigate to="settings" replace />} />
-                                <Route path="settings" element={<SettingsPage />}/>
-                                <Route path="users" element={<ManageUsersPage />}/>
-                                <Route path="pricing" element={<PricingSettingsPage />}/>
-                                <Route path="directory" element={<ManageDirectoryPage />}/>
+                        {/* --- PROTECTED APP --- */}
+                        <Route path="/app" element={<ProtectedRoute allowInactive={true}><MainLayout /></ProtectedRoute>}>
+                            <Route index element={<OnboardingRedirect />} />
+                            <Route path="subscription" element={<AppSubscriptionPage />} />
+                            <Route path="onboarding">
+                                <Route path="wallet" element={<OnboardingStepGuard requiredStep="wallet"><WalletOnboardingPromptPage /></OnboardingStepGuard>} />
+                                <Route path="business-profile" element={<OnboardingStepGuard requiredStep="profile"><BusinessProfileSetupPage /></OnboardingStepGuard>} />
+                                <Route path="services-pricing" element={<OnboardingStepGuard requiredStep="pricing"><AdminPricingPage /></OnboardingStepGuard>} />
+                            </Route>
+                            <Route path="wallet">
+                                <Route path="select-country" element={<OnboardingStepGuard requiredStep="wallet" allowWhenComplete><WalletPaymentCountryPage /></OnboardingStepGuard>} />
+                                <Route index element={<OnboardingStepGuard requiredStep="wallet" allowWhenComplete><WalletTopUpPage /></OnboardingStepGuard>} />
+                            </Route>
+                            <Route element={<ProtectedRoute />}>
+                                <Route element={<OnboardingGate />}>
+                                <Route path="dashboard" element={<DashboardPage />} />
+                                <Route path="orders/new" element={<CreateOrderPage />} />
+                                <Route path="orders/:id" element={<OrderDetailsPage />} />
+                                <Route path="orders/:id/edit" element={<EditOrderPage />} />
+                                <Route path="customers" element={<CustomerListPage />} />
+                                <Route path="customers/new" element={<CustomerFormPage mode="create" />} />
+                                <Route path="customers/:id/edit" element={<CustomerFormPage mode="edit" />} />
+                                <Route path="customers/:id/details" element={<CustomerDetailsPage />} />
+                                <Route path="payments" element={<DailyPaymentsPage />} />
+                                <Route path="inbox" element={<InboxPage />} />
+                                <Route path="profile" element={<ProfilePage />} />
+                                <Route path="business-profile" element={<BusinessProfileSetupPage />} />
+                                </Route>
+                            </Route>
+                            <Route path="admin" element={<AdminRoute />}>
+                                <Route element={<OnboardingGate />}>
+                                    <Route index element={<Navigate to="settings" replace />} />
+                                    <Route path="settings" element={<SettingsPage />}/>
+                                    <Route path="pricing" element={<AdminPricingPage />}/>
+                                    <Route path="users" element={<ManageUsersPage />}/>
+                                    <Route path="directory" element={<ManageDirectoryPage />}/>
+                                </Route>
                             </Route>
                         </Route>
 

@@ -14,11 +14,6 @@ const tenantSchema = new mongoose.Schema({
         unique: true, // MUST be unique
         index: true,
     },
-    plan: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Plan',
-      required: true,
-    },
     isActive: {
         type: Boolean,
         default: true,
@@ -30,8 +25,8 @@ const tenantSchema = new mongoose.Schema({
     },
     publicPhone: { 
         type: String,
-         trim: true 
-        },
+        trim: true 
+    },
     publicEmail: { 
         type: String, 
         trim: true, 
@@ -46,6 +41,12 @@ const tenantSchema = new mongoose.Schema({
         type: String, 
         trim: true
      },
+    countryCode: {
+        type: String,
+        trim: true,
+        uppercase: true,
+        index: true,
+    },
     description: { 
         type: String, 
         trim: true 
@@ -73,6 +74,63 @@ const tenantSchema = new mongoose.Schema({
       enum: ['active', 'trialing', 'past_due', 'canceled', 'trial'],
       default: 'trialing',
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    onboardingProfileCompleted: {
+      type: Boolean,
+      default: false,
+    },
+    onboardingPricingCompleted: {
+      type: Boolean,
+      default: false,
+    },
+    walletBalance: {
+      type: Number,
+      default: 0.00,
+      min: [0, 'Wallet balance cannot be negative.'],
+      set: v => Number(v),
+    },
+    walletCurrency: {
+      type: String,
+      default: 'USD',
+      uppercase: true,
+      trim: true,
+    },
+    walletTransactions: [
+      {
+        type: {
+          type: String,
+          enum: ['topup', 'contact_charge', 'booking_fee'],
+          required: true,
+        },
+        amount: {
+          type: Number,
+          required: true,
+          min: [0, 'Transaction amount must be positive.'],
+        },
+        currency: {
+          type: String,
+          required: true,
+          uppercase: true,
+          trim: true,
+        },
+        description: {
+          type: String,
+          trim: true,
+        },
+        balanceAfter: {
+          type: Number,
+          required: true,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      }
+    ],
     trialEndsAt: {
       type: Date,
     },

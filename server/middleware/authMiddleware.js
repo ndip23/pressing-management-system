@@ -8,13 +8,12 @@ import Tenant from '../models/Tenant.js';
 const protect = asyncHandler(async (req, res, next) => {
     let token;
 
-    // Read JWT from the 'jwt' cookie or Authorization header
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    // Read JWT from the Authorization header or, if configured, from the 'jwt' cookie.
+    if (req.headers.authorization?.startsWith('Bearer')) {
         token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies?.token) { // If using httpOnly cookies
+        token = req.cookies.token;
     }
-    else if (req.cookies.token) { // If using httpOnly cookies
-         token = req.cookies.token;
-     }
 
     if (token) {
         try {

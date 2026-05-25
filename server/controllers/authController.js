@@ -42,7 +42,7 @@ const registerUser = asyncHandler(async (req, res) => {
         username: username.toLowerCase(),
         email: email.toLowerCase(), // Save the email
         password,
-        role: (role && ['admin', 'staff'].includes(role)) ? role : 'staff',
+        role: (role && ['admin', 'staff', 'superadmin'].includes(role)) ? role : 'staff',
     });
 
     if (user) {
@@ -109,11 +109,27 @@ const getMe = asyncHandler(async (req, res) => {
     let tenantData = null;
     if (user.tenantId) {
         const tenant = await Tenant.findById(user.tenantId).select(
-            'name plan subscriptionStatus trialEndsAt nextBillingAt'
+            'name plan subscriptionStatus trialEndsAt nextBillingAt walletBalance walletCurrency walletTransactions city country countryCode publicPhone description onboardingProfileCompleted onboardingPricingCompleted'
         );
         if (tenant) {
             tenantData = tenant;
         }
+    }
+
+    const walletFunded = (tenantData?.walletBalance ?? 0) > 0;
+    const profileComplete = !!(
+        tenantData?.onboardingProfileCompleted ||
+        (tenantData?.name?.trim() &&
+            tenantData?.city?.trim() &&
+            tenantData?.publicPhone?.trim() &&
+            tenantData?.description?.trim())
+    );
+    const pricingComplete = !!tenantData?.onboardingPricingCompleted;
+    let onboardingStep = 'complete';
+    if (user.role !== 'superadmin' && tenantData) {
+        if (!walletFunded) onboardingStep = 'wallet';
+        else if (!profileComplete) onboardingStep = 'profile';
+        else if (!pricingComplete) onboardingStep = 'pricing';
     }
     
     // Respond with a comprehensive object containing user and tenant data
@@ -123,7 +139,13 @@ const getMe = asyncHandler(async (req, res) => {
         email: user.email,
         role: user.role,
         tenantId: user.tenantId,
-        tenant: tenantData, // <-- NESTED TENANT OBJECT
+        tenant: tenantData,
+        onboarding: {
+            step: onboardingStep,
+            walletFunded,
+            profileComplete,
+            pricingComplete,
+        },
     });
 });
 // @desc    Update current user's own profile (e.g., username)
@@ -237,7 +259,7 @@ const updateUserById = asyncHandler(async (req, res) => {
         user.username = username.toLowerCase();
     }
 
-    if (role && ['admin', 'staff'].includes(role)) {
+    if (role && ['admin', 'staff', 'superadmin'].includes(role)) {
         if (user.role === 'admin' && role === 'staff') {
             const adminCount = await User.countDocuments({ role: 'admin', tenantId: req.tenantId, isActive: true });
             if (adminCount <= 1) { res.status(400); throw new Error('Cannot demote the only active administrator.'); }

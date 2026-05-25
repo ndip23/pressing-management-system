@@ -1,6 +1,7 @@
 // server/controllers/priceController.js
 import asyncHandler from '../middleware/asyncHandler.js';
 import Price from '../models/Price.js';
+import Tenant from '../models/Tenant.js';
 
 // @desc    Get all prices for the current tenant
 // @route   GET /api/prices
@@ -30,6 +31,13 @@ const upsertPrices = asyncHandler(async (req, res) => {
 
     if (operations.length > 0) {
         await Price.bulkWrite(operations);
+    }
+
+    const hasConfiguredPricing = priceList.some(
+        (p) => p.itemType && p.serviceType && Number(p.price) > 0
+    );
+    if (hasConfiguredPricing) {
+        await Tenant.findByIdAndUpdate(req.tenantId, { onboardingPricingCompleted: true });
     }
 
     res.json({ message: 'Price list updated successfully.' });

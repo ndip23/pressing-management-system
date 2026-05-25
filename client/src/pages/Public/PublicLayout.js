@@ -51,7 +51,7 @@ export const PublicHeader = () => {
                        < Link to="/add-your-buisness" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.add')}</Link>
                         <Link to="/features" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.features')}</Link>
                         <Link to="/demo" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">Demo</Link>
-                        <Link to="/pricing" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.pricing')}</Link>
+                        {/*<Link to="/pricing" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.pricing')}</Link>*/}
                     </div>
                     
                     {/* Desktop Auth & Language */}
@@ -64,7 +64,7 @@ export const PublicHeader = () => {
                                 <Link to="/login" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">
                                     {t('public.header.login')}
                                 </Link>
-                                <Link to="/pricing">
+                                <Link to="/signup">
                                     <Button variant="primary" size="md">{t('public.header.getStarted')}</Button>
                                 </Link>
                             </>
@@ -181,7 +181,7 @@ export const PublicHeader = () => {
     );
 };
 
-// --- Reusable Public Footer Component ---
+
 export const PublicFooter = () => {
     const { t } = useTranslation();
     

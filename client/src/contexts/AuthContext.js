@@ -2,8 +2,6 @@
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { loginUser as apiLoginUser, getMe as apiGetMe, logoutUserApi } from '../services/api';
-import Spinner from '../components/UI/Spinner'; // Assuming you have this
-
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -79,13 +77,19 @@ export const AuthProvider = ({ children }) => {
     const loginWithToken = useCallback(async (newToken) => {
         await fetchAndSetUser(newToken);
     }, [fetchAndSetUser]);
-    const isSubscriptionActive = user?.tenant?.subscriptionStatus === 'active' || user?.tenant?.subscriptionStatus === 'trialing';
+    const isSubscriptionActive = ['active', 'trial', 'trialing'].includes(user?.tenant?.subscriptionStatus);
     const updateUserInContext = (updatedUserData) => {
         setUser(prevUser => ({
             ...prevUser,
             ...updatedUserData,
         }));
     };
+
+    const refreshUser = useCallback(async () => {
+        const storedToken = localStorage.getItem('token');
+        if (!storedToken) return;
+        await fetchAndSetUser(storedToken);
+    }, [fetchAndSetUser]);
 
     const value = {
         user,
@@ -97,11 +101,8 @@ export const AuthProvider = ({ children }) => {
         logout,
         loginWithToken,
         updateUserInContext,
+        refreshUser,
     };
-
-    if (loading) {
-        return <div className="flex h-screen items-center justify-center"><Spinner size="lg"/></div>;
-    }
 
     return (
         <AuthContext.Provider value={value}>

@@ -8,6 +8,7 @@ import React, {
   useCallback,
 } from 'react';
 import api from '../services/api'; // Your centralized axios instance
+import { useAppSettings } from './SettingsContext';
 
 const LocalizationContext = createContext();
 
@@ -30,36 +31,30 @@ export const LocalizationProvider = ({ children }) => {
   const [location, setLocation] = useState(null);
   const [rates, setRates] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { settings, loadingSettings } = useAppSettings();
 
   useEffect(() => {
     const initializeLocalization = async () => {
-      let detectedLocation = { country: 'US', currency: 'USD' }; // Safe default
+      let detectedLocation = { country: 'US', currency: 'USD' };
 
-      try {
-        // 1. Fetch user's location FROM OUR OWN BACKEND PROXY
-        const locationRes = await api.get('/currency/geolocate');
-        if (locationRes.data) {
-          detectedLocation = locationRes.data;
-        }
-      } catch (error) {
-        console.warn(
-          'Geolocation via backend failed, defaulting to USD.',
-          error.message,
-        );
-      } finally {
-        setLocation(detectedLocation);
-      }
+      const [locationResult, ratesResult] = await Promise.allSettled([
+        api.get('/currency/geolocate'),
+        api.get('/currency/rates'),
+      ]);
 
-      try {
-        // 2. Fetch conversion rates FROM OUR OWN BACKEND
-        // The '/api' prefix is removed because our 'api' instance already has it.
-        const ratesRes = await api.get('/currency/rates');
-        setRates(ratesRes.data);
-      } catch (rateError) {
-        console.error('Failed to fetch currency rates.', rateError.message);
-      } finally {
-        setLoading(false);
+      if (locationResult.status === 'fulfilled' && locationResult.value.data) {
+        detectedLocation = locationResult.value.data;
+      } else if (locationResult.status === 'rejected') {
+        console.warn('Geolocation via backend failed, defaulting to USD.');
       }
+      setLocation(detectedLocation);
+
+      if (ratesResult.status === 'fulfilled') {
+        setRates(ratesResult.value.data);
+      } else {
+        console.error('Failed to fetch currency rates.');
+      }
+      setLoading(false);
     };
 
     initializeLocalization();
@@ -67,16 +62,16 @@ export const LocalizationProvider = ({ children }) => {
 
   const convertPrice = useCallback(
     usdPrice => {
-      if (loading || typeof usdPrice !== 'number') {
+      if (loading || loadingSettings || typeof usdPrice !== 'number') {
         return `...`;
       }
 
-      const targetCurrency = location?.currency || 'USD';
+      const targetCurrency = settings?.defaultCurrencyCode || location?.currency || 'USD';
       const rate = rates?.[targetCurrency];
+      const symbol = currencySymbols[targetCurrency] || targetCurrency;
 
       if (rate) {
         const converted = usdPrice * rate;
-        const symbol = currencySymbols[targetCurrency] || targetCurrency;
 
         if (['XAF', 'XOF'].includes(targetCurrency)) {
           return `${Math.round(converted).toLocaleString('fr-FR')} ${symbol}`;
@@ -84,12 +79,15 @@ export const LocalizationProvider = ({ children }) => {
         return `${converted.toFixed(2)} ${symbol}`;
       }
 
-      return `${usdPrice.toFixed(2)} ${currencySymbols['USD']}`;
+      return `${usdPrice.toFixed(2)} ${symbol}`;
     },
-    [loading, location, rates],
+    [loading, loadingSettings, location, rates, settings],
   );
 
-  const value = { location, loading, convertPrice };
+  const selectedCurrency = settings?.defaultCurrencyCode || location?.currency || 'USD';
+  const currencySymbol = currencySymbols[selectedCurrency] || selectedCurrency;
+
+  const value = { location, loading, convertPrice, selectedCurrency, currencySymbol };
 
   return (
     <LocalizationContext.Provider value={value}>

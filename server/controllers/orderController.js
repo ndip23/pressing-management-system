@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Order from '../models/Order.js';
 import Customer from '../models/Customer.js';
 import Tenant from '../models/Tenant.js';
+import Transaction from '../models/Transaction.js';
 import Plan from '../models/Plan.js';
 import asyncHandler from '../middleware/asyncHandler.js';
 import { generateReceiptNumber } from '../utils/generateReceiptNumber.js';
@@ -21,6 +22,12 @@ const createOrder = asyncHandler(async (req, res) => {
     }
 
     const plan = await Plan.findOne({ name: tenant.plan });
+    
+    const BOOKING_FEE = 0.50;
+    if (!tenant.isVerified && tenant.walletBalance < BOOKING_FEE) {
+        res.status(403);
+        throw new Error('This salon is temporarily unable to accept bookings due to low balance.');
+    }
     
     // ✅ CRASH PROOF FIX:
     // If plan is missing OR limits are missing, default to 50.
@@ -127,6 +134,22 @@ const createOrder = asyncHandler(async (req, res) => {
     });
 
     const createdOrder = await order.save();
+
+    const newBalance = tenant.walletBalance - BOOKING_FEE;
+    tenant.walletBalance = newBalance;
+    await tenant.save();
+
+    await Transaction.create({
+        transactionId: `TX-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+        user: user._id,
+        tenant: tenantId,
+        type: 'BOOKING_FEE',
+        amount: BOOKING_FEE,
+        balanceAfter: newBalance,
+        description: 'Booking fee for new order',
+        appointmentId: createdOrder._id,
+    });
+
     res.status(201).json(createdOrder);
 });
 

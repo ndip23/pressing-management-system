@@ -5,7 +5,14 @@
       "newOrder": "New Order",
       "customers": "Customers",
       "payments": "Payments",
-      "inbox": "Inbox"
+      "inbox": "Inbox",
+      "businessProfile": "Business Profile",
+      "wallet": "Wallet"
+    },
+    "help": {
+      "title": "Help",
+      "takeTour": "Take app tour",
+      "contactSupport": "Contact support"
     },
     "admin": {
       "title": "Admin Area",
@@ -132,7 +139,15 @@
     "paymentAmountRequired": "Please enter a payment amount.",
     "validAmountRequired": "Valid positive amount required.",
     "dailyPaymentsError": "Could not load daily sales data.",
-    "ordersError": "Failed to fetch orders. Please try again."
+    "ordersError": "Failed to fetch orders. Please try again.",
+    "quickLinks": "Quick Links",
+    "quickLinksDesc": "Jump to common tasks and pages.",
+    "helpTitle": "Help",
+    "helpDescription": "New to PressMark? Replay the guided tour anytime to learn the app.",
+    "startTour": "Take app tour",
+    "completeProfileTitle": "Complete your business profile",
+    "completeProfileDesc": "Add contact, location, branding and directory visibility so your business is ready for customers.",
+    "completeProfileAction": "Set up business profile"
   },
   "orderTable": {
     "noOrders": "No orders found.",
@@ -512,6 +527,93 @@
       "saveSuccess": "Settings saved successfully!",
       "saveError": "Failed to save settings. Please try again.",
       "unexpectedResponse": "Received an unexpected response from the server when saving."
+    }
+  },
+  "businessProfile": {
+    "title": "Business Profile Setup",
+    "subtitle": "Manage your public directory listing, contact details, and order pricing currency.",
+    "subtitleNewUser": "Complete your business profile so customers can find and trust your listing.",
+    "onboardingStepTitle": "Step 2: Business Profile",
+    "subtitleOnboarding": "Tell customers who you are. Complete this profile to appear in the directory.",
+    "businessName": "Business Name",
+    "publicPhone": "Public Phone",
+    "publicEmail": "Public Email",
+    "country": "Country",
+    "paymentCountry": "Payment country",
+    "paymentCountryHelper": "Used for wallet top-up checkout in your local currency.",
+    "city": "City",
+    "publicAddress": "Public Address",
+    "description": "Short Description",
+    "descriptionPlaceholder": "A short bio about your business, services, and what makes you stand out...",
+    "businessLogo": "Business Logo",
+    "uploadLogo": "Upload Logo",
+    "uploadingLogo": "Uploading...",
+    "logoNote": "PNG, JPG or WebP. Max 2MB.",
+    "listInDirectory": "List my business in the public directory",
+    "currencySection": "Order & payment currency",
+    "currencySectionHelper": "Used for order totals, daily payment reports, and pricing. Wallet balance stays in US dollars.",
+    "currencyCode": "Currency code",
+    "currencySymbol": "Currency symbol",
+    "saveProfile": "Save profile",
+    "saveAndContinue": "Save & continue",
+    "skipForNow": "Skip for now",
+    "loadError": "Failed to load business profile.",
+    "saveSuccess": "Business profile saved successfully!",
+    "saveFailed": "Failed to save business profile.",
+    "logoTooLarge": "Logo must be under 2MB.",
+    "logoInvalidType": "Please upload a PNG, JPG, or WebP image.",
+    "logoUploadSuccess": "Logo uploaded successfully!",
+    "logoUploadFailed": "Logo upload failed. Please try again.",
+    "galleryTitle": "Photo gallery"
+  },
+  "appTour": {
+    "label": "Getting started",
+    "restart": "Take app tour",
+    "skip": "Skip tour",
+    "previous": "Previous",
+    "next": "Next",
+    "finish": "Finish tour",
+    "steps": {
+      "welcome": {
+        "title": "Welcome to PressMark",
+        "description": "Your pressing business dashboard. This short tour shows where to manage orders, customers, payments, and your public listing."
+      },
+      "dashboard": {
+        "title": "Dashboard",
+        "description": "See today’s orders, stats, and quick actions. This is your home base after setup."
+      },
+      "newOrder": {
+        "title": "New order",
+        "description": "Create orders for walk-in or phone customers. Add items, services, and record payments."
+      },
+      "customers": {
+        "title": "Customers",
+        "description": "Save customer details and view order history for repeat clients."
+      },
+      "wallet": {
+        "title": "Wallet",
+        "description": "Top up in USD to stay listed in the directory. Customers contact you via WhatsApp; each lead uses a small fee from your wallet."
+      },
+      "payments": {
+        "title": "Daily payments",
+        "description": "Review money collected from orders each day in your business currency."
+      },
+      "inbox": {
+        "title": "Inbox",
+        "description": "View messages and notifications related to your business."
+      },
+      "businessProfile": {
+        "title": "Business profile",
+        "description": "Update your directory listing, logo, description, and the currency used for orders and pricing."
+      },
+      "settings": {
+        "title": "Settings & pricing",
+        "description": "Configure notification templates, services, prices, and staff accounts from the admin section."
+      },
+      "done": {
+        "title": "You’re all set",
+        "description": "Create your first order, keep your wallet funded, and keep your profile up to date. Need help? Contact support anytime."
+      }
     }
   },
   "manageUsers": {

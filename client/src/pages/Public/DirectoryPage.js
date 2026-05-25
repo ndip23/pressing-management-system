@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getPublicDirectoryApi } from '../../services/api';
+import { useLocalization } from '../../contexts/LocalizationContext';
+import { COUNTRY_NAMES } from '../../utils/currencyMap';
+import { getPublicDirectoryApi, contactBusinessViaWhatsAppApi } from '../../services/api';
 import Spinner from '../../components/UI/Spinner';
 import Input from '../../components/UI/Input';
 import Button from '../../components/UI/Button';
@@ -16,20 +18,25 @@ const BusinessCard = ({ business }) => {
     'https://images.unsplash.com/photo-1582735689369-7fe275765448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080';
 
   const logoUrl = business.logoUrl;
+  const displayCountry = business.country || COUNTRY_NAMES[business.countryCode] || business.countryCode || '';
 
-  const handleWhatsAppContact = (e) => {
+  const handleWhatsAppContact = async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (!business.publicPhone) return;
 
-    const phoneNumber = business.publicPhone.replace(/\s/g, '').replace('+', '');
-    const message = t('directoryPage.businessCard.whatsappMessage', {
-      name: business.name,
-    });
-
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    try {
+      const { data } = await contactBusinessViaWhatsAppApi(business.slug, t('directoryPage.businessCard.whatsappMessage', { name: business.name }));
+      if (data?.whatsappUrl) {
+        window.open(data.whatsappUrl, '_blank');
+      } else {
+        throw new Error('Unable to build WhatsApp link at this time.');
+      }
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Unable to contact this business.';
+      window.alert(message);
+    }
   };
 
   return (
@@ -58,7 +65,7 @@ const BusinessCard = ({ business }) => {
           <MapPin size={12} className="mr-1.5" />
           <span className="truncate">
             {business.city || t('directoryPage.businessCard.noLocation')}
-            {business.country && `, ${business.country}`}
+            {displayCountry && `, ${displayCountry}`}
           </span>
         </div>
 
@@ -89,8 +96,11 @@ const BusinessCard = ({ business }) => {
 };
 
 // --- ✅ FULL i18n MAIN DIRECTORY PAGE ---
+const shuffleArray = (items) => items.slice().sort(() => Math.random() - 0.5);
+
 const DirectoryPage = () => {
   const { t } = useTranslation();
+  const { location } = useLocalization();
 
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,20 +119,27 @@ const DirectoryPage = () => {
     hasPrevPage: false,
   });
 
+  const localCountryCode = location?.country || '';
+  const localCountryName = COUNTRY_NAMES[localCountryCode] || localCountryCode;
+  const isShowingLocalDirectory = !searchTerm && !cityFilter && Boolean(localCountryCode);
+
   useEffect(() => {
     const loadBusinesses = async () => {
       setLoading(true);
       setError('');
 
       try {
-        const filters = {};
+        const filters = {
+          page,
+          pageSize: pagination.pageSize,
+        };
+
         if (searchTerm) filters.search = searchTerm;
         if (cityFilter) filters.city = cityFilter;
-        filters.page = page;
-        filters.pageSize = pagination.pageSize;
+        if (!searchTerm && !cityFilter && localCountryCode) filters.country = localCountryCode;
 
         const { data } = await getPublicDirectoryApi(filters);
-        setBusinesses(data?.items || []);
+        setBusinesses(shuffleArray(data?.items || []));
         setPagination(data?.pagination || {
           page: 1,
           pageSize: 9,
@@ -139,7 +156,7 @@ const DirectoryPage = () => {
     };
 
     loadBusinesses();
-  }, [searchTerm, cityFilter, page, pagination.pageSize, t]);
+  }, [searchTerm, cityFilter, page, pagination.pageSize, localCountryCode, t]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -220,6 +237,11 @@ const DirectoryPage = () => {
             </div>
           ) : (
             <>
+              {isShowingLocalDirectory && (
+                <div className="mb-4 rounded-lg border border-apple-gray-200 bg-apple-gray-50 p-4 text-sm text-apple-gray-700 dark:border-apple-gray-700 dark:bg-apple-gray-900 dark:text-apple-gray-200">
+                  {`Showing local businesses in ${localCountryName}. Use search or city filters to expand beyond your country.`}
+                </div>
+              )}
               <div className="flex items-center justify-between gap-4 mb-6">
                 <p className="text-sm text-apple-gray-500 dark:text-apple-gray-400">
                   Showing {businesses.length} of {pagination.total} businesses

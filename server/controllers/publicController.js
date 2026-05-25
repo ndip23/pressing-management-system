@@ -14,8 +14,16 @@ import { finalizeRegistrationLogic } from '../services/registrationService.js';
 import crypto from 'crypto';
 import DirectoryListing from '../models/DirectoryListing.js';
 
+const COUNTRY_CODE_TO_NAME = {
+  BJ: 'Benin', BF: 'Burkina Faso', CM: 'Cameroon', CG: 'Congo Brazzaville',
+  CD: 'Congo DRC', CI: "Cote D'Ivoire", GA: 'Gabon', GN: 'Guinea Conakry',
+  IN: 'India', KE: 'Kenya', ML: 'Mali', SN: 'Senegal', TZ: 'Tanzania',
+  TG: 'Togo', UG: 'Uganda'
+};
+
 const DIRECTORY_CACHE_TTL_MS = 60 * 1000;
 const directoryCache = new Map();
+const DEFAULT_WHATSAPP_CONTACT_FEE = Number.parseFloat(process.env.WALLET_CONTACT_FEE || '0.5') || 0.5;
 
 // --- STEP 1: INITIATE REGISTRATION (NO OTP) ---
 const initiateRegistration = asyncHandler(async (req, res) => {
@@ -137,12 +145,13 @@ const finalizeRegistration = asyncHandler(async (req, res) => {
 // @route   GET /api/public/directory
 // @access  Public
 const getPublicDirectory = asyncHandler(async (req, res) => {
-    const { city, search } = req.query;
+    const { city, search, country } = req.query;
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const pageSize = Math.min(Math.max(parseInt(req.query.pageSize, 10) || 9, 1), 24);
     const cacheKey = JSON.stringify({
         city: city || '',
         search: search || '',
+        country: country || '',
         page,
         pageSize,
     });
@@ -161,17 +170,43 @@ const getPublicDirectory = asyncHandler(async (req, res) => {
     const nameRegex = search ? new RegExp(escapeRegex(search.trim()), 'i') : null;
     const cityRegex = city ? new RegExp(escapeRegex(city.trim()), 'i') : null;
 
+    let countryRegex = null;
+    let countryNameRegex = null;
+    if (country) {
+      const trimmedCountry = country.trim();
+      const normalizedCode = trimmedCountry.toUpperCase();
+      countryRegex = new RegExp(escapeRegex(trimmedCountry), 'i');
+      const countryName = COUNTRY_CODE_TO_NAME[normalizedCode];
+      if (countryName && countryName !== trimmedCountry) {
+        countryNameRegex = new RegExp(escapeRegex(countryName), 'i');
+      }
+    }
+
     const tenantMatch = {
         isActive: true,
         isListedInDirectory: true,
+        walletBalance: { $gt: 0 },
         ...(nameRegex ? { name: nameRegex } : {}),
         ...(cityRegex ? { city: cityRegex } : {}),
+        ...(countryRegex ? {
+          $or: [
+            { country: countryRegex },
+            { countryCode: countryRegex },
+            ...(countryNameRegex ? [{ country: countryNameRegex }] : []),
+          ]
+        } : {}),
     };
 
     const listingMatch = {
         isActive: true,
         ...(nameRegex ? { name: nameRegex } : {}),
         ...(cityRegex ? { city: cityRegex } : {}),
+        ...(countryRegex ? {
+          $or: [
+            { country: countryRegex },
+            ...(countryNameRegex ? [{ country: countryNameRegex }] : []),
+          ]
+        } : {}),
     };
 
     const skip = (page - 1) * pageSize;
@@ -185,6 +220,7 @@ const getPublicDirectory = asyncHandler(async (req, res) => {
         publicEmail: 1,
         city: 1,
         country: 1,
+        countryCode: 1,
         logoUrl: 1,
     };
 
@@ -246,7 +282,12 @@ const getBusinessBySlug = asyncHandler(async (req, res) => {
     const slug = req.params.slug;
     const publicFields = 'name slug description publicAddress publicPhone publicEmail city country logoUrl bannerUrl ';
 
-    let business = await Tenant.findOne({ slug, isActive: true, isListedInDirectory: true }).select(publicFields).lean();
+    let business = await Tenant.findOne({
+        slug,
+        isActive: true,
+        isListedInDirectory: true,
+        walletBalance: { $gt: 0 },
+    }).select(publicFields).lean();
     if (!business) {
         business = await DirectoryListing.findOne({ slug, isActive: true }).select(publicFields).lean();
     }
@@ -257,6 +298,54 @@ const getBusinessBySlug = asyncHandler(async (req, res) => {
     }
     res.json(business);
 });
+
+const contactBusinessViaWhatsApp = asyncHandler(async (req, res) => {
+    const slug = req.params.slug;
+    const message = req.body?.message || `Hello, I found your business on the directory and would like to contact you.`;
+    const feeAmount = Number.isFinite(DEFAULT_WHATSAPP_CONTACT_FEE) && DEFAULT_WHATSAPP_CONTACT_FEE > 0 ? DEFAULT_WHATSAPP_CONTACT_FEE : 100;
+
+    const tenant = await Tenant.findOne({
+        slug,
+        isActive: true,
+        isListedInDirectory: true,
+        walletBalance: { $gte: feeAmount },
+    });
+
+    if (tenant) {
+        if (!tenant.publicPhone) {
+            res.status(400);
+            throw new Error('This business does not have a public phone number available.');
+        }
+
+        tenant.walletBalance = Number((tenant.walletBalance - feeAmount).toFixed(2));
+        tenant.walletTransactions = tenant.walletTransactions || [];
+        tenant.walletTransactions.push({
+            type: 'contact_charge',
+            amount: feeAmount,
+            currency: 'USD',
+            description: 'WhatsApp contact fee',
+            balanceAfter: tenant.walletBalance,
+            createdAt: new Date(),
+        });
+
+        await tenant.save();
+
+        const phoneNumber = tenant.publicPhone.replace(/\s/g, '').replace('+', '');
+        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+        return res.status(200).json({ whatsappUrl, walletBalance: tenant.walletBalance, fee: feeAmount });
+    }
+
+    const listing = await DirectoryListing.findOne({ slug, isActive: true });
+    if (!listing || !listing.publicPhone) {
+        res.status(402);
+        throw new Error('This business is not available for contact or has insufficient wallet funds.');
+    }
+
+    const phoneNumber = listing.publicPhone.replace(/\s/g, '').replace('+', '');
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    res.status(200).json({ whatsappUrl, walletBalance: 0, fee: 0 });
+});
+
 // @desc    Get the public price list for a single tenant
 // @route   GET /api/public/tenants/:tenantId/prices
 // @access  Public
@@ -297,6 +386,7 @@ export {
   finalizeRegistration,
   getPublicDirectory,
   getBusinessBySlug,
+  contactBusinessViaWhatsApp,
   getTenantPriceList,
   handleContactForm
 };

@@ -2,8 +2,25 @@
 import asyncHandler from '../middleware/asyncHandler.js';
 import Order from '../models/Order.js';
 import User from '../models/User.js';
-import { startOfDay, endOfDay, parseISO, format, isValid as isValidDateFn } from 'date-fns';
+import Tenant from '../models/Tenant.js';
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, parseISO, format, isValid as isValidDateFn } from 'date-fns';
 import mongoose from 'mongoose';
+
+const buildRange = (targetDate, range) => {
+    switch ((range || 'day').toLowerCase()) {
+        case 'week':
+            return [startOfWeek(targetDate, { weekStartsOn: 1 }), endOfWeek(targetDate, { weekStartsOn: 1 })];
+        case 'month':
+            return [startOfMonth(targetDate), endOfMonth(targetDate)];
+        case 'quarter':
+            return [startOfQuarter(targetDate), endOfQuarter(targetDate)];
+        case 'year':
+            return [startOfYear(targetDate), endOfYear(targetDate)];
+        case 'day':
+        default:
+            return [startOfDay(targetDate), endOfDay(targetDate)];
+    }
+};
 
 const getDailyPaymentsReport = asyncHandler(async (req, res) => {
     const { tenantId } = req;
@@ -25,49 +42,39 @@ const getDailyPaymentsReport = asyncHandler(async (req, res) => {
     console.log(`[PaymentReport] Fetching report for tenant ${tenantId}, Date: ${date}, Range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
 
     const reportData = await Order.aggregate([
-        // Stage 1: Match orders for the correct tenant that have at least one payment
         {
             $match: {
                 tenantId: new mongoose.Types.ObjectId(tenantId),
-                'payments.0': { $exists: true } // Efficiently find docs with non-empty payments array
+                'payments.0': { $exists: true }
             }
         },
-        // Stage 2: Unwind the payments array to process each payment individually
-        {
-            $unwind: "$payments"
-        },
-        // Stage 3: Match only the payments that occurred on the target date
+        { $unwind: '$payments' },
         {
             $match: {
-                "payments.date": {
-                    $gte: startDate,
-                    $lte: endDate,
-                }
+                'payments.date': { $gte: startDate, $lte: endDate }
             }
         },
-        // Stage 4: Group all matching payments to get totals and detailed transactions
         {
             $group: {
-                _id: null, // Group all results into a single document
-                totalAmountCollected: { $sum: "$payments.amount" },
+                _id: null,
+                totalAmountCollected: { $sum: '$payments.amount' },
                 numberOfTransactions: { $sum: 1 },
                 detailedTransactions: {
-                    $push: { // Create an object for each transaction
-                        orderId: "$_id", // Keep the original order ID
-                        receiptNumber: "$receiptNumber",
-                        customer: "$customer", // Keep customer ID for later lookup
-                        amountCollected: "$payments.amount",
-                        paymentDate: "$payments.date",
-                        paymentMethod: "$payments.method",
-                        paymentRecordedBy: "$payments.recordedBy", // Keep user ID for later lookup
-                        orderTotal: "$totalAmount"
+                    $push: {
+                        orderId: '$_id',
+                        receiptNumber: '$receiptNumber',
+                        customer: '$customer',
+                        amountCollected: '$payments.amount',
+                        paymentDate: '$payments.date',
+                        paymentMethod: '$payments.method',
+                        paymentRecordedBy: '$payments.recordedBy',
+                        orderTotal: '$totalAmount'
                     }
                 }
             }
         }
     ]);
 
-    // If no data found, return an empty report
     if (reportData.length === 0) {
         return res.json({
             date: format(targetDate, 'yyyy-MM-dd'),
@@ -79,7 +86,6 @@ const getDailyPaymentsReport = asyncHandler(async (req, res) => {
 
     const data = reportData[0];
 
-    // --- Populate Customer and User names efficiently after aggregation ---
     const transactionDetails = data.detailedTransactions;
     const customerIds = [...new Set(transactionDetails.map(t => t.customer).filter(id => id))];
     const userIds = [...new Set(transactionDetails.map(t => t.paymentRecordedBy).filter(id => id))];
@@ -95,11 +101,9 @@ const getDailyPaymentsReport = asyncHandler(async (req, res) => {
     transactionDetails.forEach(t => {
         t.customerName = customerMap.get(t.customer?.toString()) || 'Unknown Customer';
         t.paymentRecordedByUsername = userMap.get(t.paymentRecordedBy?.toString()) || 'Unknown User';
-        delete t.customer; // Clean up original IDs
+        delete t.customer;
         delete t.paymentRecordedBy;
     });
-    // --- End Population ---
-
 
     const report = {
         date: format(targetDate, 'yyyy-MM-dd'),
@@ -111,4 +115,65 @@ const getDailyPaymentsReport = asyncHandler(async (req, res) => {
     res.json(report);
 });
 
-export { getDailyPaymentsReport };
+const getWalletDepositReport = asyncHandler(async (req, res) => {
+    const { tenantId } = req;
+    const { date, range = 'day' } = req.query;
+
+    let targetDate = date ? parseISO(date) : new Date();
+    if (!isValidDateFn(targetDate)) {
+        res.status(400);
+        throw new Error('Invalid date format. Please use YYYY-MM-DD.');
+    }
+
+    const [startDate, endDate] = buildRange(targetDate, range);
+    const byTenant = req.user.role !== 'superadmin';
+
+    console.log(`[WalletDepositReport] range=${range} tenantBased=${byTenant} start=${startDate.toISOString()} end=${endDate.toISOString()}`);
+
+    const matchStage = byTenant
+        ? { _id: new mongoose.Types.ObjectId(tenantId) }
+        : {};
+
+    const reportData = await Tenant.aggregate([
+        { $match: matchStage },
+        { $project: { name: 1, walletTransactions: 1 } },
+        { $unwind: '$walletTransactions' },
+        {
+            $match: {
+                'walletTransactions.type': 'topup',
+                'walletTransactions.createdAt': { $gte: startDate, $lte: endDate }
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                totalDeposited: { $sum: '$walletTransactions.amount' },
+                numberOfDeposits: { $sum: 1 },
+                transactions: {
+                    $push: {
+                        tenantId: '$_id',
+                        tenantName: '$name',
+                        type: '$walletTransactions.type',
+                        amount: '$walletTransactions.amount',
+                        currency: '$walletTransactions.currency',
+                        balanceAfter: '$walletTransactions.balanceAfter',
+                        description: '$walletTransactions.description',
+                        createdAt: '$walletTransactions.createdAt'
+                    }
+                }
+            }
+        }
+    ]);
+
+    const result = reportData[0] || { totalDeposited: 0, numberOfDeposits: 0, transactions: [] };
+
+    result.transactions = result.transactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    result.range = range;
+    result.date = format(targetDate, 'yyyy-MM-dd');
+    result.startDate = format(startDate, 'yyyy-MM-dd');
+    result.endDate = format(endDate, 'yyyy-MM-dd');
+
+    res.json(result);
+});
+
+export { getDailyPaymentsReport, getWalletDepositReport };

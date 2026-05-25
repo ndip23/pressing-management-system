@@ -1,6 +1,6 @@
 // client/src/pages/Dashboard/DashboardPage.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { fetchOrders, fetchDailyPaymentsReport, updateExistingOrder, } from '../../services/api';
 import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
@@ -10,11 +10,17 @@ import FilterControls from '../../components/Dashboard/FilterControls';
 import Modal from '../../components/UI/Modal';
 import Input from '../../components/UI/Input';
 import { trackEvent } from '../../utils/pixel'; 
-import { PlusCircle, AlertTriangle, CheckCircle2, Clock3, Shirt, TrendingUp, Filter as FilterIcon, } from 'lucide-react'; // Added more icons
+import {
+    PlusCircle, AlertTriangle, CheckCircle2, Clock3, Shirt, TrendingUp, Filter as FilterIcon,
+    Users, Zap, CreditCard, Inbox, Store, Settings, HelpCircle, CirclePlay,
+} from 'lucide-react';
 import { format, isPast, parseISO } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAppSettings } from '../../contexts/SettingsContext';
+import { useLocalization } from '../../contexts/LocalizationContext';
 import { useTranslation } from 'react-i18next';
+import { useAppTour } from '../../contexts/AppTourContext';
+import { getOnboardingStep, getOnboardingPath, isProfileComplete } from '../../utils/onboarding';
 
 const StatCard = ({ title, value, icon, colorClass, isLoading }) => (
     <Card className={`shadow-apple-sm ${colorClass || 'bg-white dark:bg-apple-gray-800'}`}>
@@ -54,19 +60,24 @@ const DashboardPage = () => {
     const [paymentError, setPaymentError] = useState('');
     const [paymentSuccess, setPaymentSuccess] = useState('');
     const [showFilters, setShowFilters] = useState(false);
-
-    const currencySymbol = settings?.defaultCurrencySymbol || '$';
-    // TODO: Get from global settings context
+    const navigate = useNavigate();
+    const { startTour } = useAppTour();
+    const walletBalance = user?.tenant?.walletBalance ?? 0;
+    const onboardingStep = getOnboardingStep(user);
+    const onboardingComplete = onboardingStep === 'complete';
+    const onboardingPath = getOnboardingPath(user);
+    const profileComplete = isProfileComplete(user?.tenant);
+    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+    const navPath = (path) => (onboardingComplete ? path : onboardingPath);
+    const { currencySymbol: localizationCurrencySymbol } = useLocalization();
+    const currencySymbol = localizationCurrencySymbol || settings?.defaultCurrencySymbol || '$';
+    const walletCurrency = '$';
 
     const loadOrders = useCallback(async () => {
-        console.log("[DashboardPage] --- Initiating loadOrders ---");
-        console.log("[DashboardPage] Current filters for fetchOrders:", JSON.stringify(filters, null, 2));
         setLoadingOrders(true);
         setOrdersError('');
         try {
             const { data } = await fetchOrders(filters);
-            console.log("[DashboardPage] RAW API Response from fetchOrders:", JSON.stringify(data, null, 2));
-
 
             if (data && Array.isArray(data.orders)) {
                 setOrders(data.orders);
@@ -98,6 +109,7 @@ const DashboardPage = () => {
             overdue: orders.filter(o => o.expectedPickupDate && isPast(parseISO(o.expectedPickupDate)) && !['Completed', 'Cancelled'].includes(o.status)).length,
         });
     }, [orders, pagination.totalOrders]);
+
      const loadDailyPayments = useCallback(async () => {
         // Only admins can see sales data
         if (user?.role !== 'admin') {
@@ -239,6 +251,119 @@ const DashboardPage = () => {
                     </Link>
                 </div>
             </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                 <Card className="shadow-apple-sm" title={t('dashboard.helpTitle')}>
+                    <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-full bg-apple-blue/10 text-apple-blue">
+                            <HelpCircle size={22} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm text-apple-gray-600 dark:text-apple-gray-400">{t('dashboard.helpDescription')}</p>
+                            <Button
+                                type="button"
+                                variant="primary"
+                                size="sm"
+                                className="mt-4"
+                                iconLeft={<CirclePlay size={16} />}
+                                onClick={startTour}
+                            >
+                                {t('dashboard.startTour')}
+                            </Button>
+                        </div>
+                    </div>
+                </Card>
+                <Card className="lg:col-span-2 shadow-apple-sm" title={t('dashboard.quickLinks')}>
+                    <p className="text-sm text-apple-gray-600 dark:text-apple-gray-400 mb-4">{t('dashboard.quickLinksDesc')}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <Link
+                            to={navPath('/app/orders/new')}
+                            className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
+                        >
+                            <PlusCircle size={22} className="text-apple-blue" />
+                            <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.newOrder')}</span>
+                        </Link>
+                        {/*<Link
+                            to={navPath('/app/customers')}
+                            className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
+                        >
+                            <Users size={22} className="text-apple-blue" />
+                            <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.customers')}</span>
+                        </Link>*/}
+                        <Link
+                            to={onboardingComplete ? '/app/wallet' : (onboardingStep === 'wallet' ? '/app/wallet/select-country' : onboardingPath)}
+                            className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
+                        >
+                            <Zap size={22} className="text-amber-500" />
+                            <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.wallet')}</span>
+                        </Link>
+                        <Link
+                            to={navPath('/app/payments')}
+                            className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
+                        >
+                            <CreditCard size={22} className="text-apple-green" />
+                            <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.payments')}</span>
+                        </Link>
+                        {/*<Link
+                            to={navPath('/app/inbox')}
+                            className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
+                        >
+                            <Inbox size={22} className="text-apple-blue" />
+                            <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.inbox')}</span>
+                        </Link>*/}
+                        {isAdmin && (
+                            <>
+                                <Link
+                                    to={navPath('/app/business-profile')}
+                                    className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
+                                >
+                                    <Store size={22} className="text-apple-blue" />
+                                    <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.businessProfile')}</span>
+                                </Link>
+                               {/*<Link
+                                    to={navPath('/app/admin/settings')}
+                                    className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
+                                >
+                                    <Settings size={22} className="text-apple-gray-600" />
+                                    <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.admin.settings')}</span>
+                                </Link>*/}
+                            </>
+                        )}
+                    </div>
+                </Card>
+            </div>
+
+            {walletBalance <= 0 && (
+                <div className="rounded-apple border border-apple-orange-200 bg-apple-orange-50 dark:border-apple-orange-700 dark:bg-apple-orange-950/30 p-5 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <p className="text-sm font-semibold text-apple-orange-900 dark:text-apple-orange-200">Wallet balance low</p>
+                            <p className="mt-1 text-sm text-apple-gray-700 dark:text-apple-gray-300">
+                                Your wallet balance is currently {walletCurrency} {walletBalance.toFixed(2)}. Add funds to continue using the pay-as-you-go wallet model.
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Button variant="primary" onClick={() => navigate('/app/wallet/select-country')}>
+                                Top Up Wallet
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {!profileComplete && isAdmin && (
+                <div className="rounded-apple border border-apple-blue-200 dark:border-apple-blue-800 bg-apple-blue-50 dark:bg-apple-blue-950/40 p-4 sm:p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <p className="text-sm font-semibold text-apple-blue-900 dark:text-apple-blue-100">{t('dashboard.completeProfileTitle')}</p>
+                            <p className="text-sm text-apple-gray-600 dark:text-apple-gray-300">{t('dashboard.completeProfileDesc')}</p>
+                        </div>
+                        <Link to={navPath('/app/business-profile')}>
+                            <Button variant="primary" size="sm">{t('dashboard.completeProfileAction')}</Button>
+                        </Link>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 {user?.role === 'admin' && (

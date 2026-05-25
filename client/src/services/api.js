@@ -177,6 +177,9 @@ export const fetchDailyPaymentsReport = async date => {
   if (!date) return Promise.reject(new Error('Date is required.'));
   return api.get(`/reports/daily-payments`, { params: { date } });
 };
+export const fetchWalletDepositReport = async ({ date, range }) => {
+  return api.get('/reports/wallet-deposits', { params: { date, range } });
+};
 
 // --- Admin Bell Notifications ---
 export const fetchAdminNotificationsApi = async () =>
@@ -197,9 +200,19 @@ export const getPublicDirectoryApi = async filters => {
 };
 export const getBusinessBySlugApi = async slug =>
   PublicAPI.get(`/public/directory/${slug}`);
+export const contactBusinessViaWhatsAppApi = (slug, message) =>
+  PublicAPI.post(`/public/directory/${slug}/whatsapp-contact`, { message });
 export const getMyTenantProfileApi = async () => {
   return api.get('/tenant-profile');
 };
+export const topUpMyWalletApi = (amount, currency = 'USD') =>
+  api.put('/tenant-profile/wallet', { amount, currency });
+export const updateWalletPaymentCountryApi = (countryCode) =>
+  api.put('/subscriptions/wallet-payment-country', { countryCode });
+export const initiateWalletTopUpPaymentApi = (amount, countryCode) =>
+  api.post('/subscriptions/wallet-topup', { amount, countryCode });
+export const getWalletTopUpEstimateApi = (amount, countryCode) =>
+  api.get('/subscriptions/wallet-topup-estimate', { params: { amount, countryCode } });
 export const getPlanBySlug = async (slug) => {
     return PublicAPI.get(`/plans/${slug}`); 
 };

@@ -12,6 +12,7 @@ export const COUNTRY_TO_CURRENCY = {
     IN: 'INR', // India
     KE: 'KES', // Kenya
     ML: 'XOF', // Mali
+    NG: 'NGN', // Nigeria
     SN: 'XOF', // Senegal
     TZ: 'TZS', // Tanzania
     TG: 'XOF', // Togo

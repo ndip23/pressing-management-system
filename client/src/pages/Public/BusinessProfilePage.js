@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getBusinessBySlugApi, getTenantPriceListApi, getBusinessGalleryApi } from '../../services/api'; 
+import { getBusinessBySlugApi, getTenantPriceListApi, getBusinessGalleryApi, contactBusinessViaWhatsAppApi } from '../../services/api'; 
 import Spinner from '../../components/UI/Spinner';
 import Button from '../../components/UI/Button';
 import { Phone, Mail, MapPin, Globe, Facebook, Twitter, Image as ImageIcon } from 'lucide-react';
@@ -66,10 +66,20 @@ const BusinessDetailPage = () => {
         return { itemTypes, serviceTypes, priceTable: table };
     }, [priceList]);
 
-    const handleWhatsAppContact = () => {
+    const handleWhatsAppContact = async () => {
         if (!business?.publicPhone) return;
-        const phoneNumber = business.publicPhone.replace(/\s/g, '').replace('+', '');
-        window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(`Hello ${business.name}, I found you on PressMark...`)}`, '_blank');
+
+        try {
+            const { data } = await contactBusinessViaWhatsAppApi(business.slug, `Hello ${business.name}, I found you on PressMark and would like to inquire about your services.`);
+            if (data?.whatsappUrl) {
+                window.open(data.whatsappUrl, '_blank');
+            } else {
+                throw new Error('Unable to build WhatsApp link.');
+            }
+        } catch (error) {
+            const message = error.response?.data?.message || error.message || 'Unable to contact this business.';
+            window.alert(message);
+        }
     };
 
     if (loading) return <div className="min-h-[60vh] flex justify-center items-center"><Spinner size="lg" /></div>;

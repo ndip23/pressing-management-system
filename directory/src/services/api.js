@@ -68,6 +68,8 @@ export const getPublicDirectoryApi = async filters => {
 };
 export const getBusinessBySlugApi = async slug =>
   api.get(`/public/directory/${slug}`);
+export const contactBusinessViaWhatsAppApi = async slug =>
+  api.post(`/public/directory/${slug}/whatsapp-contact`);
 export const getAllPlansAdminApi = () => directoryAdminApi.get('/plans/all');
 export const updatePlanApi = (id, planData) =>
   directoryAdminApi.put(`/plans/${id}`, planData);
