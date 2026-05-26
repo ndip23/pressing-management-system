@@ -49,6 +49,7 @@ const ContactPage = lazy(() => import('./pages/Public/ContactPage'));
 const PaymentPage = lazy(() => import('./pages/Public/PaymentPage'));
 const TermsPage = lazy(() => import('./pages/Public/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/Public/PrivacyPage'));
+const ManageSystemPage = lazy(() => import('./pages/Dashboard/ManageSystemPage'));
 
 
 const ProtectedRoute = ({ children, allowInactive = false }) => {
@@ -108,6 +109,7 @@ function App() {
                     <Route path="/app" element={<ProtectedRoute allowInactive={true}><MainLayout /></ProtectedRoute>}>
                         <Route index element={<OnboardingRedirect />} />
                         <Route path="subscription" element={<AppSubscriptionPage />} />
+                        <Route path="manage" element={<ManageSystemPage />} />
                         <Route path="onboarding">
                             <Route path="wallet" element={<OnboardingStepGuard requiredStep="wallet"><WalletOnboardingPromptPage /></OnboardingStepGuard>} />
                             <Route path="business-profile" element={<OnboardingStepGuard requiredStep="profile"><BusinessProfileSetupPage /></OnboardingStepGuard>} />

@@ -163,11 +163,11 @@ const DashboardPage = () => {
                             <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.orders')}</span>
                         </Link>
                         <Link
-                            to={navPath('/app/orders/new')}
+                            to={navPath('/app/inbox')}
                             className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
                         >
-                            <PlusCircle size={22} className="text-apple-blue" />
-                            <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.newOrder')}</span>
+                            <Inbox size={22} className="text-apple-blue" />
+                            <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.inbox')}</span>
                         </Link>
                         {/*<Link
                             to={navPath('/app/customers')}
@@ -190,13 +190,6 @@ const DashboardPage = () => {
                             <CreditCard size={22} className="text-apple-green" />
                             <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.payments')}</span>
                         </Link>
-                        {/*<Link
-                            to={navPath('/app/inbox')}
-                            className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
-                        >
-                            <Inbox size={22} className="text-apple-blue" />
-                            <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.inbox')}</span>
-                        </Link>*/}
                         {isAdmin && (
                             <>
                                 <Link
