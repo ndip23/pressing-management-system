@@ -2,6 +2,7 @@
   "sidebar": {
     "navigation": {
       "dashboard": "Tableau de Bord",
+      "orders": "Commandes",
       "newOrder": "Nouvelle Commande",
       "customers": "Clients",
       "payments": "Paiements",
@@ -105,10 +106,31 @@
     "completeProfileTitle": "Complétez votre profil entreprise",
     "completeProfileDesc": "Ajoutez vos coordonnées, votre ville et votre visibilité dans l'annuaire.",
     "completeProfileAction": "Configurer le profil",
+    "viewAllOrders": "Gérer toutes les commandes",
+    "recentOrders": "Commandes à traiter",
+    "recentOrdersDesc": "Ouvrez la page Commandes pour voir, filtrer et mettre à jour chaque commande.",
     "statusReceived": "Reçu",
     "statusInProgress": "En Cours",
     "statusReadyForPickup": "Prêt pour Récupération",
     "statusCompleted": "Terminé"
+  },
+  "ordersList": {
+    "title": "Commandes",
+    "subtitle": "Consultez et gérez toutes les commandes — en attente, en cours, prêtes et terminées.",
+    "tableTitle": "Toutes les commandes",
+    "loadError": "Échec du chargement des commandes.",
+    "empty": "Aucune commande ne correspond à vos filtres.",
+    "createFirst": "Créer votre première commande",
+    "showing": "{{count}} commande(s) affichée(s)",
+    "tabs": {
+      "active": "À traiter",
+      "all": "Toutes",
+      "pending": "En attente",
+      "processing": "En cours",
+      "ready": "Prêtes",
+      "completed": "Terminées",
+      "overdue": "En retard"
+    }
   },
   "orderTable": {
     "noOrders": "Aucune commande trouvée.",
@@ -541,6 +563,10 @@
       "dashboard": {
         "title": "Tableau de bord",
         "description": "Consultez les commandes du jour et les actions rapides."
+      },
+      "orders": {
+        "title": "Commandes",
+        "description": "Consultez toutes les commandes. Filtrez par statut : en attente, en cours, prêtes, terminées ou en retard."
       },
       "newOrder": {
         "title": "Nouvelle commande",

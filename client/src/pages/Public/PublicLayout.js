@@ -1,5 +1,6 @@
 // client/src/pages/Public/PublicLayout.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import PixelTracker from '../../components/PixelTracker';
 import { Link, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
@@ -202,8 +203,24 @@ export const PublicFooter = () => {
 
 // --- Main Layout Component ---
 const PublicLayout = () => {
+    useEffect(() => {
+        let cancelled = false;
+        const initAos = async () => {
+            const [{ default: AOS }] = await Promise.all([
+                import('aos'),
+                import('aos/dist/aos.css'),
+            ]);
+            if (!cancelled) {
+                AOS.init({ duration: 600, offset: 80, once: true, mirror: false });
+            }
+        };
+        initAos();
+        return () => { cancelled = true; };
+    }, []);
+
     return (
         <div className="bg-apple-gray-50 dark:bg-apple-gray-950 min-h-screen flex flex-col">
+            <PixelTracker />
             <PublicHeader />
             <main className="flex-grow">
                 <Outlet /> {/* This is where the specific page content will be rendered */}

@@ -8,7 +8,8 @@ import asyncHandler from '../middleware/asyncHandler.js';
 import { customAlphabet } from 'nanoid'; 
 import { addMinutes } from 'date-fns'; 
 import { sendNotification } from '../services/notificationService.js'; 
-import { cloudinary } from '../config/cloudinaryConfig.js'; 
+import { cloudinary } from '../config/cloudinaryConfig.js';
+import { resolveAssignableRole, canAssignRole } from '../utils/resolveUserRole.js';
 
 const registerUser = asyncHandler(async (req, res) => {
     const { username, email, password, role } = req.body; // Expect email now
@@ -42,7 +43,7 @@ const registerUser = asyncHandler(async (req, res) => {
         username: username.toLowerCase(),
         email: email.toLowerCase(), // Save the email
         password,
-        role: (role && ['admin', 'staff', 'superadmin'].includes(role)) ? role : 'staff',
+        role: resolveAssignableRole(role, req.user?.role),
     });
 
     if (user) {
@@ -259,7 +260,11 @@ const updateUserById = asyncHandler(async (req, res) => {
         user.username = username.toLowerCase();
     }
 
-    if (role && ['admin', 'staff', 'superadmin'].includes(role)) {
+    if (role) {
+        if (!canAssignRole(role, req.user?.role)) {
+            res.status(403);
+            throw new Error('You are not allowed to assign this role.');
+        }
         if (user.role === 'admin' && role === 'staff') {
             const adminCount = await User.countDocuments({ role: 'admin', tenantId: req.tenantId, isActive: true });
             if (adminCount <= 1) { res.status(400); throw new Error('Cannot demote the only active administrator.'); }

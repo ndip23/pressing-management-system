@@ -49,6 +49,9 @@ const orderSchema = new mongoose.Schema({
     adminNotifiedActualOverdue: { type: Boolean, default: false },
 }, { timestamps: true });
 
+orderSchema.index({ tenantId: 1, createdAt: -1 });
+orderSchema.index({ tenantId: 1, status: 1, expectedPickupDate: 1 });
+orderSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
 
 // --- MIDDLEWARE HOOK FOR AUTOMATIC CALCULATIONS ---
 orderSchema.pre('save', function (next) {

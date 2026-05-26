@@ -11,7 +11,6 @@ import { sendNotification } from '../services/notificationService.js';
 
 const createOrder = asyncHandler(async (req, res) => {
     
-    console.log("--------------- HITTING NEW ORDER CONTROLLER ---------------");
     const { tenantId, user } = req;
 
     // --- 1. SAFE ORDER LIMIT CHECK ---
@@ -155,7 +154,7 @@ const createOrder = asyncHandler(async (req, res) => {
 
 const getOrders = asyncHandler(async (req, res) => {
     const { tenantId } = req;
-    const { paid, overdue, serviceType, status, receiptNumber, customerName, customerPhone, customerId } = req.query;
+    const { paid, overdue, active, serviceType, status, receiptNumber, customerName, customerPhone, customerId } = req.query;
     const pageSize = parseInt(req.query.pageSize, 10) || 10;
     const page = parseInt(req.query.page, 10) || 1;
     let query = { tenantId: tenantId };
@@ -166,7 +165,11 @@ const getOrders = asyncHandler(async (req, res) => {
         query.expectedPickupDate = { $lt: new Date() };
         query.status = { $nin: ['Completed', 'Cancelled'] };
     }
-    if (status) query.status = status;
+    if (active === 'true') {
+        query.status = { $nin: ['Completed', 'Cancelled'] };
+    } else if (status) {
+        query.status = status;
+    }
     if (receiptNumber) query.receiptNumber = { $regex: receiptNumber, $options: 'i' };
     if (serviceType) query['items.serviceType'] = { $regex: serviceType, $options: 'i' };
 
@@ -196,6 +199,29 @@ const getOrders = asyncHandler(async (req, res) => {
     res.json({ orders, page, pages: Math.ceil(count / pageSize), totalOrders: count });
 });
 
+const getDashboardOrderSummary = asyncHandler(async (req, res) => {
+    const { tenantId } = req;
+    const now = new Date();
+    const activeStatuses = { $nin: ['Completed', 'Cancelled'] };
+
+    const [totalOrders, pendingCount, readyCount, overdueCount, recentOrders] = await Promise.all([
+        Order.countDocuments({ tenantId }),
+        Order.countDocuments({ tenantId, status: { $in: ['Pending', 'Processing'] } }),
+        Order.countDocuments({ tenantId, status: 'Ready for Pickup' }),
+        Order.countDocuments({
+            tenantId,
+            expectedPickupDate: { $lt: now },
+            status: activeStatuses,
+        }),
+        Order.find({ tenantId, status: activeStatuses })
+            .populate('customer', 'name phone')
+            .sort({ expectedPickupDate: 1, createdAt: -1 })
+            .limit(5)
+            .lean(),
+    ]);
+
+    res.json({ totalOrders, pendingCount, readyCount, overdueCount, recentOrders });
+});
 
 const getOrderById = asyncHandler(async (req, res) => {
     const { tenantId } = req;
@@ -453,6 +479,7 @@ const recordPayment = asyncHandler(async (req, res) => {
 export {
     createOrder,
     getOrders,
+    getDashboardOrderSummary,
     getOrderById,
     updateOrder,
     deleteOrder,

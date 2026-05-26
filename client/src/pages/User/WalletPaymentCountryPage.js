@@ -14,7 +14,6 @@ import {
 import { updateWalletPaymentCountryApi } from '../../services/api';
 import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
-import Spinner from '../../components/UI/Spinner';
 import toast from 'react-hot-toast';
 
 const LOCAL_CURRENCY_LABELS = {
@@ -47,7 +46,7 @@ const WalletPaymentCountryPage = () => {
   useEffect(() => {
     const existing = getWalletPaymentCountryCode(user?.tenant);
     if (existing) setCountryCode(existing);
-  }, [user?.tenant?.countryCode]);
+  }, [user?.tenant?.countryCode, user?.tenant]);
 
   const selectedCurrency = COUNTRY_TO_CURRENCY[countryCode] || 'USD';
   const currencyLabel = LOCAL_CURRENCY_LABELS[selectedCurrency] || selectedCurrency;

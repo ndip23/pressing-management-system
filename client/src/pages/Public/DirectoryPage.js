@@ -18,7 +18,7 @@ const BusinessCard = ({ business }) => {
     'https://images.unsplash.com/photo-1582735689369-7fe275765448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080';
 
   const logoUrl = business.logoUrl;
-  const displayCountry = business.country || COUNTRY_NAMES[business.countryCode] || business.countryCode || '';
+  const displayCountry = business.country || COUNTRY_NAMES[business.countryCode] || business.countryCode || ' ';
 
   const handleWhatsAppContact = async (e) => {
     e.preventDefault();
@@ -101,6 +101,8 @@ const shuffleArray = (items) => items.slice().sort(() => Math.random() - 0.5);
 const DirectoryPage = () => {
   const { t } = useTranslation();
   const { location } = useLocalization();
+    console.log("Current detected location object:", location);
+  console.log("Extracted country code:", location?.country);
 
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);

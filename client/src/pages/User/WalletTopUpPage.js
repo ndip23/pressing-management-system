@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { isWalletFunded, WALLET_CURRENCY_SYMBOL, MIN_TOP_UP_AMOUNT, CONTACT_FEE } from '../../utils/onboarding';
@@ -56,21 +56,21 @@ const WalletTopUpPage = () => {
     const [localCurrency, setLocalCurrency] = useState('USD');
     const [isEstimating, setIsEstimating] = useState(false);
 
-    const loadTenantProfile = async () => {
-        setIsLoadingProfile(true);
-        try {
-            const { data } = await getMyTenantProfileApi();
-            setTenantProfile(data);
-        } catch (error) {
-            console.error('Failed to load tenant profile:', error.response?.data?.message || error.message);
-            setTenantProfile({
-                walletBalance: user?.tenant?.walletBalance ?? 0,
-                walletTransactions: user?.tenant?.walletTransactions || [],
-            });
-        } finally {
-            setIsLoadingProfile(false);
-        }
-    };
+    const loadTenantProfile = useCallback(async () => {
+    setIsLoadingProfile(true);
+    try {
+        const { data } = await getMyTenantProfileApi();
+        setTenantProfile(data);
+    } catch (error) {
+        console.error('Failed to load tenant profile:', error.response?.data?.message || error.message);
+        setTenantProfile({
+            walletBalance: user?.tenant?.walletBalance ?? 0,
+            walletTransactions: user?.tenant?.walletTransactions || [],
+        });
+    } finally {
+        setIsLoadingProfile(false);
+    }
+}, [user?.tenant?.walletBalance, user?.tenant?.walletTransactions]);
 
     useEffect(() => {
         if (!paymentCountryCode) {
@@ -78,7 +78,7 @@ const WalletTopUpPage = () => {
             return;
         }
         loadTenantProfile();
-    }, [paymentCountryCode, fromOnboarding, navigate]);
+    }, [paymentCountryCode, fromOnboarding, navigate, loadTenantProfile]);
 
     useEffect(() => {
         if (!paymentCountryCode) return undefined;
@@ -123,7 +123,7 @@ const WalletTopUpPage = () => {
         if (fromOnboarding && isWalletFunded(tenant)) {
             navigate('/app/onboarding/business-profile', { replace: true, state: { fromOnboarding: true } });
         }
-    }, [tenantProfile?.walletBalance, user?.tenant?.walletBalance, fromOnboarding, navigate]);
+    }, [tenantProfile?.walletBalance, user?.tenant?.walletBalance, fromOnboarding, navigate, user?.tenant]);
 
     const currentBalance = tenantProfile?.walletBalance ?? user?.tenant?.walletBalance ?? 0;
     const transactions = tenantProfile?.walletTransactions || [];

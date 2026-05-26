@@ -81,7 +81,14 @@ const handleTwilioWhatsapp = asyncHandler(async (req, res) => {
 // @access  Public
 const verifySwychrSignature = (rawBody, signature) => {
     const secret = process.env.ACCOUNTPE_WEBHOOK_SECRET;
-    if (!secret) return true;
+    if (!secret) {
+        if (process.env.NODE_ENV === 'production') {
+            console.error('[Webhook] ACCOUNTPE_WEBHOOK_SECRET is not set — rejecting webhook.');
+            return false;
+        }
+        console.warn('[Webhook] ACCOUNTPE_WEBHOOK_SECRET missing (dev only — accepting unsigned webhooks).');
+        return true;
+    }
     if (!signature || !rawBody) return false;
     const expected = crypto
         .createHmac('sha256', secret)

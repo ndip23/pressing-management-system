@@ -4,8 +4,7 @@ import express from "express";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import cors from "cors";
-import path from "path";
-console.log("HELLO FROM BACKEND");
+import compression from "compression";
 
 // Load environment variables at the very top
 dotenv.config();
@@ -59,7 +58,8 @@ connectDB()
 app.get("/", (_req, res) => res.status(200).json({ status: "OK" }));
 
 // --- Security and CORS Middleware ---
-app.use(helmet()); // Sets various security headers
+app.use(helmet());
+app.use(compression());
 
 const corsOptions = {
   origin:

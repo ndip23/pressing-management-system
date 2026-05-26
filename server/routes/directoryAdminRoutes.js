@@ -11,10 +11,11 @@ import {
     getTenantById
 } from '../controllers/directoryAdminController.js';
 import { protectDirectoryAdmin } from '../middleware/directoryAdminMiddleware.js';
+import { directoryAdminLoginLimiter } from '../middleware/rateLimiters.js';
 
 const router = express.Router();
 
-router.post('/login', loginDirectoryAdmin); // Public login endpoint
+router.post('/login', directoryAdminLoginLimiter, loginDirectoryAdmin);
 
 router.route('/listings')
     .get(protectDirectoryAdmin, getAllDirectoryListings)
@@ -24,9 +25,9 @@ router.route('/listings/:id')
     .put(protectDirectoryAdmin, updateDirectoryListing)
     .delete(protectDirectoryAdmin, deleteDirectoryListing);
 router.route('/tenants')
-    .get(getAllTenants);
+    .get(protectDirectoryAdmin, getAllTenants);
 router.route('/tenants/:id')
-    .get(getTenantById)
-    .put(updateTenant);
+    .get(protectDirectoryAdmin, getTenantById)
+    .put(protectDirectoryAdmin, updateTenant);
 
 export default router;

@@ -1,20 +1,17 @@
 // client/src/pages/Dashboard/DashboardPage.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { fetchOrders, fetchDailyPaymentsReport, updateExistingOrder, } from '../../services/api';
+import { fetchDashboardOrderSummary, fetchDailyPaymentsReport } from '../../services/api';
 import Card from '../../components/UI/Card';
 import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
 import OrderTable from '../../components/Dashboard/OrderTable';
-import FilterControls from '../../components/Dashboard/FilterControls';
-import Modal from '../../components/UI/Modal';
-import Input from '../../components/UI/Input';
 import { trackEvent } from '../../utils/pixel'; 
 import {
-    PlusCircle, AlertTriangle, CheckCircle2, Clock3, Shirt, TrendingUp, Filter as FilterIcon,
-    Users, Zap, CreditCard, Inbox, Store, Settings, HelpCircle, CirclePlay,
+    PlusCircle, AlertTriangle, CheckCircle2, Clock3, Shirt, TrendingUp, ClipboardList,
+    Zap, CreditCard, Store, HelpCircle, CirclePlay, Tags
 } from 'lucide-react';
-import { format, isPast, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAppSettings } from '../../contexts/SettingsContext';
 import { useLocalization } from '../../contexts/LocalizationContext';
@@ -42,24 +39,12 @@ const DashboardPage = () => {
     const [orders, setOrders] = useState([]);
     const [loadingOrders, setLoadingOrders] = useState(true);
     const [ordersError, setOrdersError] = useState('');
-    const [filters, setFilters] = useState({
-        paid: '', overdue: '', customerName: '', status: '', receiptNumber: '', customerPhone: '',
-        page: 1, pageSize: 10,
-    });
-    const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalOrders: 0 });
     const [stats, setStats] = useState({ total: 0, pending: 0, ready: 0, overdue: 0 });
 
     const [dailyTotalPayments, setDailyTotalPayments] = useState(0);
     const [loadingDailyPayments, setLoadingDailyPayments] = useState(true);
     const [dailyPaymentsError, setDailyPaymentsError] = useState('');
 
-    const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
-    const [paymentAmountInput, setPaymentAmountInput] = useState('');
-    const [paymentSubmitting, setPaymentSubmitting] = useState(false);
-    const [paymentError, setPaymentError] = useState('');
-    const [paymentSuccess, setPaymentSuccess] = useState('');
-    const [showFilters, setShowFilters] = useState(false);
     const navigate = useNavigate();
     const { startTour } = useAppTour();
     const walletBalance = user?.tenant?.walletBalance ?? 0;
@@ -77,38 +62,23 @@ const DashboardPage = () => {
         setLoadingOrders(true);
         setOrdersError('');
         try {
-            const { data } = await fetchOrders(filters);
-
-            if (data && Array.isArray(data.orders)) {
-                setOrders(data.orders);
-            } else {
-                setOrders([]);
-                console.warn("[DashboardPage] API response 'data.orders' is not an array or is missing.");
-            }
-            setPagination({
-                currentPage: data.page || 1,
-                totalPages: data.pages || 0,
-                totalOrders: data.totalOrders || 0,
+            const { data } = await fetchDashboardOrderSummary();
+            setOrders(Array.isArray(data?.recentOrders) ? data.recentOrders : []);
+            setStats({
+                total: data.totalOrders ?? 0,
+                pending: data.pendingCount ?? 0,
+                ready: data.readyCount ?? 0,
+                overdue: data.overdueCount ?? 0,
             });
         } catch (err) {
             const errMsg = err.response?.data?.message || t('dashboard.ordersError');
             setOrdersError(errMsg);
             setOrders([]);
-            setPagination({ currentPage: 1, totalPages: 0, totalOrders: 0 });
+            setStats({ total: 0, pending: 0, ready: 0, overdue: 0 });
         } finally {
             setLoadingOrders(false);
         }
-    }, [filters, t]);
-
-    // Calculate stats based on the currently fetched page of orders
-    useEffect(() => {
-        setStats({
-            total: pagination.totalOrders, // This is the grand total from backend
-            pending: orders.filter(o => ['Pending', 'Processing'].includes(o.status)).length,
-            ready: orders.filter(o => o.status === 'Ready for Pickup').length,
-            overdue: orders.filter(o => o.expectedPickupDate && isPast(parseISO(o.expectedPickupDate)) && !['Completed', 'Cancelled'].includes(o.status)).length,
-        });
-    }, [orders, pagination.totalOrders]);
+    }, [t]);
 
      const loadDailyPayments = useCallback(async () => {
         // Only admins can see sales data
@@ -131,108 +101,15 @@ const DashboardPage = () => {
 
     // --- MAIN useEffect TO LOAD ALL DASHBOARD DATA ---
     useEffect(() => {
-        loadOrders(filters);
+        loadOrders();
         loadDailyPayments();
-         trackEvent('ViewContent', {
+        trackEvent('ViewContent', {
             content_name: 'Dashboard',
             content_category: 'Management',
         });
-    }, [filters, loadOrders, loadDailyPayments]);
+    }, [loadOrders, loadDailyPayments]);
 
-    const handleFilterChange = (newFilters) => setFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
-    const handleResetFilters = () => setFilters({ paid: '', overdue: '', customerName: '', status: '', receiptNumber: '', customerPhone: '', page: 1, pageSize: 10 });
-    const handlePageChange = (newPage) => {
-        if (newPage >= 1 && newPage <= pagination.totalPages && newPage !== pagination.currentPage && !loadingOrders) {
-            setFilters(prev => ({ ...prev, page: newPage }));
-        }
-    };
-
-    // This function is passed to OrderTable and potentially to a payment modal
-    const handleOrderPaymentUpdated = (updatedOrder) => {
-        // Update the specific order in the local 'orders' state
-        setOrders(prevOrders =>
-            prevOrders.map(o => (o._id === updatedOrder._id ? updatedOrder : o))
-        );
-        // If a payment was made, refresh daily sales (could also just add to existing total if API returns payment amount)
-        if (updatedOrder.isFullyPaid || (selectedOrderForPayment && updatedOrder.amountPaid > selectedOrderForPayment.amountPaid)) {
-            loadDailyPayments();
-        }
-        setSelectedOrderForPayment(updatedOrder); // Keep modal updated if still open
-    };
-
-    // --- Payment Modal Logic ---
-    const handleOpenPaymentModal = (order) => {
-        setSelectedOrderForPayment(order);
-        setPaymentAmountInput(''); setPaymentError(''); setPaymentSuccess('');
-        setShowPaymentModal(true);
-    };
-    const handleClosePaymentModal = () => { setShowPaymentModal(false); setSelectedOrderForPayment(null); };
-    const handlePaymentSubmit = async () => {
-        if (!selectedOrderForPayment || !paymentAmountInput) { setPaymentError(t('dashboard.paymentAmountRequired')); return; }
-        const amountToRecord = parseFloat(paymentAmountInput);
-        if (isNaN(amountToRecord) || amountToRecord <= 0) { setPaymentError(t('dashboard.validAmountRequired')); return; }
-
-        setPaymentSubmitting(true); setPaymentError(''); setPaymentSuccess('');
-        try {
-            const currentOrder = selectedOrderForPayment;
-            const newTotalAmountPaid = (currentOrder.amountPaid || 0) + amountToRecord;
-
-            if (newTotalAmountPaid > currentOrder.totalAmount) {
-                console.warn("Payment exceeds total amount due. Backend should handle this.");
-            }
-
-            const { data: updatedOrderFromAPI } = await updateExistingOrder(currentOrder._id, {
-                amountPaid: newTotalAmountPaid
-            });
-            setPaymentSuccess(t('dashboard.paymentSuccess', {
-                amount: `${currencySymbol}${amountToRecord.toFixed(2)}`,
-                receiptNumber: updatedOrderFromAPI.receiptNumber
-            }));
-            handleOrderPaymentUpdated(updatedOrderFromAPI);
-            setTimeout(handleClosePaymentModal, 2000);
-        } catch (err) {
-            setPaymentError(err.response?.data?.message || t('dashboard.paymentError'));
-        } finally {
-            setPaymentSubmitting(false);
-        }
-    };
-
-    // --- Content for Order List ---
-    let ordersContent;
-    if (loadingOrders && orders.length === 0 && !ordersError) {
-        ordersContent = <div className="flex justify-center items-center h-64"><Spinner size="lg" /></div>;
-    } else if (ordersError) {
-        ordersContent = <div className="p-4 text-center text-apple-red bg-red-50 dark:bg-red-900/30 rounded-apple"><AlertTriangle size={24} className="mx-auto mb-2" />{ordersError}</div>;
-    } else if (!loadingOrders && orders.length === 0) {
-        ordersContent = <div className="py-10 text-center text-apple-gray-500 dark:text-apple-gray-400">{t('dashboard.noOrdersFound')}</div>;
-    } else {
-        ordersContent = (
-            <>
-
-                {loadingOrders && orders.length > 0 && (<div className="absolute inset-0 bg-white/50 dark:bg-black/50 flex items-center justify-center z-10 rounded-b-apple-lg"><Spinner /></div>)}
-                <OrderTable orders={orders} onRecordPaymentClick={handleOpenPaymentModal} />
-                {pagination.totalOrders > 0 && pagination.totalPages > 1 && (
-                    <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-2">
-                        <span className="text-sm text-apple-gray-600 dark:text-apple-gray-400">
-                            {t('dashboard.pageInfo', {
-                                currentPage: pagination.currentPage,
-                                totalPages: pagination.totalPages,
-                                totalOrders: pagination.totalOrders
-                            })}
-                        </span>
-                        <div className="flex space-x-2">
-                            <Button onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={pagination.currentPage === 1 || loadingOrders} variant="secondary" size="sm">
-                                {t('dashboard.previous')}
-                            </Button>
-                            <Button onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={pagination.currentPage >= pagination.totalPages || loadingOrders} variant="secondary" size="sm">
-                                {t('dashboard.next')}
-                            </Button>
-                        </div>
-                    </div>
-                )}
-            </>
-        );
-    }
+    const previewOrders = orders;
 
 
 
@@ -240,10 +117,12 @@ const DashboardPage = () => {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h1 className="text-2xl sm:text-3xl font-semibold text-apple-gray-800 dark:text-apple-gray-100">{t('dashboard.title')}</h1>
-                <div className="flex items-center space-x-2">
-                    <Button onClick={() => setShowFilters(prev => !prev)} variant="secondary" size="md" iconLeft={<FilterIcon size={16} />}>
-                        {t('dashboard.filters')} {showFilters ? t('dashboard.filtersHide') : t('dashboard.filtersShow')}
-                    </Button>
+                <div className="flex items-center flex-wrap gap-2">
+                    <Link to={navPath('/app/orders')}>
+                        <Button variant="secondary" size="md" iconLeft={<ClipboardList size={18} />}>
+                            {t('dashboard.viewAllOrders')}
+                        </Button>
+                    </Link>
                     <Link to="/app/orders/new">
                         <Button variant="primary" size="md" iconLeft={<PlusCircle size={18} />}>
                             {t('dashboard.createNewOrder')}
@@ -276,6 +155,13 @@ const DashboardPage = () => {
                 <Card className="lg:col-span-2 shadow-apple-sm" title={t('dashboard.quickLinks')}>
                     <p className="text-sm text-apple-gray-600 dark:text-apple-gray-400 mb-4">{t('dashboard.quickLinksDesc')}</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <Link
+                            to={navPath('/app/orders')}
+                            className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
+                        >
+                            <ClipboardList size={22} className="text-apple-blue" />
+                            <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.orders')}</span>
+                        </Link>
                         <Link
                             to={navPath('/app/orders/new')}
                             className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
@@ -320,6 +206,13 @@ const DashboardPage = () => {
                                     <Store size={22} className="text-apple-blue" />
                                     <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.businessProfile')}</span>
                                 </Link>
+                                <Link
+                            to={navPath('/app/admin/pricing')}
+                            className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
+                        >
+                            <Tags size={22} className="text-apple-blue" />
+                            <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.admin.servicesPricing')}</span>
+                        </Link>
                                {/*<Link
                                     to={navPath('/app/admin/settings')}
                                     className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
@@ -376,9 +269,9 @@ const DashboardPage = () => {
                 )}
                 <StatCard
                     title={t('dashboard.totalOrders')}
-                    value={String(pagination.totalOrders)}
+                    value={String(stats.total)}
                     icon={<Shirt size={24} className="text-apple-blue" />}
-                    isLoading={loadingOrders && pagination.totalOrders === 0 && !ordersError}
+                    isLoading={loadingOrders && stats.total === 0 && !ordersError}
                 />
                 <StatCard
                     title={t('dashboard.pendingProcessing')}
@@ -402,58 +295,35 @@ const DashboardPage = () => {
             </div>
             {dailyPaymentsError && <p className="text-xs text-center text-red-500 mt-1">{dailyPaymentsError}</p>}
 
-            {showFilters && (
-                <Card title={t('dashboard.filterOrders')} className="mb-6">
-                    <FilterControls filters={filters} onFilterChange={handleFilterChange} onResetFilters={handleResetFilters} onApplyFilters={loadOrders} />
-                </Card>
-            )}
-
-            <Card title={t('dashboard.orderList')} className="overflow-visible relative" contentClassName="p-0 sm:p-0">
-                <div className="px-4 sm:px-6 pb-6 relative">
-                    {ordersContent}
+            <Card title={t('dashboard.recentOrders')} className="overflow-visible relative" contentClassName="p-0 sm:p-0">
+                <div className="px-4 sm:px-6 pt-2 pb-6">
+                    <p className="text-sm text-apple-gray-600 dark:text-apple-gray-400 mb-4">{t('dashboard.recentOrdersDesc')}</p>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        <Link to="/app/orders?tab=active">
+                            <Button variant="primary" size="sm">{t('ordersList.tabs.active')}</Button>
+                        </Link>
+                        {stats.overdue > 0 && (
+                            <Link to="/app/orders?tab=overdue">
+                                <Button variant="secondary" size="sm" iconLeft={<AlertTriangle size={14} />}>
+                                    {t('ordersList.tabs.overdue')} ({stats.overdue})
+                                </Button>
+                            </Link>
+                        )}
+                        <Link to="/app/orders">
+                            <Button variant="secondary" size="sm">{t('dashboard.viewAllOrders')}</Button>
+                        </Link>
+                    </div>
+                    {loadingOrders && previewOrders.length === 0 ? (
+                        <div className="flex justify-center py-12"><Spinner size="lg" /></div>
+                    ) : ordersError ? (
+                        <p className="text-sm text-apple-red text-center py-6">{ordersError}</p>
+                    ) : previewOrders.length === 0 ? (
+                        <p className="text-sm text-apple-gray-500 text-center py-6">{t('dashboard.noOrdersFound')}</p>
+                    ) : (
+                        <OrderTable orders={previewOrders} />
+                    )}
                 </div>
             </Card>
-
-            {showPaymentModal && selectedOrderForPayment && (
-                <Modal
-                    isOpen={showPaymentModal}
-                    onClose={handleClosePaymentModal}
-                    title={t('dashboard.recordPayment', { receiptNumber: selectedOrderForPayment.receiptNumber })}
-                    size="md"
-                >
-                    <div className="space-y-4">
-                        {paymentSuccess && <p className="p-3 text-sm bg-green-100 text-apple-green rounded-apple flex items-center"><CheckCircle2 size={18} className="mr-2" />{paymentSuccess}</p>}
-                        {paymentError && <p className="p-3 text-sm bg-red-100 text-apple-red rounded-apple flex items-center"><AlertTriangle size={18} className="mr-2" />{paymentError}</p>}
-                        <div>
-                            <p className="text-sm"><strong>{t('dashboard.customer')}:</strong> {selectedOrderForPayment.customer?.name}</p>
-                            <p className="text-sm"><strong>{t('dashboard.totalAmount')}:</strong> {currencySymbol}{(selectedOrderForPayment.totalAmount || 0).toFixed(2)}</p>
-                            <p className="text-sm"><strong>{t('dashboard.currentlyPaid')}:</strong> {currencySymbol}{(selectedOrderForPayment.amountPaid || 0).toFixed(2)}</p>
-                            <p className="text-sm font-semibold">{t('dashboard.balanceDue')}: {currencySymbol}{Math.max(0, (selectedOrderForPayment.totalAmount || 0) - (selectedOrderForPayment.amountPaid || 0)).toFixed(2)}</p>
-                        </div>
-                        <Input
-                            label={t('dashboard.paymentAmountToAdd')}
-                            id="paymentAmountInputModal"
-                            type="number"
-                            value={paymentAmountInput}
-                            onChange={(e) => setPaymentAmountInput(e.target.value)}
-                            placeholder={t('dashboard.enterAmount')}
-                            min="0.01"
-                            step="0.01"
-                            disabled={paymentSubmitting}
-                            required
-                            autoFocus
-                        />
-                        <div className="mt-6 flex justify-end space-x-3">
-                            <Button variant="secondary" onClick={handleClosePaymentModal} disabled={paymentSubmitting}>
-                                {t('dashboard.cancel')}
-                            </Button>
-                            <Button variant="primary" onClick={handlePaymentSubmit} isLoading={paymentSubmitting} disabled={paymentSubmitting}>
-                                {t('dashboard.submitPayment')}
-                            </Button>
-                        </div>
-                    </div>
-                </Modal>
-            )}
         </div>
     );
 };

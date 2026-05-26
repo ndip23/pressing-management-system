@@ -125,6 +125,7 @@ export const fetchOrders = async (filters = {}) => {
   }, {});
   return api.get('/orders', { params: validFilters });
 };
+export const fetchDashboardOrderSummary = () => api.get('/orders/dashboard-summary');
 export const fetchOrderById = orderId => api.get(`/orders/${orderId}`);
 export const createNewOrder = orderData => api.post('/orders', orderData);
 export const updateExistingOrder = (orderId, orderData) =>

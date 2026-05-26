@@ -22,7 +22,7 @@ const WalletOnboardingPromptPage = () => {
     if (isWalletFunded(user?.tenant)) {
       navigate('/app/onboarding/business-profile', { replace: true });
     }
-  }, [user?.tenant?.walletBalance, navigate]);
+  }, [user?.tenant?.walletBalance, navigate, user?.tenant]);
 
   return (
     <div className="min-h-[calc(100vh-8rem)] flex flex-col">

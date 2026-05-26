@@ -3,6 +3,7 @@ import express from 'express';
 import {
     createOrder,
     getOrders,
+    getDashboardOrderSummary,
     getOrderById,
     updateOrder,
     deleteOrder,
@@ -17,6 +18,8 @@ import { checkSubscription } from '../middleware/subscriptionCheckMiddleware.js'
 import { canCreateOrder } from '../middleware/usageLimitMiddleware.js';
 import { body, validationResult } from 'express-validator';
 const router = express.Router();
+
+router.get('/dashboard-summary', protect, getDashboardOrderSummary);
 
 router.route('/')
     .post(protect,checkSubscription, canCreateOrder, createOrder)

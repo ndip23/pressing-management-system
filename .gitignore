@@ -1,10 +1,42 @@
-# OSX
-#
-.DS_Store
+# Dependencies
+node_modules/
+**/node_modules/
+**/node_modules/.cache/
 
-# Xcode
-#
+# Environment & secrets — never commit
+.env
+.env.*
+!.env.example
+backend/.env
+server/.env
+client/.env
+client/.env.local
+client/.env.*.local
+
+# Build output
 build/
+client/build/
+directory/build/
+dist/
+*.map
+
+# Logs & OS
+npm-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Seeds / local scripts with credentials
+server/seedAdmin.js
+server/seedDirectoryAdmin.js
+server/.hashPassword.js
+
+# Mobile / legacy (keep existing ignores)
 *.pbxuser
 !default.pbxuser
 *.mode1v3
@@ -21,11 +53,6 @@ DerivedData
 *.ipa
 *.xcuserstate
 **/.xcode.env.local
-
-# Android/IntelliJ
-#
-build/
-.idea
 .gradle
 local.properties
 *.iml
@@ -34,47 +61,20 @@ local.properties
 *.keystore
 !debug.keystore
 .kotlin/
-.env
-
-# node.js
-#
-node_modules/
-npm-debug.log
-yarn-error.log
 /uml diagrams
 /desktop-app
-/node_modules
-# fastlane
-#
-# It is recommended to not store the screenshots in the git repo. Instead, use fastlane to re-generate the
-# screenshots whenever they are needed.
-# For more information about the recommended setup visit:
-# https://docs.fastlane.tools/best-practices/source-control/
-
 **/fastlane/report.xml
 **/fastlane/Preview.html
 **/fastlane/screenshots
 **/fastlane/test_output
-
-# Bundle artifact
 *.jsbundle
-
-# Ruby / CocoaPods
 **/Pods/
 /vendor/bundle/
-
-# Temporary files created by Metro to check the health of the file watcher
 .metro-health-check*
-
-# testing
 /coverage
-
-# Yarn
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
-.env
-backend/.env

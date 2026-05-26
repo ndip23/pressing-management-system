@@ -1,40 +1,44 @@
-// server/routes/webhookRoutes.js
 import express from 'express';
+import twilio from 'twilio';
 import { handleTwilioWhatsapp, accountPeWebhook, accountPeRedirect } from '../controllers/webhookController.js';
-// Optional but HIGHLY recommended: Twilio's request validation middleware
-// import twilio from 'twilio';
 
 const router = express.Router();
 
-// Middleware to validate that the request is genuinely from Twilio
-// This prevents others from spamming your webhook endpoint.
 const validateTwilioRequest = (req, res, next) => {
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const baseUrl = process.env.TWILIO_WEBHOOK_BASE_URL || process.env.RENDER_EXTERNAL_URL;
+
+    if (!authToken || !baseUrl) {
+        if (process.env.NODE_ENV === 'production') {
+            console.error('[Twilio Webhook] TWILIO_AUTH_TOKEN or TWILIO_WEBHOOK_BASE_URL missing — rejecting.');
+            return res.status(503).send('Webhook validation not configured');
+        }
+        return next();
+    }
+
     const twilioSignature = req.headers['x-twilio-signature'];
-    const url = process.env.RENDER_EXTERNAL_URL + req.originalUrl; // You need your full public URL
-    const params = req.body;
-    
+    const url = `${baseUrl.replace(/\/$/, '')}${req.originalUrl}`;
     const requestIsValid = twilio.validateRequest(
-        process.env.TWILIO_AUTH_TOKEN,
+        authToken,
         twilioSignature,
         url,
-        params
+        req.body
     );
 
     if (requestIsValid) {
-        next();
-    } else {
-        console.warn('[Twilio Webhook] Invalid Twilio signature. Request rejected.');
-        res.status(403).send('Forbidden');
+        return next();
     }
+    console.warn('[Twilio Webhook] Invalid Twilio signature. Request rejected.');
+    return res.status(403).send('Forbidden');
 };
 
-// Twilio sends data as 'application/x-www-form-urlencoded', so we need the urlencoded parser.
-// The `validateTwilioRequest` middleware should come after the parser.
-router.post('/twilio-whatsapp', express.urlencoded({ extended: false }), /* validateTwilioRequest, */ handleTwilioWhatsapp);
+router.post(
+    '/twilio-whatsapp',
+    express.urlencoded({ extended: false }),
+    validateTwilioRequest,
+    handleTwilioWhatsapp
+);
 router.get('/accountpe', accountPeRedirect);
 router.post('/accountpe', express.raw({ type: 'application/json' }), accountPeWebhook);
-// NOTE: I've commented out `validateTwilioRequest` for now. To make it work, you need to
-// set `RENDER_EXTERNAL_URL` in your Render environment variables (e.g., https://your-backend.onrender.com).
-// It's easier to get the basic functionality working first, then add validation.
 
 export default router;

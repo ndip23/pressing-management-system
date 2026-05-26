@@ -29,8 +29,15 @@ export const getGalleryByTenant = asyncHandler(async (req, res) => {
 
 export const deleteGalleryImage = asyncHandler(async (req, res) => {
     const image = await Gallery.findById(req.params.id);
-    if (!image) throw new Error('Image not found');
-    
+    if (!image) {
+        res.status(404);
+        throw new Error('Image not found');
+    }
+    if (image.tenantId?.toString() !== req.tenantId?.toString()) {
+        res.status(403);
+        throw new Error('Not authorized to delete this image.');
+    }
+
     // Safely destroy the image
     if (image.cloudinaryId) {
         await cloudinary.uploader.destroy(image.cloudinaryId);

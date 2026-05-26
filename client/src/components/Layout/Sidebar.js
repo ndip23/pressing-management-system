@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
     LayoutDashboard,
     PlusCircle,
+    ClipboardList,
     Users,      // Using Users icon for "Customers" link
     Settings,   // For Admin settings
     Package,    // For Logo
@@ -12,7 +13,6 @@ import {
     X,
     KeyRound,
     Tags,
-    Inbox,
     LogOut,
     Zap,
     Store,
@@ -93,6 +93,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
                 <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto custom-scrollbar"> {/* Added custom-scrollbar if you defined it */}
                      <NavItem to={navTo('/app/dashboard')} icon={LayoutDashboard} end={true}>{t('sidebar.navigation.dashboard')}</NavItem>
+                    <NavItem to={navTo('/app/orders')} icon={ClipboardList}>{t('sidebar.navigation.orders')}</NavItem>
                     <NavItem to={navTo('/app/orders/new')} icon={PlusCircle}>{t('sidebar.navigation.newOrder')}</NavItem>
                     <NavItem to={navTo('/app/customers')} icon={Users}>{t('sidebar.navigation.customers')}</NavItem>
                     <NavItem to={onboardingLocked && onboardingStep === 'wallet' ? '/app/wallet/select-country' : '/app/wallet'} icon={Zap}>{t('sidebar.navigation.wallet')}</NavItem>

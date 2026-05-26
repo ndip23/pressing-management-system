@@ -1,9 +1,6 @@
 // client/src/App.js
 import React, { Suspense, lazy } from 'react';
-import AOS from "aos";
-import "aos/dist/aos.css";
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import PixelTracker from "./components/PixelTracker";
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom'; 
 import { useAuth } from './contexts/AuthContext';
 import { DirectoryAuthProvider } from './contexts/DirectoryAuthContext';
 import MainLayout from './components/Layout/MainLayout';
@@ -25,6 +22,7 @@ const PricingPage = lazy(() => import('./pages/Public/PricingPage'));
 const DirectoryPage = lazy(() => import('./pages/Public/DirectoryPage'));
 const BusinessProfilePage = lazy(() => import('./pages/Public/BusinessProfilePage'));
 const DashboardPage = lazy(() => import('./pages/Dashboard/DashboardPage'));
+const OrdersListPage = lazy(() => import('./pages/Orders/OrdersListPage'));
 const CreateOrderPage = lazy(() => import('./pages/Orders/CreateOrderPage'));
 const OrderDetailsPage = lazy(() => import('./pages/Orders/OrderDetailsPage'));
 const EditOrderPage = lazy(() => import('./pages/Orders/EditOrderPage'));
@@ -49,6 +47,8 @@ const VerifyPaymentPage = lazy(() => import('./pages/Public/VerifyPaymentPage'))
 const VerifyUpgradePage = lazy(() => import('./pages/Public/VerifyUpgradePage'));
 const ContactPage = lazy(() => import('./pages/Public/ContactPage')); 
 const PaymentPage = lazy(() => import('./pages/Public/PaymentPage'));
+const TermsPage = lazy(() => import('./pages/Public/TermsPage'));
+const PrivacyPage = lazy(() => import('./pages/Public/PrivacyPage'));
 
 
 const ProtectedRoute = ({ children, allowInactive = false }) => {
@@ -79,82 +79,80 @@ const AdminRoute = ({ children }) => {
 };
 
 function App() {
-    React.useEffect(() => { AOS.init({ duration: 600, offset: 80, once: true, mirror: false }); }, []);
-
     return (
-        <Router>
-            <PixelTracker />
-            <DirectoryAuthProvider>
-                <Suspense fallback={<div className="flex h-screen items-center justify-center"><Spinner size="lg" /></div>}>
-                    <Routes>
-                        <Route element={<DirectoryLayout />}>
-                            <Route path="/" element={<DirectoryPage />} />
-                            <Route path="/directory" element={<DirectoryPage />} />
-                            <Route path="/directory/:slug" element={<BusinessProfilePage />} />
-                        </Route>
+        <DirectoryAuthProvider>
+            <Suspense fallback={<div className="flex h-screen items-center justify-center"><Spinner size="lg" /></div>}>
+                <Routes>
+                    <Route element={<DirectoryLayout />}>
+                        <Route path="/" element={<DirectoryPage />} />
+                        <Route path="/directory" element={<DirectoryPage />} />
+                        <Route path="/directory/:slug" element={<BusinessProfilePage />} />
+                    </Route>
 
-                        <Route element={<PublicLayout />}>
-                            <Route path="/add-your-buisness" element={<LandingPage />} />
-                            <Route path="/features" element={<FeaturesPage />} />
-                            <Route path="/pricing" element={<PricingPage />} />
-                            <Route path="/signup" element={<SignUpPage />} />
-                            <Route path="/demo" element={<SignUpPage />} />
-                            <Route path="/login" element={<LoginPage />} />
-                            <Route path="/contact" element={<ContactPage />} />
-                            <Route path="/payment" element={<PaymentPage />} /> 
-                            <Route path="/verify-payment" element={<VerifyPaymentPage />} />    
-                            <Route path="/verify-upgrade" element={<VerifyUpgradePage />} /> 
-                        </Route>
+                    <Route element={<PublicLayout />}>
+                        <Route path="/add-your-buisness" element={<LandingPage />} />
+                        <Route path="/features" element={<FeaturesPage />} />
+                        <Route path="/pricing" element={<PricingPage />} />
+                        <Route path="/signup" element={<SignUpPage />} />
+                        <Route path="/demo" element={<SignUpPage />} />
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route path="/contact" element={<ContactPage />} />
+                        <Route path="/payment" element={<PaymentPage />} /> 
+                        <Route path="/terms" element={<TermsPage />} />
+                        <Route path="/privacy" element={<PrivacyPage />} />
+                        <Route path="/verify-payment" element={<VerifyPaymentPage />} />    
+                        <Route path="/verify-upgrade" element={<VerifyUpgradePage />} /> 
+                    </Route>
 
-                        {/* --- PROTECTED APP --- */}
-                        <Route path="/app" element={<ProtectedRoute allowInactive={true}><MainLayout /></ProtectedRoute>}>
-                            <Route index element={<OnboardingRedirect />} />
-                            <Route path="subscription" element={<AppSubscriptionPage />} />
-                            <Route path="onboarding">
-                                <Route path="wallet" element={<OnboardingStepGuard requiredStep="wallet"><WalletOnboardingPromptPage /></OnboardingStepGuard>} />
-                                <Route path="business-profile" element={<OnboardingStepGuard requiredStep="profile"><BusinessProfileSetupPage /></OnboardingStepGuard>} />
-                                <Route path="services-pricing" element={<OnboardingStepGuard requiredStep="pricing"><AdminPricingPage /></OnboardingStepGuard>} />
-                            </Route>
-                            <Route path="wallet">
-                                <Route path="select-country" element={<OnboardingStepGuard requiredStep="wallet" allowWhenComplete><WalletPaymentCountryPage /></OnboardingStepGuard>} />
-                                <Route index element={<OnboardingStepGuard requiredStep="wallet" allowWhenComplete><WalletTopUpPage /></OnboardingStepGuard>} />
-                            </Route>
-                            <Route element={<ProtectedRoute />}>
-                                <Route element={<OnboardingGate />}>
-                                <Route path="dashboard" element={<DashboardPage />} />
-                                <Route path="orders/new" element={<CreateOrderPage />} />
-                                <Route path="orders/:id" element={<OrderDetailsPage />} />
-                                <Route path="orders/:id/edit" element={<EditOrderPage />} />
-                                <Route path="customers" element={<CustomerListPage />} />
-                                <Route path="customers/new" element={<CustomerFormPage mode="create" />} />
-                                <Route path="customers/:id/edit" element={<CustomerFormPage mode="edit" />} />
-                                <Route path="customers/:id/details" element={<CustomerDetailsPage />} />
-                                <Route path="payments" element={<DailyPaymentsPage />} />
-                                <Route path="inbox" element={<InboxPage />} />
-                                <Route path="profile" element={<ProfilePage />} />
-                                <Route path="business-profile" element={<BusinessProfileSetupPage />} />
-                                </Route>
-                            </Route>
-                            <Route path="admin" element={<AdminRoute />}>
-                                <Route element={<OnboardingGate />}>
-                                    <Route index element={<Navigate to="settings" replace />} />
-                                    <Route path="settings" element={<SettingsPage />}/>
-                                    <Route path="pricing" element={<AdminPricingPage />}/>
-                                    <Route path="users" element={<ManageUsersPage />}/>
-                                    <Route path="directory" element={<ManageDirectoryPage />}/>
-                                </Route>
+                    {/* --- PROTECTED APP --- */}
+                    <Route path="/app" element={<ProtectedRoute allowInactive={true}><MainLayout /></ProtectedRoute>}>
+                        <Route index element={<OnboardingRedirect />} />
+                        <Route path="subscription" element={<AppSubscriptionPage />} />
+                        <Route path="onboarding">
+                            <Route path="wallet" element={<OnboardingStepGuard requiredStep="wallet"><WalletOnboardingPromptPage /></OnboardingStepGuard>} />
+                            <Route path="business-profile" element={<OnboardingStepGuard requiredStep="profile"><BusinessProfileSetupPage /></OnboardingStepGuard>} />
+                            <Route path="services-pricing" element={<OnboardingStepGuard requiredStep="pricing"><AdminPricingPage /></OnboardingStepGuard>} />
+                        </Route>
+                        <Route path="wallet">
+                            <Route path="select-country" element={<OnboardingStepGuard requiredStep="wallet" allowWhenComplete><WalletPaymentCountryPage /></OnboardingStepGuard>} />
+                            <Route index element={<OnboardingStepGuard requiredStep="wallet" allowWhenComplete><WalletTopUpPage /></OnboardingStepGuard>} />
+                        </Route>
+                        <Route element={<ProtectedRoute />}>
+                            <Route element={<OnboardingGate />}>
+                            <Route path="dashboard" element={<DashboardPage />} />
+                            <Route path="orders" element={<OrdersListPage />} />
+                            <Route path="orders/new" element={<CreateOrderPage />} />
+                            <Route path="orders/:id" element={<OrderDetailsPage />} />
+                            <Route path="orders/:id/edit" element={<EditOrderPage />} />
+                            <Route path="customers" element={<CustomerListPage />} />
+                            <Route path="customers/new" element={<CustomerFormPage mode="create" />} />
+                            <Route path="customers/:id/edit" element={<CustomerFormPage mode="edit" />} />
+                            <Route path="customers/:id/details" element={<CustomerDetailsPage />} />
+                            <Route path="payments" element={<DailyPaymentsPage />} />
+                            <Route path="inbox" element={<InboxPage />} />
+                            <Route path="profile" element={<ProfilePage />} />
+                            <Route path="business-profile" element={<BusinessProfileSetupPage />} />
                             </Route>
                         </Route>
+                        <Route path="admin" element={<AdminRoute />}>
+                            <Route element={<OnboardingGate />}>
+                                <Route index element={<Navigate to="settings" replace />} />
+                                <Route path="settings" element={<SettingsPage />}/>
+                                <Route path="pricing" element={<AdminPricingPage />}/>
+                                <Route path="users" element={<ManageUsersPage />}/>
+                                <Route path="directory" element={<ManageDirectoryPage />}/>
+                            </Route>
+                        </Route>
+                    </Route>
 
-                        <Route path="/directory-admin/login" element={<DirectoryAdminLoginPage />} />
-                        <Route element={<DirectoryAdminRoute />}>
-                            <Route path="/directory-admin/dashboard" element={<DirectoryAdminDashboard />} />
-                        </Route>
-                        
-                    </Routes>
-                </Suspense>
-            </DirectoryAuthProvider>
-        </Router>
+                    <Route path="/directory-admin/login" element={<DirectoryAdminLoginPage />} />
+                    <Route element={<DirectoryAdminRoute />}>
+                        <Route path="/directory-admin/dashboard" element={<DirectoryAdminDashboard />} />
+                    </Route>
+                    
+                </Routes>
+            </Suspense>
+        </DirectoryAuthProvider>
     );
 }
 

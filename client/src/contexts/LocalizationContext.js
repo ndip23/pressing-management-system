@@ -1,4 +1,4 @@
-// client/src/context/LocalizationContext.js
+// client/src/contexts/LocalizationContext.js
 
 import React, {
   createContext,
@@ -6,13 +6,14 @@ import React, {
   useEffect,
   useContext,
   useCallback,
+  useRef,
 } from 'react';
-import api from '../services/api'; // Your centralized axios instance
+import { useLocation } from 'react-router-dom';
+import api from '../services/api';
 import { useAppSettings } from './SettingsContext';
 
 const LocalizationContext = createContext();
 
-// Expanded currency symbols map
 const currencySymbols = {
   USD: '$',
   EUR: '€',
@@ -27,38 +28,58 @@ const currencySymbols = {
   ZWL: 'Z$',
 };
 
+const PAGES_NEEDING_RATES = ['/pricing', '/payment', '/signup', '/demo', '/add-your-buisness'];
+
 export const LocalizationProvider = ({ children }) => {
-  const [location, setLocation] = useState(null);
-  const [rates, setRates] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [location, setLocation] = useState({ country: 'US', currency: 'USD' });
+  const [rates, setRates] = useState({ USD: 1 });
+  const [loading, setLoading] = useState(false);
   const { settings, loadingSettings } = useAppSettings();
+  const routeLocation = useLocation();
+  const initializedRef = useRef(false);
 
   useEffect(() => {
+    if (loadingSettings || initializedRef.current) return;
+
+    const needsRates = PAGES_NEEDING_RATES.some((path) =>
+      routeLocation.pathname.startsWith(path)
+    );
+    const currencyCode = settings?.defaultCurrencyCode || 'USD';
+
+    if (!needsRates && currencyCode === 'USD') {
+      setLocation({ country: 'US', currency: 'USD' });
+      setRates({ USD: 1 });
+      initializedRef.current = true;
+      return;
+    }
+
+    initializedRef.current = true;
+    setLoading(true);
+
     const initializeLocalization = async () => {
-      let detectedLocation = { country: 'US', currency: 'USD' };
-
-      const [locationResult, ratesResult] = await Promise.allSettled([
-        api.get('/currency/geolocate'),
-        api.get('/currency/rates'),
-      ]);
-
-      if (locationResult.status === 'fulfilled' && locationResult.value.data) {
-        detectedLocation = locationResult.value.data;
-      } else if (locationResult.status === 'rejected') {
-        console.warn('Geolocation via backend failed, defaulting to USD.');
+      const requests = [api.get('/currency/rates')];
+      if (needsRates) {
+        requests.unshift(api.get('/currency/geolocate'));
       }
-      setLocation(detectedLocation);
 
-      if (ratesResult.status === 'fulfilled') {
-        setRates(ratesResult.value.data);
+      const results = await Promise.allSettled(requests);
+      let geoIndex = needsRates ? 0 : -1;
+      const ratesIndex = needsRates ? 1 : 0;
+
+      if (geoIndex >= 0 && results[geoIndex]?.status === 'fulfilled' && results[geoIndex].value.data) {
+        setLocation(results[geoIndex].value.data);
       } else {
-        console.error('Failed to fetch currency rates.');
+        setLocation({ country: 'US', currency: currencyCode });
+      }
+
+      if (results[ratesIndex]?.status === 'fulfilled') {
+        setRates(results[ratesIndex].value.data);
       }
       setLoading(false);
     };
 
     initializeLocalization();
-  }, []);
+  }, [loadingSettings, settings?.defaultCurrencyCode, routeLocation.pathname]);
 
   const convertPrice = useCallback(
     usdPrice => {
