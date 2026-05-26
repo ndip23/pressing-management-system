@@ -9,6 +9,7 @@ import React, {
   useRef,
 } from 'react';
 import { useLocation } from 'react-router-dom';
+import axios from 'axios'; // Import axios for browser-level geolocation lookup
 import api from '../services/api';
 import { useAppSettings } from './SettingsContext';
 
@@ -28,11 +29,11 @@ const currencySymbols = {
   ZWL: 'Z$',
 };
 
-const PAGES_NEEDING_RATES = [ '/',
-  '/directory','/pricing', '/payment', '/signup', '/demo', '/add-your-buisness'];
+const PAGES_NEEDING_RATES = [ '/', '/directory', '/pricing', '/payment', '/signup', '/demo', '/add-your-buisness'];
 
 export const LocalizationProvider = ({ children }) => {
-  const [location, setLocation] = useState({ country: 'US', currency: 'USD' });
+  // 🛡️ Change the initial fallback to CM (Cameroon) and XAF
+  const [location, setLocation] = useState({ country: 'CM', currency: 'XAF' });
   const [rates, setRates] = useState({ USD: 1 });
   const [loading, setLoading] = useState(false);
   const { settings, loadingSettings } = useAppSettings();
@@ -45,7 +46,7 @@ export const LocalizationProvider = ({ children }) => {
     const needsRates = PAGES_NEEDING_RATES.some((path) =>
       routeLocation.pathname.startsWith(path)
     );
-    const currencyCode = settings?.defaultCurrencyCode || 'USD';
+    const currencyCode = settings?.defaultCurrencyCode || 'XAF'; // Safe default currency fallback
 
     if (!needsRates && currencyCode === 'USD') {
       setLocation({ country: 'US', currency: 'USD' });
@@ -58,19 +59,45 @@ export const LocalizationProvider = ({ children }) => {
     setLoading(true);
 
     const initializeLocalization = async () => {
+      // Rates are still loaded from your backend API
       const requests = [api.get('/currency/rates')];
-      if (needsRates) {
-        requests.unshift(api.get('/currency/geolocate'));
-      }
-
+      
       const results = await Promise.allSettled(requests);
-      let geoIndex = needsRates ? 0 : -1;
-      const ratesIndex = needsRates ? 1 : 0;
+      const ratesIndex = 0;
 
-      if (geoIndex >= 0 && results[geoIndex]?.status === 'fulfilled' && results[geoIndex].value.data) {
-        setLocation(results[geoIndex].value.data);
+      // 🗺️ Robust Browser-Level Geolocation Fetch (Bypasses backend crashes)
+      if (needsRates) {
+        try {
+          // Cloudflare trace is secure, fast, bypassed by ad-blockers, and works on live domains
+          const traceRes = await axios.get('https://cloudflare.com/cdn-cgi/trace');
+          const traceData = traceRes.data;
+          
+          const locLine = traceData.split('\n').find(line => line.startsWith('loc='));
+          const detectedCountry = locLine ? locLine.split('=')[1] : null;
+
+          if (detectedCountry && detectedCountry !== 'XX') {
+            const currencyMap = {
+              CM: 'XAF',
+              CI: 'XOF',
+              SN: 'XOF',
+              NG: 'NGN',
+              KE: 'KES',
+              GH: 'GHS',
+              US: 'USD',
+            };
+            const matchedCurrency = currencyMap[detectedCountry] || 'USD';
+            
+            setLocation({ country: detectedCountry, currency: matchedCurrency });
+          } else {
+            throw new Error('Could not parse country code');
+          }
+        } catch (geoError) {
+          console.error('Browser geolocation lookup failed, falling back to CM:', geoError.message);
+          // 🛡️ Fallback to Cameroon 'CM' if lookup fails
+          setLocation({ country: 'CM', currency: 'XAF' });
+        }
       } else {
-        setLocation({ country: 'US', currency: currencyCode });
+        setLocation({ country: 'CM', currency: currencyCode });
       }
 
       if (results[ratesIndex]?.status === 'fulfilled') {
