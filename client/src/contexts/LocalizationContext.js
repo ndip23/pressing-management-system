@@ -28,7 +28,8 @@ const currencySymbols = {
   ZWL: 'Z$',
 };
 
-const PAGES_NEEDING_RATES = ['/pricing', '/payment', '/signup', '/demo', '/add-your-buisness'];
+const PAGES_NEEDING_RATES = [ '/',
+  '/directory','/pricing', '/payment', '/signup', '/demo', '/add-your-buisness'];
 
 export const LocalizationProvider = ({ children }) => {
   const [location, setLocation] = useState({ country: 'US', currency: 'USD' });
