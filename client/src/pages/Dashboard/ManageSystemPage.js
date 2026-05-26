@@ -2,7 +2,17 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/UI/Card';
-import { Settings, Users, CreditCard, FolderSearch, ArrowLeft } from 'lucide-react';
+import { 
+  Settings, 
+  Users, 
+  CreditCard, 
+  FolderSearch, 
+  ArrowLeft, 
+  Layers, 
+  Receipt, 
+  Mail, 
+  UserSquare2 
+} from 'lucide-react';
 
 const ManageSystemPage = () => {
   const navigate = useNavigate();
@@ -10,6 +20,7 @@ const ManageSystemPage = () => {
   const isAdmin = user?.role === 'admin';
 
   const managementOptions = [
+    // --- ADMIN REQUIRED CONTROLS ---
     {
       title: 'Store Settings',
       description: 'Configure your laundry business profile, hours, and branding.',
@@ -38,6 +49,35 @@ const ManageSystemPage = () => {
       path: '/app/admin/directory',
       adminRequired: true,
     },
+    // --- WORKSPACE & OPERATIONAL CONTROLS ---
+    {
+      title: 'Subscription Status',
+      description: 'Review plan details, view remaining days, or upgrade your account tier.',
+      icon: <Layers className="text-emerald-500" size={24} />,
+      path: '/app/subscription',
+      adminRequired: false,
+    },
+    {
+      title: 'Transaction History',
+      description: 'Examine payment logs, daily revenue totals, and top-up receipts.',
+      icon: <Receipt className="text-orange-500" size={24} />,
+      path: '/app/payments',
+      adminRequired: false,
+    },
+    {
+      title: 'Messaging Inbox',
+      description: 'Review communications with potential directory leads and clients.',
+      icon: <Mail className="text-indigo-500" size={24} />,
+      path: '/app/inbox',
+      adminRequired: false,
+    },
+    {
+      title: 'Profile Settings',
+      description: 'Update personal security details, login passwords, and contact info.',
+      icon: <UserSquare2 className="text-purple-500" size={24} />,
+      path: '/app/profile',
+      adminRequired: false,
+    },
   ];
 
   return (
@@ -47,6 +87,7 @@ const ManageSystemPage = () => {
         <button 
           onClick={() => navigate('/app/dashboard')}
           className="p-2 rounded-full hover:bg-apple-gray-100 dark:hover:bg-apple-gray-800 transition-colors"
+          title="Back to Dashboard"
         >
           <ArrowLeft size={20} className="text-apple-gray-600 dark:text-apple-gray-300" />
         </button>
@@ -70,7 +111,7 @@ const ManageSystemPage = () => {
               key={index} 
               className={`p-6 transition-all duration-200 ${
                 isLocked 
-                  ? 'opacity-60 cursor-not-allowed' 
+                  ? 'opacity-60 cursor-not-allowed border-dashed' 
                   : 'hover:shadow-apple-lg hover:-translate-y-1 cursor-pointer'
               }`}
               onClick={() => {
@@ -78,14 +119,14 @@ const ManageSystemPage = () => {
               }}
             >
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-apple-blue/10 rounded-2xl">
+                <div className="p-3 bg-apple-gray-50 dark:bg-apple-gray-800/50 rounded-2xl">
                   {option.icon}
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-apple-gray-900 dark:text-white flex items-center gap-2">
-                    {option.title}
+                  <h3 className="text-lg font-semibold text-apple-gray-900 dark:text-white flex items-center justify-between gap-2">
+                    <span>{option.title}</span>
                     {isLocked && (
-                      <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-medium">
+                      <span className="text-xs bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 px-2 py-0.5 rounded-full font-medium">
                         Admin Only
                       </span>
                     )}

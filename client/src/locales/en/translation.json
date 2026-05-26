@@ -8,7 +8,9 @@
       "payments": "Payments",
       "inbox": "Inbox",
       "businessProfile": "Business Profile",
-      "wallet": "Wallet"
+      "wallet": "Wallet",
+      "topup": "Top up Wallet",
+      "manage": "'Management System"
     },
     "help": {
       "title": "Help",

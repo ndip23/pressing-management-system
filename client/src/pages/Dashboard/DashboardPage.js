@@ -9,7 +9,7 @@ import OrderTable from '../../components/Dashboard/OrderTable';
 import { trackEvent } from '../../utils/pixel'; 
 import {
     PlusCircle, AlertTriangle, CheckCircle2, Clock3, Shirt, TrendingUp, ClipboardList,
-    Zap, CreditCard, Store, HelpCircle, CirclePlay, Tags
+    Zap, CreditCard, Store, HelpCircle, CirclePlay, Tags, Inbox, ShieldAlert
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
@@ -156,6 +156,13 @@ const DashboardPage = () => {
                     <p className="text-sm text-apple-gray-600 dark:text-apple-gray-400 mb-4">{t('dashboard.quickLinksDesc')}</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         <Link
+                            to={navPath('/app/manage')}
+                            className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
+                        >
+                            <ShieldAlert size={22} className="text-apple-blue" />
+                            <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.manage')}</span>
+                        </Link>
+                        <Link
                             to={navPath('/app/orders')}
                             className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
                         >
@@ -181,7 +188,7 @@ const DashboardPage = () => {
                             className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
                         >
                             <Zap size={22} className="text-amber-500" />
-                            <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.wallet')}</span>
+                            <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.topup')}</span>
                         </Link>
                         <Link
                             to={navPath('/app/payments')}
