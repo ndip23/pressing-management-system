@@ -78,3 +78,6 @@ local.properties
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat

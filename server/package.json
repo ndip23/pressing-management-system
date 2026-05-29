@@ -5,14 +5,14 @@
   "type": "module",
   "description": "",
   "scripts": {
-    "start": "node --env-file=.env server.js",
-    "server": "nodemon --env-file=.env server.js",
+    "start": "node server.js",
+    "server": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "seed:admin": "node --env-file=.env seedAdmin.js",
-    "seed:dir-admin": "node --env-file=.env seedDirectoryAdmin.js",
-    "seed:dir-admin-destroy": "node --env-file=.env seedDirectoryAdmin.js -d",
-    "data:import": "node --env-file=.env seeder.js",
-    "data:destroy": "node --env-file=.env seeder.js -d"
+    "seed:admin": "node seedAdmin.js",
+    "seed:dir-admin": "node seedDirectoryAdmin.js",
+    "seed:dir-admin-destroy": "node seedDirectoryAdmin.js -d",
+    "data:import": "node seeder.js",
+    "data:destroy": "node seeder.js -d"
   },
   "keywords": [],
   "author": "",
