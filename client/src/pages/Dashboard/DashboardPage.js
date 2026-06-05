@@ -17,7 +17,8 @@ import { useAppSettings } from '../../contexts/SettingsContext';
 import { useLocalization } from '../../contexts/LocalizationContext';
 import { useTranslation } from 'react-i18next';
 import { useAppTour } from '../../contexts/AppTourContext';
-import { getOnboardingStep, getOnboardingPath, isProfileComplete } from '../../utils/onboarding';
+import { useWalletGuard } from '../../contexts/WalletGuardContext';
+import { isProfileComplete } from '../../utils/onboarding';
 
 const StatCard = ({ title, value, icon, colorClass, isLoading }) => (
     <Card className={`shadow-apple-sm ${colorClass || 'bg-white dark:bg-apple-gray-800'}`}>
@@ -47,13 +48,13 @@ const DashboardPage = () => {
 
     const navigate = useNavigate();
     const { startTour } = useAppTour();
+    const { walletFunded, guardClick } = useWalletGuard();
     const walletBalance = user?.tenant?.walletBalance ?? 0;
-    const onboardingStep = getOnboardingStep(user);
-    const onboardingComplete = onboardingStep === 'complete';
-    const onboardingPath = getOnboardingPath(user);
     const profileComplete = isProfileComplete(user?.tenant);
     const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
-    const navPath = (path) => (onboardingComplete ? path : onboardingPath);
+    // Operational links route normally when the wallet is funded; otherwise the
+    // click is intercepted and the refill block is shown.
+    const linkGuard = walletFunded ? undefined : guardClick;
     const { currencySymbol: localizationCurrencySymbol } = useLocalization();
     const currencySymbol = localizationCurrencySymbol || settings?.defaultCurrencySymbol || '$';
     const walletCurrency = '$';
@@ -118,12 +119,12 @@ const DashboardPage = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h1 className="text-2xl sm:text-3xl font-semibold text-apple-gray-800 dark:text-apple-gray-100">{t('dashboard.title')}</h1>
                 <div className="flex items-center flex-wrap gap-2">
-                    <Link to={navPath('/app/orders')}>
+                    <Link to="/app/orders" onClick={linkGuard}>
                         <Button variant="secondary" size="md" iconLeft={<ClipboardList size={18} />}>
                             {t('dashboard.viewAllOrders')}
                         </Button>
                     </Link>
-                    <Link to="/app/orders/new">
+                    <Link to="/app/orders/new" onClick={linkGuard}>
                         <Button variant="primary" size="md" iconLeft={<PlusCircle size={18} />}>
                             {t('dashboard.createNewOrder')}
                         </Button>
@@ -156,42 +157,46 @@ const DashboardPage = () => {
                     <p className="text-sm text-apple-gray-600 dark:text-apple-gray-400 mb-4">{t('dashboard.quickLinksDesc')}</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         <Link
-                            to={navPath('/app/manage')}
+                            to="/app/manage"
+                            onClick={linkGuard}
                             className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
                         >
                             <ShieldAlert size={22} className="text-apple-blue" />
                             <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.manage')}</span>
                         </Link>
                         <Link
-                            to={navPath('/app/orders')}
+                            to="/app/orders"
+                            onClick={linkGuard}
                             className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
                         >
                             <ClipboardList size={22} className="text-apple-blue" />
                             <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.orders')}</span>
                         </Link>
                         <Link
-                            to={navPath('/app/inbox')}
+                            to="/app/inbox"
+                            onClick={linkGuard}
                             className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
                         >
                             <Inbox size={22} className="text-apple-blue" />
                             <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.inbox')}</span>
                         </Link>
                         {/*<Link
-                            to={navPath('/app/customers')}
+                            to="/app/customers"
                             className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
                         >
                             <Users size={22} className="text-apple-blue" />
                             <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.customers')}</span>
                         </Link>*/}
                         <Link
-                            to={onboardingComplete ? '/app/wallet' : (onboardingStep === 'wallet' ? '/app/wallet/select-country' : onboardingPath)}
-                            className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
+                            to={walletFunded ? '/app/wallet' : '/app/wallet/select-country'}
+                            className="flex flex-col items-center gap-2 rounded-apple border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30 p-4 text-center hover:border-amber-400 transition-colors"
                         >
                             <Zap size={22} className="text-amber-500" />
                             <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.topup')}</span>
                         </Link>
                         <Link
-                            to={navPath('/app/payments')}
+                            to="/app/payments"
+                            onClick={linkGuard}
                             className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
                         >
                             <CreditCard size={22} className="text-apple-green" />
@@ -200,21 +205,23 @@ const DashboardPage = () => {
                         {isAdmin && (
                             <>
                                 <Link
-                                    to={navPath('/app/business-profile')}
+                                    to="/app/business-profile"
+                                    onClick={linkGuard}
                                     className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
                                 >
                                     <Store size={22} className="text-apple-blue" />
                                     <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.navigation.businessProfile')}</span>
                                 </Link>
                                 <Link
-                            to={navPath('/app/admin/pricing')}
+                            to="/app/admin/pricing"
+                            onClick={linkGuard}
                             className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
                         >
                             <Tags size={22} className="text-apple-blue" />
                             <span className="text-sm font-medium text-apple-gray-800 dark:text-apple-gray-100">{t('sidebar.admin.servicesPricing')}</span>
                         </Link>
                                {/*<Link
-                                    to={navPath('/app/admin/settings')}
+                                    to="/app/admin/settings"
                                     className="flex flex-col items-center gap-2 rounded-apple border border-apple-gray-200 dark:border-apple-gray-700 bg-apple-gray-50 dark:bg-apple-gray-900/50 p-4 text-center hover:border-apple-blue hover:bg-apple-blue-50 dark:hover:bg-apple-blue-950/30 transition-colors"
                                 >
                                     <Settings size={22} className="text-apple-gray-600" />
@@ -226,32 +233,37 @@ const DashboardPage = () => {
                 </Card>
             </div>
 
-            {walletBalance <= 0 && (
-                <div className="rounded-apple border border-apple-orange-200 bg-apple-orange-50 dark:border-apple-orange-700 dark:bg-apple-orange-950/30 p-5 shadow-sm">
+            {!walletFunded && (
+                <div className="rounded-apple-lg border border-amber-300 dark:border-amber-700 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 p-5 shadow-sm">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div>
-                            <p className="text-sm font-semibold text-apple-orange-900 dark:text-apple-orange-200">Wallet balance low</p>
-                            <p className="mt-1 text-sm text-apple-gray-700 dark:text-apple-gray-300">
-                                Your wallet balance is currently {walletCurrency} {walletBalance.toFixed(2)}. Add funds to continue using the pay-as-you-go wallet model.
-                            </p>
+                        <div className="flex items-start gap-3">
+                            <div className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                                <Zap size={18} />
+                            </div>
+                            <div>
+                                <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">Your wallet is empty — refill to get started</p>
+                                <p className="mt-1 text-sm text-apple-gray-700 dark:text-apple-gray-300">
+                                    Balance: <span className="font-semibold">{walletCurrency}{walletBalance.toFixed(2)}</span>. PressMark runs on a pay-as-you-go wallet. Refill your account before anything is done — once funded, every feature unlocks and we'll show you around.
+                                </p>
+                            </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <Button variant="primary" onClick={() => navigate('/app/wallet/select-country')}>
-                                Top Up Wallet
+                            <Button variant="primary" iconLeft={<Zap size={16} />} onClick={() => navigate('/app/wallet/select-country')}>
+                                Refill wallet
                             </Button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {!profileComplete && isAdmin && (
+            {walletFunded && !profileComplete && isAdmin && (
                 <div className="rounded-apple border border-apple-blue-200 dark:border-apple-blue-800 bg-apple-blue-50 dark:bg-apple-blue-950/40 p-4 sm:p-5">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                             <p className="text-sm font-semibold text-apple-blue-900 dark:text-apple-blue-100">{t('dashboard.completeProfileTitle')}</p>
                             <p className="text-sm text-apple-gray-600 dark:text-apple-gray-300">{t('dashboard.completeProfileDesc')}</p>
                         </div>
-                        <Link to={navPath('/app/business-profile')}>
+                        <Link to="/app/business-profile" onClick={linkGuard}>
                             <Button variant="primary" size="sm">{t('dashboard.completeProfileAction')}</Button>
                         </Link>
                     </div>
@@ -299,17 +311,17 @@ const DashboardPage = () => {
                 <div className="px-4 sm:px-6 pt-2 pb-6">
                     <p className="text-sm text-apple-gray-600 dark:text-apple-gray-400 mb-4">{t('dashboard.recentOrdersDesc')}</p>
                     <div className="flex flex-wrap gap-2 mb-4">
-                        <Link to="/app/orders?tab=active">
+                        <Link to="/app/orders?tab=active" onClick={linkGuard}>
                             <Button variant="primary" size="sm">{t('ordersList.tabs.active')}</Button>
                         </Link>
                         {stats.overdue > 0 && (
-                            <Link to="/app/orders?tab=overdue">
+                            <Link to="/app/orders?tab=overdue" onClick={linkGuard}>
                                 <Button variant="secondary" size="sm" iconLeft={<AlertTriangle size={14} />}>
                                     {t('ordersList.tabs.overdue')} ({stats.overdue})
                                 </Button>
                             </Link>
                         )}
-                        <Link to="/app/orders">
+                        <Link to="/app/orders" onClick={linkGuard}>
                             <Button variant="secondary" size="sm">{t('dashboard.viewAllOrders')}</Button>
                         </Link>
                     </div>

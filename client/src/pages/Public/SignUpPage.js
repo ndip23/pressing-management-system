@@ -133,7 +133,7 @@ const Step3Confirmation = ({ data, onPrev, onConfirm, isSubmitting }) => {
 // --- Main SignUpPage Component ---
 const SignUpPage = () => {
     const { t } = useTranslation();
-    const { login } = useAuth();
+    const { loginWithToken } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -198,14 +198,21 @@ const handleInitiateRegistration = async () => {
     try {
         // ✅ Explicitly set the exact key
         localStorage.setItem('registration_data', JSON.stringify(formData));
+        // Arm the guided tour so it fires after the wallet is first funded,
+        // regardless of whether this is a free or paid-plan signup.
+        localStorage.setItem('pressmark_tour_pending', '1');
+        localStorage.removeItem('pressmark_tour_done');
         
         const { data } = await initiateRegistrationApi(formData);
 
         if (data.paymentRequired) {
             navigate(`/payment?plan=${formData.plan.toLowerCase()}&email=${formData.adminUser.email}`);
         } else {
-            login(data);
-            navigate('/app/business-profile', { state: { fromSignup: true } });
+            // Account is live — sign the user in with the returned token and send
+            // them straight to the dashboard. The guided tour will auto-start once
+            // they fund their wallet (see WalletTourTrigger).
+            await loginWithToken(data.token);
+            navigate('/app/dashboard', { replace: true, state: { fromSignup: true } });
         }
     } catch (err) {
         setError(err.response?.data?.message || 'Registration failed');

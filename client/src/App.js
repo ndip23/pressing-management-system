@@ -8,9 +8,8 @@ import PublicLayout from './pages/Public/PublicLayout';
 import DirectoryLayout from './pages/Public/DirectoryLayout';
 import Spinner from './components/UI/Spinner';
 import DirectoryAdminRoute from './components/Auth/DirectoryAdminRoute';
-import OnboardingGate from './components/Auth/OnboardingGate';
 import OnboardingRedirect from './components/Auth/OnboardingRedirect';
-import OnboardingStepGuard from './components/Auth/OnboardingStepGuard';
+import WalletGate from './components/Auth/WalletGate';
 
 // --- LAZY-LOADED PAGE COMPONENTS ---
 const LoginPage = lazy(() => import('./pages/Auth/LoginPage'));
@@ -107,37 +106,43 @@ function App() {
 
                     {/* --- PROTECTED APP --- */}
                     <Route path="/app" element={<ProtectedRoute allowInactive={true}><MainLayout /></ProtectedRoute>}>
+                        {/* New accounts land straight on the dashboard. */}
                         <Route index element={<OnboardingRedirect />} />
                         <Route path="subscription" element={<AppSubscriptionPage />} />
-                        <Route path="manage" element={<ManageSystemPage />} />
-                        <Route path="onboarding">
-                            <Route path="wallet" element={<OnboardingStepGuard requiredStep="wallet"><WalletOnboardingPromptPage /></OnboardingStepGuard>} />
-                            <Route path="business-profile" element={<OnboardingStepGuard requiredStep="profile"><BusinessProfileSetupPage /></OnboardingStepGuard>} />
-                            <Route path="services-pricing" element={<OnboardingStepGuard requiredStep="pricing"><AdminPricingPage /></OnboardingStepGuard>} />
-                        </Route>
+
+                        {/* Always reachable on an empty wallet: dashboard, wallet flow, personal profile. */}
+                        <Route path="dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+                        <Route path="profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                         <Route path="wallet">
-                            <Route path="select-country" element={<OnboardingStepGuard requiredStep="wallet" allowWhenComplete><WalletPaymentCountryPage /></OnboardingStepGuard>} />
-                            <Route index element={<OnboardingStepGuard requiredStep="wallet" allowWhenComplete><WalletTopUpPage /></OnboardingStepGuard>} />
+                            <Route path="select-country" element={<WalletPaymentCountryPage />} />
+                            <Route index element={<WalletTopUpPage />} />
                         </Route>
-                        <Route element={<ProtectedRoute />}>
-                            <Route element={<OnboardingGate />}>
-                            <Route path="dashboard" element={<DashboardPage />} />
-                            <Route path="orders" element={<OrdersListPage />} />
-                            <Route path="orders/new" element={<CreateOrderPage />} />
-                            <Route path="orders/:id" element={<OrderDetailsPage />} />
-                            <Route path="orders/:id/edit" element={<EditOrderPage />} />
-                            <Route path="customers" element={<CustomerListPage />} />
-                            <Route path="customers/new" element={<CustomerFormPage mode="create" />} />
-                            <Route path="customers/:id/edit" element={<CustomerFormPage mode="edit" />} />
-                            <Route path="customers/:id/details" element={<CustomerDetailsPage />} />
-                            <Route path="payments" element={<DailyPaymentsPage />} />
-                            <Route path="inbox" element={<InboxPage />} />
-                            <Route path="profile" element={<ProfilePage />} />
+                        {/* Legacy onboarding routes — no longer forced, still reachable. */}
+                        <Route path="onboarding">
+                            <Route path="wallet" element={<WalletOnboardingPromptPage />} />
                             <Route path="business-profile" element={<BusinessProfileSetupPage />} />
+                            <Route path="services-pricing" element={<AdminPricingPage />} />
+                        </Route>
+
+                        {/* Everything below requires a funded wallet (WalletGate). */}
+                        <Route element={<ProtectedRoute />}>
+                            <Route element={<WalletGate />}>
+                                <Route path="manage" element={<ManageSystemPage />} />
+                                <Route path="orders" element={<OrdersListPage />} />
+                                <Route path="orders/new" element={<CreateOrderPage />} />
+                                <Route path="orders/:id" element={<OrderDetailsPage />} />
+                                <Route path="orders/:id/edit" element={<EditOrderPage />} />
+                                <Route path="customers" element={<CustomerListPage />} />
+                                <Route path="customers/new" element={<CustomerFormPage mode="create" />} />
+                                <Route path="customers/:id/edit" element={<CustomerFormPage mode="edit" />} />
+                                <Route path="customers/:id/details" element={<CustomerDetailsPage />} />
+                                <Route path="payments" element={<DailyPaymentsPage />} />
+                                <Route path="inbox" element={<InboxPage />} />
+                                <Route path="business-profile" element={<BusinessProfileSetupPage />} />
                             </Route>
                         </Route>
                         <Route path="admin" element={<AdminRoute />}>
-                            <Route element={<OnboardingGate />}>
+                            <Route element={<WalletGate />}>
                                 <Route index element={<Navigate to="settings" replace />} />
                                 <Route path="settings" element={<SettingsPage />}/>
                                 <Route path="pricing" element={<AdminPricingPage />}/>

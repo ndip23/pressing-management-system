@@ -121,7 +121,7 @@ const WalletTopUpPage = () => {
         const balance = tenantProfile?.walletBalance ?? user?.tenant?.walletBalance ?? 0;
         const tenant = { walletBalance: balance };
         if (fromOnboarding && isWalletFunded(tenant)) {
-            navigate('/app/onboarding/business-profile', { replace: true, state: { fromOnboarding: true } });
+            navigate('/app/dashboard', { replace: true });
         }
     }, [tenantProfile?.walletBalance, user?.tenant?.walletBalance, fromOnboarding, navigate, user?.tenant]);
 

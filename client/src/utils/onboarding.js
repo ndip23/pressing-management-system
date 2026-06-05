@@ -25,21 +25,20 @@ export const isProfileComplete = (tenant) => {
 
 export const isPricingComplete = (tenant) => !!tenant?.onboardingPricingCompleted;
 
+// The ONLY hard requirement to use the app is a funded wallet.
+// Business profile + services/pricing are optional nudges shown on the
+// dashboard, never blocking redirects.
 export const getOnboardingStep = (user) => {
   if (!user || user.role === 'superadmin') return 'complete';
   const tenant = user.tenant;
   if (!tenant) return 'wallet';
   if (!isWalletFunded(tenant)) return 'wallet';
-  if (!isProfileComplete(tenant)) return 'profile';
-  if (!isPricingComplete(tenant)) return 'pricing';
   return 'complete';
 };
 
-export const getOnboardingPath = (user) => {
-  const step = getOnboardingStep(user);
-  if (step === 'complete') return '/app/dashboard';
-  return ONBOARDING_PATHS[step];
-};
+// New accounts always land on the dashboard. Funding happens via the
+// in-app wallet block (see WalletGuardContext), not a forced redirect.
+export const getOnboardingPath = () => '/app/dashboard';
 
 export const isOnboardingRoute = (pathname) =>
   pathname.startsWith('/app/onboarding') ||
