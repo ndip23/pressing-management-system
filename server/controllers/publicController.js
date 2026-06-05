@@ -104,7 +104,7 @@ const initiateRegistration = asyncHandler(async (req, res) => {
             amount: priceDetails.amount,
             currency: priceDetails.currency,
             transaction_id,
-            description: `Subscription to PressFlow ${plan.name} Plan`,
+            description: `Subscription to PressMark ${plan.name} Plan`,
             pass_digital_charge: true,
             callback_url : callback_url 
         };

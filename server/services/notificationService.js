@@ -163,10 +163,10 @@ const sendNotification = async (customer, templateType, order, customPlaceholder
             emailSubjectTemplate = templates.manualReminderEmailSubject || templates.subject || 'Reminder: Your Order #{{receiptNumber}}';
             emailBodyTemplate = templates.manualReminderEmailBody || `Dear {{customerName}},\nThis is a reminder for your order #{{receiptNumber}}.\n\nThank you,\n{{companyName}}`;
         } else if (templateType === 'signupOtp') {
-            emailSubjectTemplate = templates.signupOtpSubject || 'Your PressFlow Verification Code';
+            emailSubjectTemplate = templates.signupOtpSubject || 'Your PressMark Verification Code';
             emailBodyTemplate = templates.signupOtpBody || 'Welcome to {{companyName}}!\n\nYour verification code is: {{otp}}\n\nThis code will expire in 15 minutes.\n\nIf you did not request this, please ignore this email.';
         } else if (templateType === 'passwordChangeOtp') {
-            emailSubjectTemplate = templates.passwordChangeOtpSubject || 'Your PressFlow Password Change Code';
+            emailSubjectTemplate = templates.passwordChangeOtpSubject || 'Your PressMark Password Change Code';
             bodyTemplate = templates.passwordChangeOtpBody || 'Hi {{customerName}},\n\nA password change was requested for your account. Use the verification code below to confirm this change:\n\nVerification Code: {{otp}}\n\nThis code will expire in 10 minutes. If you did not request this, please secure your account or contact support.';
         }
 
@@ -218,7 +218,7 @@ export const sendContactFormEmail = async ({ name, from, message }) => {
         from: process.env.EMAIL_FROM,
         // --- THIS SENDS THE EMAIL TO YOU/YOUR DAD ---
         to: 'ojongagbor87@gmail.com', 
-        subject: `New Contact Message from ${name} via PressFlow`,
+        subject: `New Contact Message from ${name} via PressMark`,
         text: `You have received a new message from your website's contact form.\n\n` +
               `From: ${name}\n` +
               `Email: ${from}\n\n` +

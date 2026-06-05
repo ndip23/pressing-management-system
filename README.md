@@ -1,6 +1,6 @@
-# PressFlow - Laundry & Pressing Management System
+# PressMark - Laundry & Pressing Management System
 
-PressFlow is a full-stack MERN application designed as a comprehensive Software as a Service (SaaS) platform for laundry and pressing businesses. It provides tools for business owners (Tenants) to manage their operations, customers, and orders, while also featuring a public-facing directory for end-users to discover local laundry services.
+PressMark is a full-stack MERN application designed as a comprehensive Software as a Service (SaaS) platform for laundry and pressing businesses. It provides tools for business owners (Tenants) to manage their operations, customers, and orders, while also featuring a public-facing directory for end-users to discover local laundry services.
 
  
 <!-- **Action:** Replace this with a real screenshot URL of your running application! -->

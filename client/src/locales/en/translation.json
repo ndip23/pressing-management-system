@@ -490,7 +490,7 @@
     "title": "Application Settings",
     "publicProfile": {
       "title": "Public Directory Profile",
-      "description": "This information will be visible to the public on the PressFlow Business Directory page.",
+      "description": "This information will be visible to the public on the PressMark Business Directory page.",
       "businessName": "Public Business Name",
       "businessNameHelper": "Business name is set during signup and cannot be changed here.",
       "publicPhone": "Public Phone",
@@ -719,7 +719,7 @@
   },
   "landing": {
       "headline": "Streamline Your Pressing Business.",
-      "subheadline": "From order logging and payment tracking to customer notifications, PressFlow is the all-in-one system to manage your laundry and dry cleaning operations effortlessly."
+      "subheadline": "From order logging and payment tracking to customer notifications, PressMark is the all-in-one system to manage your laundry and dry cleaning operations effortlessly."
   },
   "notifications": {
     "newOrder": "New Order Received",
@@ -829,7 +829,7 @@
       },
       "features": {
         "title": "Everything You Need to Run Your Shop",
-        "subtitle": "From drop-off to pickup, PressFlow has you covered.",
+        "subtitle": "From drop-off to pickup, PressMark has you covered.",
         "orderManagement": {
           "title": "Effortless Order Management",
           "description": "Log orders in seconds. Track items, services, quantities, and special instructions with ease. Never lose an order again."
@@ -857,7 +857,7 @@
       },
       "cta": {
         "title": "Ready to Modernize Your Business?",
-        "subtitle": "Join dozens of other laundry services simplifying their workflow with PressFlow.",
+        "subtitle": "Join dozens of other laundry services simplifying their workflow with PressMark.",
         "startTrial": "Start Now"
       }
     },
@@ -970,7 +970,7 @@
       },
       "notifications": {
         "title": "Automated Customer Notifications",
-        "description": "Stop spending time on the phone. PressFlow automatically sends an email or SMS to your customer the moment their order is marked 'Ready for Pickup', enhancing their experience and freeing up your time."
+        "description": "Stop spending time on the phone. PressMark automatically sends an email or SMS to your customer the moment their order is marked 'Ready for Pickup', enhancing their experience and freeing up your time."
       },
       "dateTracking": {
         "title": "Date Tracking & Overdue Alerts",

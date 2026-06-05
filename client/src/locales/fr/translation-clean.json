@@ -23,7 +23,7 @@
   },
   "landing": {
       "headline": "Optimisez Votre Entreprise de Pressing.",
-      "subheadline": "De la saisie des commandes au suivi des paiements et aux notifications clients, PressFlow est le système tout-en-un pour gérer vos opérations de blanchisserie et de nettoyage à sec sans effort."
+      "subheadline": "De la saisie des commandes au suivi des paiements et aux notifications clients, PressMark est le système tout-en-un pour gérer vos opérations de blanchisserie et de nettoyage à sec sans effort."
   },
   "settings": {
     "title": "Paramètres",
@@ -122,7 +122,7 @@
       },
       "features": {
         "title": "Tout Ce Dont Vous Avez Besoin Pour Gérer Votre Magasin",
-        "subtitle": "Du dépôt au retrait, PressFlow vous accompagne.",
+        "subtitle": "Du dépôt au retrait, PressMark vous accompagne.",
         "orderManagement": {
           "title": "Gestion Simplifiée des Commandes",
           "description": "Enregistrez les commandes en quelques secondes. Suivez les articles, services, quantités et instructions spéciales facilement. Ne perdez plus jamais une commande."
@@ -150,7 +150,7 @@
       },
       "cta": {
         "title": "Prêt à Moderniser Votre Entreprise ?",
-        "subtitle": "Rejoignez des dizaines d'autres services de blanchisserie qui simplifient leur flux de travail avec PressFlow.",
+        "subtitle": "Rejoignez des dizaines d'autres services de blanchisserie qui simplifient leur flux de travail avec PressMark.",
         "startTrial": "Commencer Votre Essai Gratuit"
       }
     },
@@ -276,7 +276,7 @@
     },
     "notifications": {
       "title": "Notifications Automatisées aux Clients",
-      "description": "Gagnez du temps au quotidien. PressFlow envoie automatiquement un email ou SMS à votre client dès que sa commande est marquée « Prête pour le Retrait », améliorant leur expérience et vous libérant du temps."
+      "description": "Gagnez du temps au quotidien. PressMark envoie automatiquement un email ou SMS à votre client dès que sa commande est marquée « Prête pour le Retrait », améliorant leur expérience et vous libérant du temps."
     },
     "dateTracking": {
       "title": "Suivi des Dates & Alertes de Retard",
@@ -298,7 +298,7 @@
   }
 },
   "signup": {
-    "title": "Créer Votre Compte PressFlow",
+    "title": "Créer Votre Compte PressMark",
     "stepProgress": "Étape {{current}} sur {{total}}",
     "finalStep": "Étape Finale",
     "step1": {
@@ -378,7 +378,7 @@
       "verificationFailed": "La vérification a échoué. Veuillez réessayer."
     },
     "success": {
-      "message": "Compte créé avec succès ! Bienvenue sur PressFlow !"
+      "message": "Compte créé avec succès ! Bienvenue sur PressMark !"
     },
     "defaultItems": {
       "shirt": "Chemise",

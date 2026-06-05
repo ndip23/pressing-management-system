@@ -42,8 +42,8 @@ export const PublicHeader = () => {
             <header className="sticky top-0 bg-white/80 dark:bg-apple-gray-900/80 backdrop-blur-md z-50 shadow-apple-sm">
                 <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
                     <Link to="/directory" className="flex items-center space-x-2">
-                    <img src="/logo.png" alt="PressFlow Logo" className="h-8 w-auto" />
-                    <span className="text-xl font-bold text-apple-gray-800 dark:text-apple-gray-100">PressFlow</span>
+                    <img src="/logo.png" alt="PressMark Logo" className="h-8 w-auto" />
+                    <span className="text-xl font-bold text-apple-gray-800 dark:text-apple-gray-100">Press<span className="text-apple-blue">Mark</span></span>
                 </Link>
                     
                     {/* Desktop Navigation */}

@@ -28,7 +28,7 @@ const TermsPage = () => {
               <h2 className="text-xl font-bold text-apple-gray-900 dark:text-white">1. Acceptance of Terms</h2>
             </div>
             <p>
-              By creating an account, subscribing as a laundry business ("Tenant"), or browsing the PressFlow public directory, you agree to comply with and be bound by these Terms of Service. If you do not agree, please do not access or use our platform.
+              By creating an account, subscribing as a laundry business ("Tenant"), or browsing the PressMark public directory, you agree to comply with and be bound by these Terms of Service. If you do not agree, please do not access or use our platform.
             </p>
           </section>
 
@@ -49,7 +49,7 @@ const TermsPage = () => {
               <h2 className="text-xl font-bold text-apple-gray-900 dark:text-white">3. Notifications & Wallet Balance Deductions</h2>
             </div>
             <p className="mb-3">
-              PressFlow offers automated messaging channels (including SMS and WhatsApp integrations) to notify customers of order updates (e.g., "Pending", "Ready for Pickup").
+              PressMark offers automated messaging channels (including SMS and WhatsApp integrations) to notify customers of order updates (e.g., "Pending", "Ready for Pickup").
             </p>
             <ul className="list-disc pl-6 space-y-2 text-sm">
               <li>
@@ -74,7 +74,7 @@ const TermsPage = () => {
           <section>
             <h2 className="text-xl font-bold text-apple-gray-900 dark:text-white mb-3">5. Limitation of Liability</h2>
             <p>
-              PressFlow functions as a software provider and business directory pipeline. We do not participate in, nor assume responsibility for, standard business transactions, lost garments, quality disputes, or service failures arising between directory end-users and listed business tenants.
+              PressMark functions as a software provider and business directory pipeline. We do not participate in, nor assume responsibility for, standard business transactions, lost garments, quality disputes, or service failures arising between directory end-users and listed business tenants.
             </p>
           </section>
 

@@ -449,7 +449,7 @@
     "title": "Paramètres de l'Application",
     "publicProfile": {
       "title": "Profil de Répertoire Public",
-      "description": "Ces informations seront visibles au public sur la page du répertoire d'entreprises PressFlow.",
+      "description": "Ces informations seront visibles au public sur la page du répertoire d'entreprises PressMark.",
       "businessName": "Nom Public de l'Entreprise",
       "businessNameHelper": "Le nom de l'entreprise est défini lors de l'inscription et ne peut pas être modifié ici.",
       "publicPhone": "Téléphone Public",
@@ -695,7 +695,7 @@
   },
   "landing": {
     "headline": "Optimisez Votre Entreprise de Pressing.",
-    "subheadline": "De la saisie des commandes au suivi des paiements et aux notifications clients, PressFlow est le système tout-en-un pour gérer vos opérations de blanchisserie et de nettoyage à sec sans effort."
+    "subheadline": "De la saisie des commandes au suivi des paiements et aux notifications clients, PressMark est le système tout-en-un pour gérer vos opérations de blanchisserie et de nettoyage à sec sans effort."
   },
   "notifications": {
     "newOrder": "Nouvelle Commande Reçue",
@@ -850,7 +850,7 @@
       },
       "features": {
         "title": "Tout Ce Dont Vous Avez Besoin Pour Gérer Votre Magasin",
-        "subtitle": "Du dépôt au retrait, PressFlow vous accompagne.",
+        "subtitle": "Du dépôt au retrait, PressMark vous accompagne.",
         "orderManagement": {
           "title": "Gestion Simplifiée des Commandes",
           "description": "Enregistrez les commandes en quelques secondes. Suivez les articles, services, quantités et instructions spéciales facilement. Ne perdez plus jamais une commande."
@@ -878,7 +878,7 @@
       },
       "cta": {
         "title": "Prêt à Moderniser Votre Entreprise ?",
-        "subtitle": "Rejoignez des dizaines d'autres services de blanchisserie qui simplifient leur flux de travail avec PressFlow.",
+        "subtitle": "Rejoignez des dizaines d'autres services de blanchisserie qui simplifient leur flux de travail avec PressMark.",
         "startTrial": "Commencer Votre Essai Gratuit"
       },
       "banner": {
@@ -1007,7 +1007,7 @@
       },
       "notifications": {
         "title": "Notifications Automatiques aux Clients",
-        "description": "Gagnez du temps précieux. PressFlow envoie automatiquement un email ou un SMS à votre client dès que sa commande est marquée « Prête pour le Retrait », améliorant leur expérience tout en vous libérant du temps."
+        "description": "Gagnez du temps précieux. PressMark envoie automatiquement un email ou un SMS à votre client dès que sa commande est marquée « Prête pour le Retrait », améliorant leur expérience tout en vous libérant du temps."
       },
       "dateTracking": {
         "title": "Suivi des Dates & Alertes de Retard",

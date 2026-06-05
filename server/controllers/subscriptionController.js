@@ -80,7 +80,7 @@ const initiateSubscription = asyncHandler(async (req, res) => {
         name: adminUser.username,
         email: adminUser.email,
         transaction_id,
-        description: `Subscription to PressFlow ${planName} Plan`,
+        description: `Subscription to PressMark ${planName} Plan`,
         pass_digital_charge: true,
         callback_url: callback_url
     };
@@ -156,7 +156,7 @@ const changeSubscriptionPlan = asyncHandler(async (req, res) => {
         name: tenant.name,
         email: loggedInUser.email,
         transaction_id,
-        description: `Upgrade to PressFlow ${newPlan.name} Plan`,
+        description: `Upgrade to PressMark ${newPlan.name} Plan`,
         pass_digital_charge: true,
         callback_url: `${backendBaseUrl}/api/webhooks/accountpe?flow=upgrade&transaction_id=${transaction_id}`
     };

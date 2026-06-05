@@ -412,7 +412,7 @@
     "title": "Mga Setting ng Application",
     "publicProfile": {
       "title": "Public Directory Profile",
-      "description": "Ang impormasyong ito ay makikita ng publiko sa PressFlow Business Directory page.",
+      "description": "Ang impormasyong ito ay makikita ng publiko sa PressMark Business Directory page.",
       "businessName": "Public Business Name",
       "businessNameHelper": "Ang pangalan ng negosyo ay na-set sa panahon ng signup at hindi maaaring mabago dito.",
       "publicPhone": "Public Phone",
@@ -568,7 +568,7 @@
   },
   "landing": {
     "headline": "Palakasin ang Inyong Pressing Business.",
-    "subheadline": "Mula sa pag-log ng order at pagsubaybay sa bayad hanggang sa mga notification ng customer, ang PressFlow ay ang all-in-one system para pamahalaan ang inyong laundry at dry cleaning operations nang walang kahirap-hirap."
+    "subheadline": "Mula sa pag-log ng order at pagsubaybay sa bayad hanggang sa mga notification ng customer, ang PressMark ay ang all-in-one system para pamahalaan ang inyong laundry at dry cleaning operations nang walang kahirap-hirap."
   },
   "notifications": {
     "newOrder": "Nakatanggap ng Bagong Order",
@@ -728,7 +728,7 @@
       },
       "features": {
         "title": "Lahat ng Kailangan Ninyo para Patakbuhin ang Inyong Shop",
-        "subtitle": "Mula sa drop-off hanggang pickup, saklaw kayo ng PressFlow.",
+        "subtitle": "Mula sa drop-off hanggang pickup, saklaw kayo ng PressMark.",
         "orderManagement": {
           "title": "Walang Kahirap-hirap na Order Management",
           "description": "Mag-log ng mga order sa loob ng mga segundo. Subaybayan ang mga item, serbisyo, dami, at mga espesyal na tagubilin nang madali. Hindi na mawawala ang mga order."
@@ -756,7 +756,7 @@
       },
       "cta": {
         "title": "Handa na Bang Modernisahin ang Inyong Negosyo?",
-        "subtitle": "Sumali sa maraming ibang laundry service na nagpapasimple ng kanilang workflow gamit ang PressFlow.",
+        "subtitle": "Sumali sa maraming ibang laundry service na nagpapasimple ng kanilang workflow gamit ang PressMark.",
         "startTrial": "Simulan ang Inyong Libreng Trial"
       }
     },
@@ -875,7 +875,7 @@
       },
       "notifications": {
         "title": "Automated Customer Notifications",
-        "description": "Tumigil sa paggugugol ng oras sa telepono. Awtomatikong nagpapadala ang PressFlow ng email o SMS sa inyong customer sa sandaling markahan ang kanilang order na 'Handa na para Kunin', pinapabuti ang kanilang karanasan at nagliliberang oras para sa inyo."
+        "description": "Tumigil sa paggugugol ng oras sa telepono. Awtomatikong nagpapadala ang PressMark ng email o SMS sa inyong customer sa sandaling markahan ang kanilang order na 'Handa na para Kunin', pinapabuti ang kanilang karanasan at nagliliberang oras para sa inyo."
       },
       "dateTracking": {
         "title": "Date Tracking at Overdue Alerts",
