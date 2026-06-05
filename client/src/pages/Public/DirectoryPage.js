@@ -40,17 +40,21 @@ const BusinessCard = ({ business }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-apple-gray-900 rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 flex flex-col">
+    <div className="group bg-white dark:bg-apple-gray-900 rounded-2xl shadow-apple-md border border-apple-gray-100 dark:border-apple-gray-800 overflow-hidden transition-all duration-300 hover:shadow-apple-xl hover:-translate-y-1.5 hover:border-apple-blue/30 flex flex-col">
       {/* Banner */}
-      <div className="relative">
-        <div className="h-32 bg-cover bg-center" style={{ backgroundImage: `url(${bannerUrl})` }} />
+      <div className="relative h-28">
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+          style={{ backgroundImage: `url(${bannerUrl})` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
 
         {/* Logo */}
-        <div className="absolute top-20 left-6 w-20 h-20 rounded-lg bg-white dark:bg-apple-gray-800 p-1 shadow-md flex items-center justify-center overflow-hidden">
+        <div className="absolute -bottom-8 left-5 w-16 h-16 rounded-2xl bg-white dark:bg-apple-gray-800 ring-4 ring-white dark:ring-apple-gray-900 shadow-apple-md flex items-center justify-center overflow-hidden">
           {logoUrl ? (
-            <img src={logoUrl} alt={business.name} className="w-full h-full object-cover rounded-md" />
+            <img src={logoUrl} alt={business.name} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-3xl font-bold text-apple-blue">
+            <span className="text-2xl font-bold text-apple-blue">
               {business.name?.charAt(0).toUpperCase()}
             </span>
           )}
@@ -58,22 +62,22 @@ const BusinessCard = ({ business }) => {
       </div>
 
       {/* Content */}
-      <div className="p-6 pt-12 flex-grow flex flex-col">
-        <h3 className="font-bold text-lg truncate">{business.name}</h3>
+      <div className="px-5 pt-11 pb-5 flex-grow flex flex-col">
+        <h3 className="font-bold text-lg text-apple-gray-900 dark:text-white truncate">{business.name}</h3>
 
-        <div className="flex items-center mt-1 text-xs text-apple-gray-500">
-          <MapPin size={12} className="mr-1.5" />
+        <div className="flex items-center mt-1 text-xs text-apple-gray-500 dark:text-apple-gray-400">
+          <MapPin size={13} className="mr-1.5 flex-shrink-0" />
           <span className="truncate">
             {business.city || t('directoryPage.businessCard.noLocation')}
             {displayCountry && `, ${displayCountry}`}
           </span>
         </div>
 
-        <p className="mt-4 text-sm h-10 line-clamp-2 flex-grow">
+        <p className="mt-3 text-sm text-apple-gray-600 dark:text-apple-gray-300 line-clamp-2 flex-grow min-h-[2.5rem]">
           {business.description || t('directoryPage.businessCard.defaultDescription')}
         </p>
 
-        <div className="mt-6 flex flex-col sm:flex-row gap-3">
+        <div className="mt-5 flex items-center gap-3">
           <Link to={`/directory/${business.slug}`} className="flex-1">
             <Button variant="secondary" className="w-full">
               {t('directoryPage.businessCard.viewDetails')}
@@ -101,8 +105,6 @@ const shuffleArray = (items) => items.slice().sort(() => Math.random() - 0.5);
 const DirectoryPage = () => {
   const { t } = useTranslation();
   const { location } = useLocalization();
-    console.log("Current detected location object:", location);
-  console.log("Extracted country code:", location?.country);
 
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -178,24 +180,32 @@ const DirectoryPage = () => {
   return (
     <>
       {/* HERO SECTION */}
-      <section className="py-16 md:py-20 bg-gradient-hero text-white">
-        <div className="container mx-auto px-6 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold">
+      <section className="relative overflow-hidden bg-gradient-to-br from-apple-blue to-sky-600 text-white">
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-20 -left-16 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-sky-300/20 blur-3xl" />
+        </div>
+
+        <div className="relative container mx-auto px-6 py-16 md:py-24 text-center">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
             {t('directoryPage.hero.title')}
           </h1>
 
-          <p className="mt-4 text-lg max-w-2xl mx-auto">
+          <p className="mt-4 text-lg text-sky-100 max-w-2xl mx-auto">
             {t('directoryPage.hero.subtitle')}
           </p>
 
-          <form onSubmit={handleSearchSubmit} className="mt-8 max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-white/10 p-4 rounded-xl">
+          {/* Search card */}
+          <form
+            onSubmit={handleSearchSubmit}
+            className="mt-9 max-w-4xl mx-auto bg-white dark:bg-apple-gray-900 p-3 sm:p-4 rounded-2xl shadow-apple-xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto_auto] gap-3 text-left"
+          >
             <Input
               id="search"
               placeholder={t('directoryPage.search.businessPlaceholder')}
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               prefixIcon={<Search size={18} />}
-              inputClassName="bg-white/20 text-white"
             />
 
             <Input
@@ -204,15 +214,14 @@ const DirectoryPage = () => {
               value={cityInput}
               onChange={(e) => setCityInput(e.target.value)}
               prefixIcon={<MapPin size={18} />}
-              inputClassName="bg-white/20 text-white"
             />
 
-            <Button type="submit" variant="primary" className="w-full">
-              Search
+            <Button type="submit" variant="primary" className="w-full sm:w-auto px-8" iconLeft={<Search size={16} />}>
+              {t('directoryPage.search.searchButton', 'Search')}
             </Button>
 
-            <Button type="button" variant="secondary" className="w-full" onClick={handleClearFilters}>
-              Clear
+            <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={handleClearFilters}>
+              {t('directoryPage.search.clearButton', 'Clear')}
             </Button>
           </form>
         </div>
@@ -228,14 +237,19 @@ const DirectoryPage = () => {
           ) : error ? (
             <p className="text-center text-red-500 py-12">{error}</p>
           ) : businesses.length === 0 ? (
-            <div className="text-center py-12">
-              <Aperture size={48} className="mx-auto mb-4" />
-              <h3 className="text-xl font-semibold">
+            <div className="text-center py-16 max-w-md mx-auto">
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-apple-blue/10 text-apple-blue">
+                <Aperture size={32} />
+              </div>
+              <h3 className="text-xl font-semibold text-apple-gray-900 dark:text-white">
                 {t('directoryPage.states.emptyTitle')}
               </h3>
-              <p className="mt-2">
+              <p className="mt-2 text-apple-gray-500 dark:text-apple-gray-400">
                 {t('directoryPage.states.emptySubtitle')}
               </p>
+              <Button type="button" variant="secondary" className="mt-6" onClick={handleClearFilters}>
+                {t('directoryPage.search.clearButton', 'Clear')}
+              </Button>
             </div>
           ) : (
             <>
@@ -267,7 +281,7 @@ const DirectoryPage = () => {
                   disabled={!pagination.hasPrevPage || loading}
                   iconLeft={<ChevronLeft size={16} />}
                 >
-                  Previous
+                  {t('directoryPage.pagination.previous', 'Previous')}
                 </Button>
 
                 <span className="text-sm text-apple-gray-600 dark:text-apple-gray-300">
@@ -279,9 +293,9 @@ const DirectoryPage = () => {
                   variant="secondary"
                   onClick={() => setPage((prev) => prev + 1)}
                   disabled={!pagination.hasNextPage || loading}
-                  iconLeft={<ChevronRight size={16} />}
+                  iconRight={<ChevronRight size={16} />}
                 >
-                  Next
+                  {t('directoryPage.pagination.next', 'Next')}
                 </Button>
               </div>
             </>
