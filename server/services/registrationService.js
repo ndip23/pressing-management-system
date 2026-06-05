@@ -110,7 +110,10 @@ export const finalizeRegistrationLogic = async (pendingUser) => {
         // --- 7. CLEANUP & COMMIT ---
         await pendingUser.deleteOne({ session });
         
-        const token = generateToken(savedUser._id); // Generate JWT for immediate login
+        // Include tenantId (and username/role) in the JWT — the auth middleware
+        // requires decoded.tenantId, otherwise /auth/me rejects the token and the
+        // freshly-signed-up user gets bounced back to the login page.
+        const token = generateToken(savedUser._id, savedUser.username, savedUser.role, tenantId); // Generate JWT for immediate login
 
             await session.commitTransaction();
             return { tenant: savedTenant, user: savedUser, token };
