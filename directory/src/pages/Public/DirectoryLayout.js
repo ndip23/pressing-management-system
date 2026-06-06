@@ -28,7 +28,7 @@ export const DirectoryHeader = () => {
                     <Link to="/directory" className={getLinkClass('/directory')}>Find a Service</Link>
                     
                     {/* ✅ EXTERNAL LINK TO SUBDOMAIN */}
-                    <a href="https://sys.pressmark.site" className="text-sm font-medium hover:text-apple-blue dark:hover:text-sky-300 transition-colors text-apple-gray-600 dark:text-apple-gray-300">
+                    <a href="https://pressmark.site/" className="text-sm font-medium hover:text-apple-blue dark:hover:text-sky-300 transition-colors text-apple-gray-600 dark:text-apple-gray-300">
                         Get The Software
                     </a>
                 </div>
@@ -56,8 +56,8 @@ export const DirectoryFooter = () => (
                     <ul className="space-y-2 text-sm">
                         <li><Link to="/directory" className="text-sky-200 hover:text-white hover:underline">Search Directory</Link></li>
                         {/* ✅ EXTERNAL LINKS TO SUBDOMAIN */}
-                        <li><a href="https://sys.pressmark.site" className="text-sky-200 hover:text-white hover:underline">Get The Software</a></li>
-                        <li><a href="https://sys.pressmark.site/features" className="text-sky-200 hover:text-white hover:underline">Software Features</a></li>
+                        <li><a href="https://pressmark.site" className="text-sky-200 hover:text-white hover:underline">Get The Software</a></li>
+                        <li><a href="https://pressmark.site/features" className="text-sky-200 hover:text-white hover:underline">Software Features</a></li>
                     </ul>
                 </div>
 
@@ -65,7 +65,7 @@ export const DirectoryFooter = () => (
                     <h4 className="font-bold text-lg mb-3">Resources</h4>
                     <ul className="space-y-2 text-sm">
                         {/* ✅ EXTERNAL LINK */}
-                        <li><a href="https://sys.pressmark.site/contact" className="text-sky-200 hover:text-white hover:underline">Contact Us</a></li>
+                        <li><a href="https://pressmark.site/contact" className="text-sky-200 hover:text-white hover:underline">Contact Us</a></li>
                     </ul>
                 </div>
             </div>

@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 const getSaasUrl = (path = '') => {
     // If you are on production, use the subdomain
     if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        return `https://sys.pressmark.site${path}`;
+        return `https://pressmark.site${path}`;
     }
     
     // ✅ FIX: Remove the '/#' prefix. If using BrowserRouter, you don't need it!

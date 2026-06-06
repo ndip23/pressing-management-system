@@ -44,18 +44,6 @@ const LandingPage = () => {
                 data-aos="fade-in"
             >
 
-                {/* Promo Banner */}
-                <div 
-                    className="w-full bg-gradient-to-r from-apple-blue to-blue-500 text-white rounded-full px-6 py-3 mb-8 flex items-center justify-center gap-3 shadow-md"
-                    data-aos="zoom-in"
-                    data-aos-delay="100"
-                >
-                    <span className="text-xl">🎉</span>
-                    <p className="text-base font-medium">
-                       {t('public.landing.banner.promo')}
-                    </p>
-                </div>
-
                 <div className="container mx-auto px-6">
                     <div className="max-w-2xl mx-auto">
 
