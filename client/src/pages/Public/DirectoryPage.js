@@ -96,7 +96,7 @@ const BusinessCard = ({ business }) => {
 };
 
 // --- ✅ FULL i18n MAIN DIRECTORY PAGE ---
-const shuffleArray = (items) => items.slice().sort(() => Math.random() - 0.5);
+const shuffleArray = (items) => items.slice().sort(() => Math.random() - 0.2);
 
 const DirectoryPage = () => {
   const { t } = useTranslation();

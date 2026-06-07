@@ -1,6 +1,6 @@
-export const MIN_WALLET_BALANCE = 0.01;
+export const MIN_WALLET_BALANCE = 0.5;
 export const MIN_TOP_UP_AMOUNT = 5;
-export const CONTACT_FEE = 0.5;
+export const CONTACT_FEE = 0.2;
 export const WALLET_CURRENCY_CODE = 'USD';
 export const WALLET_CURRENCY_SYMBOL = '$';
 
@@ -29,7 +29,8 @@ export const getOnboardingStep = (user) => {
   if (!user || user.role === 'superadmin') return 'complete';
   const tenant = user.tenant;
   if (!tenant) return 'wallet';
-  if (!isWalletFunded(tenant)) return 'wallet';
+  // Skip wallet funding check - allow dashboard access with 0 balance
+  // Modal will handle wallet top-up prompts when user tries to use features
   if (!isProfileComplete(tenant)) return 'profile';
   if (!isPricingComplete(tenant)) return 'pricing';
   return 'complete';

@@ -116,11 +116,10 @@ function App() {
                             <Route path="services-pricing" element={<OnboardingStepGuard requiredStep="pricing"><AdminPricingPage /></OnboardingStepGuard>} />
                         </Route>
                         <Route path="wallet">
-                            <Route path="select-country" element={<OnboardingStepGuard requiredStep="wallet" allowWhenComplete><WalletPaymentCountryPage /></OnboardingStepGuard>} />
-                            <Route index element={<OnboardingStepGuard requiredStep="wallet" allowWhenComplete><WalletTopUpPage /></OnboardingStepGuard>} />
+                            <Route path="select-country" element={<WalletPaymentCountryPage />} />
+                            <Route index element={<WalletTopUpPage />} />
                         </Route>
                         <Route element={<ProtectedRoute />}>
-                            <Route element={<OnboardingGate />}>
                             <Route path="dashboard" element={<DashboardPage />} />
                             <Route path="orders" element={<OrdersListPage />} />
                             <Route path="orders/new" element={<CreateOrderPage />} />
@@ -134,16 +133,13 @@ function App() {
                             <Route path="inbox" element={<InboxPage />} />
                             <Route path="profile" element={<ProfilePage />} />
                             <Route path="business-profile" element={<BusinessProfileSetupPage />} />
-                            </Route>
                         </Route>
                         <Route path="admin" element={<AdminRoute />}>
-                            <Route element={<OnboardingGate />}>
                                 <Route index element={<Navigate to="settings" replace />} />
                                 <Route path="settings" element={<SettingsPage />}/>
                                 <Route path="pricing" element={<AdminPricingPage />}/>
                                 <Route path="users" element={<ManageUsersPage />}/>
                                 <Route path="directory" element={<ManageDirectoryPage />}/>
-                            </Route>
                         </Route>
                     </Route>
 

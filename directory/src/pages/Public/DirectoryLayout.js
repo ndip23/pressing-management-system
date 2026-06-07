@@ -28,7 +28,7 @@ export const DirectoryHeader = () => {
                     <Link to="/directory" className={getLinkClass('/directory')}>Find a Service</Link>
                     
                     {/* ✅ EXTERNAL LINK TO SUBDOMAIN */}
-                    <a href="https://pressmark.site/" className="text-sm font-medium hover:text-apple-blue dark:hover:text-sky-300 transition-colors text-apple-gray-600 dark:text-apple-gray-300">
+                    <a href="https://pressmark.site/add-your-buisness" className="text-sm font-medium hover:text-apple-blue dark:hover:text-sky-300 transition-colors text-apple-gray-600 dark:text-apple-gray-300">
                         Get The Software
                     </a>
                 </div>
@@ -56,7 +56,7 @@ export const DirectoryFooter = () => (
                     <ul className="space-y-2 text-sm">
                         <li><Link to="/directory" className="text-sky-200 hover:text-white hover:underline">Search Directory</Link></li>
                         {/* ✅ EXTERNAL LINKS TO SUBDOMAIN */}
-                        <li><a href="https://pressmark.site" className="text-sky-200 hover:text-white hover:underline">Get The Software</a></li>
+                        <li><a href="https://pressmark.site/add-your-business" className="text-sky-200 hover:text-white hover:underline">Get The Software</a></li>
                         <li><a href="https://pressmark.site/features" className="text-sky-200 hover:text-white hover:underline">Software Features</a></li>
                     </ul>
                 </div>

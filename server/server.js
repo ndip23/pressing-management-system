@@ -54,38 +54,61 @@ connectDB()
     process.exit(1);
   });
 
-// Simple health check endpoint for uptime and monitoring tools
-app.get("/", (_req, res) => res.status(200).json({ status: "OK" }));
-
-// --- Security and CORS Middleware ---
-app.use(helmet());
-app.use(compression());
-
+// --- 1. CORS CONFIGURATION (MUST BE FIRST) ---
 const corsOptions = {
-  origin:
-    process.env.NODE_ENV === "production"
-      ? (process.env.FRONTEND_URL || "").split(",").map((url) => url.trim())
-      : ["http://localhost:3000",
-        "https://pressmark.site",      
-        "https://www.pressmark.site",  
-        "https://sys.pressmark.site",
-        "https://www.sys.pressmark.site",
-        "https://pressing-management-system.vercel.app" ],
+  origin: (origin, callback) => {
+    const whitelist = [
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "https://pressmark.site",
+      "https://www.pressmark.site",
+      "https://sys.pressmark.site",
+      "https://www.sys.pressmark.site",
+      "https://pressing-management-system.vercel.app",
+    ];
+
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (whitelist.indexOf(origin) !== -1 || process.env.NODE_ENV !== "production") {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
+
 app.use(cors(corsOptions));
 
-// --- Webhook Route (MUST come BEFORE express.json()) ---
-// This is because webhook signature verification needs the raw request body.
+// --- 2. OTHER SECURITY & UTILITY MIDDLEWARE ---
+app.use(helmet({
+  crossOriginResourcePolicy: false, // Allows images to load from other domains
+}));
+app.use(compression());
+
+// --- 3. REQUEST LOGGER (To help you find the 500 error) ---
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} to ${req.url}`);
+  next();
+});
+
+// --- 4. WEBHOOK ROUTE (Before Body Parser) ---
 app.use("/api/webhooks", webhookRoutes);
 
-// --- Body Parser Middleware ---
+// --- 5. BODY PARSERS ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// --- API Routes Mounting ---
+// --- 6. API ROUTES ---
+app.get("/", (_req, res) => res.status(200).json({ status: "OK", message: "Server is alive" }));
+app.get("/api/test", (req, res) => res.json({ message: "API is running!" }));
+
 app.use("/api/public", publicRoutes);
-app.use("/api/directory-admins", directoryAdminRoutes); // Corrected from directory-admin
+app.use("/api/directory-admins", directoryAdminRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/orders", orderRoutes);
@@ -101,18 +124,31 @@ app.use("/api/plans", planRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use('/api/gallery', galleryRoutes);
 
-// --- Root Route for Health Check ---
-app.get("/api/test", (req, res) => res.json({ message: "API is running!" }));
-// --- TEMPORARY DEBUG ROUTE ---
-
-// --- Error Handling Middleware (must be last) ---
+// --- 7. ERROR HANDLING (MUST BE LAST) ---
 app.use(errorMiddleware.notFound);
-app.use(errorMiddleware.errorHandler);
+
+// Custom error logger to fix your 500 issue
+app.use((err, req, res, next) => {
+  console.error("❌ BACKEND ERROR DETECTED:");
+  console.error(err.stack); // This prints the EXACT line of code where it crashed
+  
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  
+  // Set CORS headers for error responses
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
+  
+  res.status(statusCode).json({
+    message: err.message,
+    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+  });
+});
 
 // --- Start Server ---
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () =>
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
+const server = app.listen(PORT, () =>
+  console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`)
 );
 
 export default app;

@@ -1,120 +1,120 @@
 // client/src/contexts/AuthContext.js
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import { loginUser as apiLoginUser, getMe as apiGetMe, logoutUserApi } from '../services/api';
+import { 
+    loginUser as apiLoginUser, 
+    getMe as apiGetMe, 
+    logoutUserApi, 
+    setAuthHeader // Ensure you exported this from api.js
+} from '../services/api';
+
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(() => localStorage.getItem('token')); // Initialize from localStorage
+    const [token, setToken] = useState(() => localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
 
     const logout = useCallback(async () => {
         try {
-            if (localStorage.getItem('token')) { // Check localStorage directly
-                await logoutUserApi();
+            // Only try to call logout API if we actually have a token
+            if (localStorage.getItem('token')) {
+                await logoutUserApi().catch(() => {}); // ignore error on logout
             }
-        } catch (error) {
-            console.error("Logout API call failed:", error.response?.data?.message || error.message);
         } finally {
             localStorage.removeItem('token');
+            setAuthHeader(null); // Clear axios header
             setUser(null);
             setToken(null);
+            setLoading(false);
         }
-    }, []); // This useCallback has no dependencies as it uses localStorage directly, so it's stable.
+    }, []);
 
     const fetchAndSetUser = useCallback(async (jwtToken) => {
-        if (jwtToken) {
-            try {
-                const decoded = jwtDecode(jwtToken);
-                if (decoded.exp * 1000 < Date.now()) {
-                    await logout();
-                    return;
-                }
-                localStorage.setItem('token', jwtToken); // Ensure token is set for API calls
-                setToken(jwtToken);
+        if (!jwtToken) return;
 
-                try {
-                    const { data: userData } = await apiGetMe();
-                    setUser(userData);
-                } catch (meError) {
-                    console.error("Failed to fetch current user (/me):", meError.response?.data?.message || meError.message);
-                    await logout(); // Logout if /me fails
-                }
-            } catch (error) {
-                console.error("Invalid token on load:", error);
-                await logout();
-            }
-        } else {
-            // If no token is provided, ensure we are in a logged-out state
-            await logout();
-        }
-    }, [logout]); // <<<<< CORRECTED: ADDED 'logout' TO THE DEPENDENCY ARRAY
-
-    useEffect(() => {
-        const checkUser = async () => {
-            setLoading(true);
-            const storedToken = localStorage.getItem('token');
-            await fetchAndSetUser(storedToken);
-            setLoading(false);
-        };
-        checkUser();
-    }, [fetchAndSetUser]); // This dependency is correct
-
-    const login = async (username, password) => {
         try {
-            const { data } = await apiLoginUser({ username, password });
-            await fetchAndSetUser(data.token);
+            // 1. Manually force the header into Axios instance IMMEDIATELY
+            setAuthHeader(jwtToken); 
+
+            // 2. Decode for local checks (expiration)
+            const decoded = jwtDecode(jwtToken);
+            if (decoded.exp * 1000 < Date.now()) {
+                await logout();
+                return;
+            }
+
+            // 3. Fetch full profile from backend
+            const { data: userData } = await apiGetMe();
+            
+            // 4. Update state only if request succeeded
+            localStorage.setItem('token', jwtToken);
+            setToken(jwtToken);
+            setUser(userData);
             return true;
         } catch (error) {
-            await logout(); // Ensure clean state on login failure
-            // Re-throw the specific error for the login page to handle
-            throw error.response?.data || new Error(error.response?.data?.message || 'Login failed');
+            console.error("Auth fetch failed:", error.response?.data?.message || error.message);
+            // If it's a 401, clear local data to stop the loop
+            if (error.response?.status === 401) {
+                localStorage.removeItem('token');
+                setAuthHeader(null);
+                setUser(null);
+                setToken(null);
+            }
+            return false;
+        }
+    }, [logout]);
+
+    useEffect(() => {
+        const initAuth = async () => {
+            setLoading(true);
+            const storedToken = localStorage.getItem('token');
+            if (storedToken) {
+                await fetchAndSetUser(storedToken);
+            }
+            setLoading(false);
+        };
+        initAuth();
+    }, [fetchAndSetUser]);
+
+    const login = async (username, password) => {
+        setLoading(true);
+        try {
+            const { data } = await apiLoginUser({ username, password });
+            const success = await fetchAndSetUser(data.token);
+            return success;
+        } catch (error) {
+            throw error;
+        } finally {
+            setLoading(false);
         }
     };
 
-    // This function is for the multi-step signup flow
     const loginWithToken = useCallback(async (newToken) => {
-        await fetchAndSetUser(newToken);
-    }, [fetchAndSetUser]);
-    const isSubscriptionActive = ['active', 'trial', 'trialing'].includes(user?.tenant?.subscriptionStatus);
-    const updateUserInContext = (updatedUserData) => {
-        setUser(prevUser => ({
-            ...prevUser,
-            ...updatedUserData,
-        }));
-    };
-
-    const refreshUser = useCallback(async () => {
-        const storedToken = localStorage.getItem('token');
-        if (!storedToken) return;
-        await fetchAndSetUser(storedToken);
+        setLoading(true);
+        const success = await fetchAndSetUser(newToken);
+        setLoading(false);
+        return success;
     }, [fetchAndSetUser]);
 
     const value = {
         user,
         token,
         isAuthenticated: !!user && !!token,
-        isSubscriptionActive,
+        isSubscriptionActive: ['active', 'trial', 'trialing'].includes(user?.tenant?.subscriptionStatus),
         loading,
         login,
         logout,
         loginWithToken,
-        updateUserInContext,
-        refreshUser,
+        updateUserInContext: (updated) => setUser(prev => ({ ...prev, ...updated })),
+        refreshUser: async () => fetchAndSetUser(localStorage.getItem('token')),
     };
 
-    return (
-        <AuthContext.Provider value={value}>
-            {children}
-        </AuthContext.Provider>
-    );
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
+    if (!context) throw new Error('useAuth must be used within AuthProvider');
     return context;
 };

@@ -53,7 +53,7 @@ const TermsPage = () => {
             </p>
             <ul className="list-disc pl-6 space-y-2 text-sm">
               <li>
-                <strong>Transaction Fee:</strong> A flat service charge of <strong>$0.50 USD</strong> (or local currency equivalent of approximately <strong>300 XAF</strong>) is deducted directly from the Tenant's digital wallet balance for each successfully queued message transaction.
+                <strong>Transaction Fee:</strong> A flat service charge of <strong>$0.20 USD</strong> (or local currency equivalent of approximately <strong>300 XAF</strong>) is deducted directly from the Tenant's digital wallet balance for each successfully queued message transaction.
               </li>
               <li>
                 <strong>Wallet Funding:</strong> Tenants must maintain a sufficient prepayment balance in their dynamic wallet to use these automatic notification features.

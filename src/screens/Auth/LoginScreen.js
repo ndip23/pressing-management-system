@@ -26,7 +26,7 @@ const LoginScreen = () => {
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
-                <Text style={styles.title}>PressFlow</Text>
+                <Text style={styles.title}>PressMark</Text>
                 <Input placeholder="Username" value={username} onChangeText={setUsername} autoCapitalize="none" />
                 <Input placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
