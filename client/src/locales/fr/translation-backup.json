@@ -103,6 +103,8 @@
     "header": {
       "home": "Accueil",
       "features": "Fonctionnalités",
+      "about": "À Propos",
+      "contact": "Contact",
       "pricing": "Tarifs",
       "login": "Connexion",
       "add": "Ajoutez Votre Entreprise",
@@ -120,6 +122,7 @@
         "subtitle": "Le système de gestion tout-en-un pour le suivi des commandes, les notifications clients et la gestion des paiements. Passez moins de temps à gérer, plus de temps à développer.",
         "getStartedFree": "Commencer Gratuitement",
         "learnMore": "En Savoir Plus"
+        
       },
       "features": {
         "title": "Tout Ce Dont Vous Avez Besoin Pour Gérer Votre Magasin",

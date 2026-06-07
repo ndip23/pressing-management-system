@@ -42,8 +42,8 @@ export const PublicHeader = () => {
             <header className="sticky top-0 bg-white/80 dark:bg-apple-gray-900/80 backdrop-blur-md z-50 shadow-apple-sm">
                 <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
                     <Link to="/directory" className="flex items-center space-x-2">
-                    <img src="/logo.png" alt="PressFlow Logo" className="h-8 w-auto" />
-                    <span className="text-xl font-bold text-apple-gray-800 dark:text-apple-gray-100">PressFlow</span>
+                    <img src="/logo.png" alt="PressMark Logo" className="h-8 w-auto" />
+                    <span className="text-xl font-bold text-apple-gray-800 dark:text-apple-gray-100">PressMark</span>
                 </Link>
                     
                     {/* Desktop Navigation */}
@@ -51,7 +51,9 @@ export const PublicHeader = () => {
                        {/* <Link to="/directory" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.home')}</Link>*/}
                        < Link to="/add-your-buisness" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.add')}</Link>
                         <Link to="/features" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.features')}</Link>
-                        <Link to="/demo" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">Demo</Link>
+                        <Link to="/contact" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.contact')}</Link>
+                        <Link to="/about" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.about')}</Link>
+                        {/*<Link to="/demo" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">Demo</Link>*/}
                         {/*<Link to="/pricing" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.pricing')}</Link>*/}
                     </div>
                     

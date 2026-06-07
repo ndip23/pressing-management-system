@@ -20,7 +20,7 @@ const PublicHeader = () => (
                 <Link to="/pricing" className="text-sm font-medium text-apple-gray-600 dark:text-apple-gray-300 hover:text-apple-blue dark:hover:text-white">Pricing</Link>
                 <Link to="/login" className="text-sm font-medium text-apple-gray-600 dark:text-apple-gray-300 hover:text-apple-blue dark:hover:text-white">Log In</Link>
                 <Link to="/signup" className="bg-apple-blue text-white px-4 py-2 rounded-apple text-sm font-semibold hover:bg-sky-600 transition-colors">
-                    Sign Up Free
+                    Sign Up 
                 </Link>
             </nav>
             {/* Mobile menu button could be added here */}

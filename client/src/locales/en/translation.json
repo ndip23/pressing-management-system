@@ -788,9 +788,11 @@
     "header": {
       "home": "Directory",
       "features": "Features",
+      "contact": "Contact",
+      "about": "About",
       "pricing": "Pricing",
       "login": "Login",
-      "add": "Add Your Buisness",
+      "add": "Add Your Business",
       "getStarted": "Get Started"
     },
     "contact": {

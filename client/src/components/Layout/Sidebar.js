@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useAppTour } from '../../contexts/AppTourContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { getOnboardingStep, getOnboardingPath, WALLET_CURRENCY_SYMBOL } from '../../utils/onboarding';
+import {  WALLET_CURRENCY_SYMBOL } from '../../utils/onboarding';
 import Button from '../UI/Button';
 
 // NavItem component (assuming this is already correct and handles active/disabled states)
@@ -60,10 +60,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     const { startTour } = useAppTour();
     const navigate = useNavigate();
     const [showWalletModal, setShowWalletModal] = useState(false);
-    const onboardingStep = getOnboardingStep(user);
-    const onboardingLocked = onboardingStep !== 'complete';
-    const onboardingPath = getOnboardingPath(user);
-    const navTo = (path) => (onboardingLocked ? onboardingPath : path);
     const walletBalance = user?.tenant?.walletBalance ?? 0;
 
     const handleNavigation = (e, path) => {

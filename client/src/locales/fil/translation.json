@@ -687,6 +687,8 @@
     "header": {
       "home": "Home",
       "features": "Mga Feature",
+      "about": "Tungkol sa Amin",
+      "contact": "Makipag-ugnayan",
       "pricing": "Presyo",
       "login": "Login",
       "add": "idagdag ang enterprise",
