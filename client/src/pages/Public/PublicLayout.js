@@ -125,12 +125,20 @@ export const PublicHeader = () => {
                                     {t('public.header.features')}
                                 </Link>
                                 <Link 
-                                    to="/pricing" 
+                                    to="/contact" 
                                     className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
                                     onClick={closeMobileMenu}
                                 >
-                                    {t('public.header.pricing')}
+                                    {t('public.header.contact')}
                                 </Link>
+                                 <Link 
+                                    to="/about" 
+                                    className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
+                                    onClick={closeMobileMenu}
+                                >
+                                    {t('public.header.about')}
+                                </Link>
+                                
                                 
                                 {/* Language Switcher in Mobile Menu */}
                                 <div className="px-4 py-3">

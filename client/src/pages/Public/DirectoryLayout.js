@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Menu, X } from 'lucide-react';
 
 // --- Helper to point to the SaaS URL ---
 const getSaasUrl = (path = '') => {
@@ -17,34 +18,155 @@ const getSaasUrl = (path = '') => {
 export const DirectoryHeader = () => {
     const { t } = useTranslation();
     const location = useLocation();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const getLinkClass = (path) => {
         const baseClass = "text-sm font-medium hover:text-apple-blue dark:hover:text-sky-300 transition-colors";
         const activeClass = "text-apple-blue dark:text-sky-400 font-semibold";
-        const isActive = path === '/directory' ? location.pathname === path || location.pathname === "/" : location.pathname.startsWith(path);
-        return `${baseClass} ${isActive ? activeClass : 'text-apple-gray-600 dark:text-apple-gray-300'}`;
+        const isActive =
+            path === '/directory'
+                ? location.pathname === path || location.pathname === "/"
+                : location.pathname.startsWith(path);
+
+        return `${baseClass} ${
+            isActive
+                ? activeClass
+                : 'text-apple-gray-600 dark:text-apple-gray-300'
+        }`;
     };
 
     return (
-        <header className="sticky top-0 bg-white/80 dark:bg-apple-gray-900/80 backdrop-blur-md z-50 shadow-apple-sm">
-            <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
-                <Link to="/directory" className="flex items-center space-x-2">
-                    <svg className="h-8 w-8 text-apple-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                    <span className="text-xl font-bold text-apple-gray-800 dark:text-apple-gray-100">{t("directory.brand")}</span>
-                </Link>
+        <>
+            <header className="sticky top-0 bg-white/80 dark:bg-apple-gray-900/80 backdrop-blur-md z-50 shadow-apple-sm">
+                <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
+                    <Link to="/directory" className="flex items-center space-x-2">
+                        <svg
+                            className="h-8 w-8 text-apple-blue"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                            />
+                        </svg>
 
-                <div className="hidden md:flex space-x-8 items-center">
-                    <Link to="/directory" className={getLinkClass('/directory')}>{t("directory.nav.findService")}</Link>
-                    
-                    {/* External Link using Helper */}
-                    <a href={getSaasUrl('/')} className="text-sm font-medium text-apple-gray-600 hover:text-apple-blue transition-colors">
-                        {t("directory.nav.getSoftware")}
-                    </a>
+                        <span className="text-xl font-bold text-apple-gray-800 dark:text-apple-gray-100">
+                            {t("directory.brand")}
+                        </span>
+                    </Link>
+
+                    {/* Desktop Menu */}
+                    <div className="hidden md:flex space-x-8 items-center">
+                        <Link
+                            to="/directory"
+                            className={getLinkClass('/directory')}
+                        >
+                            {t("directory.nav.findService")}
+                        </Link>
+
+                        <a
+                            href={getSaasUrl('/add-your-business')}
+                            className="text-sm font-medium text-apple-gray-600 hover:text-apple-blue transition-colors"
+                        >
+                            {t("directory.nav.getSoftware")}
+                        </a>
+                    </div>
+
+                    {/* Mobile Hamburger */}
+                    <button
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="md:hidden flex items-center justify-center w-10 h-10 rounded-lg hover:bg-apple-gray-100 dark:hover:bg-apple-gray-800 transition-colors"
+                        aria-label="Toggle mobile menu"
+                    >
+                        {isMobileMenuOpen ? (
+                            <X
+                                size={24}
+                                className="text-apple-gray-700 dark:text-apple-gray-300"
+                            />
+                        ) : (
+                            <Menu
+                                size={24}
+                                className="text-apple-gray-700 dark:text-apple-gray-300"
+                            />
+                        )}
+                    </button>
+                </nav>
+            </header>
+
+            {/* Mobile Menu */}
+            {isMobileMenuOpen && (
+                <div className="fixed inset-0 z-40 md:hidden">
+                    {/* Backdrop */}
+                    <div
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                    />
+
+                    {/* Menu Panel */}
+                    <div className="absolute top-[73px] right-0 w-80 max-w-[90vw] h-[calc(100vh-73px)] bg-white dark:bg-apple-gray-900 shadow-xl border-l border-apple-gray-200 dark:border-apple-gray-800 overflow-y-auto">
+                        <div className="p-6 space-y-4">
+
+                            <Link
+                                to="/directory"
+                                className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                                {t("directory.nav.findService")}
+                            </Link>
+
+                            <a
+                                href={getSaasUrl('/add-your-business')}
+                                className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                                {t("directory.nav.getSoftware")}
+                            </a>
+
+                            <a
+                                href={getSaasUrl('/features')}
+                                className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
+                            >
+                                {t("directory.footer.features")}
+                            </a>
+
+                            <a
+                                href={getSaasUrl('/privacy')}
+                                className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
+                            >
+                                {t("directory.footer.privacy")}
+                            </a>
+
+                            <a
+                                href={getSaasUrl('/terms')}
+                                className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
+                            >
+                                {t("directory.footer.terms")}
+                            </a>
+
+                            <a
+                                href={getSaasUrl('/contact')}
+                                className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
+                            >
+                                {t("directory.footer.contact")}
+                            </a>
+
+                            <Link
+                                to="/directory-admin/login"
+                                className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                                {t("directory.footer.adminPortal")}
+                            </Link>
+                        </div>
+                    </div>
                 </div>
-            </nav>
-        </header>
+            )}
+        </>
     );
 };
 
