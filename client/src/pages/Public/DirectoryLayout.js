@@ -70,7 +70,7 @@ export const DirectoryHeader = () => {
                         </Link>
 
                         <a
-                            href={getSaasUrl('/add-your-business')}
+                            href={getSaasUrl('/add-your-buisness')}
                             className="text-sm font-medium text-apple-gray-600 hover:text-apple-blue transition-colors"
                         >
                             {t("directory.nav.getSoftware")}
@@ -120,7 +120,7 @@ export const DirectoryHeader = () => {
                             </Link>
 
                             <a
-                                href={getSaasUrl('/add-your-business')}
+                                href={getSaasUrl('/add-your-buisness')}
                                 className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
                                 onClick={() => setIsMobileMenuOpen(false)}
                             >
@@ -130,38 +130,18 @@ export const DirectoryHeader = () => {
                             <a
                                 href={getSaasUrl('/features')}
                                 className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
+                                onClick={() => setIsMobileMenuOpen(false)}
                             >
                                 {t("directory.footer.features")}
                             </a>
 
                             <a
-                                href={getSaasUrl('/privacy')}
-                                className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
-                            >
-                                {t("directory.footer.privacy")}
-                            </a>
-
-                            <a
-                                href={getSaasUrl('/terms')}
-                                className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
-                            >
-                                {t("directory.footer.terms")}
-                            </a>
-
-                            <a
                                 href={getSaasUrl('/contact')}
-                                className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
-                            >
-                                {t("directory.footer.contact")}
-                            </a>
-
-                            <Link
-                                to="/directory-admin/login"
                                 className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
                                 onClick={() => setIsMobileMenuOpen(false)}
                             >
-                                {t("directory.footer.adminPortal")}
-                            </Link>
+                                {t("directory.footer.contact")}
+                            </a>
                         </div>
                     </div>
                 </div>
