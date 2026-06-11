@@ -7,7 +7,7 @@ import DirectoryHeader from './DirectoryHeader';
 const PublicFooter = () => (
     <footer className="bg-apple-gray-100 dark:bg-black/20">
         <div className="container mx-auto px-6 py-8 text-center text-sm text-apple-gray-500 dark:text-apple-gray-400">
-            <p>© {new Date().getFullYear()} PressMark. All Rights Reserved.</p>
+            <p>© {new Date().getFullYear()} lsmbooker. All Rights Reserved.</p>
             <div className="mt-4 space-x-6">
                 <Link to="/privacy" className="hover:text-apple-blue">Privacy Policy</Link>
                 <Link to="/terms" className="hover:text-apple-blue">Terms of Service</Link>

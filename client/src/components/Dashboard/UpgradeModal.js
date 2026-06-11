@@ -113,7 +113,7 @@ const UpgradeModal = ({ isOpen, onClose }) => {
         <Modal isOpen={isOpen} onClose={onClose} title="Upgrade Your Subscription" size="3xl">
             <div className="p-6">
                 <p className="text-center text-apple-gray-500 dark:text-apple-gray-400 mb-8">
-                    Your current trial has expired . Choose a plan to continue enjoying PressMark.
+                    Your current trial has expired . Choose a plan to continue enjoying lsmbooker.
                 </p>
                 {loading ? <div className="flex justify-center"><Spinner /></div> : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -61,10 +61,10 @@ const corsOptions = {
     const whitelist = [
       "http://localhost:3000",
       "http://127.0.0.1:3000",
-      "https://pressmark.site",
-      "https://www.pressmark.site",
-      "https://sys.pressmark.site",
-      "https://www.sys.pressmark.site",
+      "https://lsmbooker.com",
+      "https://www.lsmbooker.com",
+      "https://sys.lsmbooker.com",
+      "https://www.sys.lsmbooker.com",
       "https://pressing-management-system.vercel.app",
     ];
 

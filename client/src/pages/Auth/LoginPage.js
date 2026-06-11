@@ -105,7 +105,7 @@ const LoginPage = () => {
                 </div>
             </Card>
             <p className="mt-8 text-center text-xs text-apple-gray-500 dark:text-apple-gray-400">
-                © {new Date().getFullYear()} PressMark. {t('login.copyright')}
+                © {new Date().getFullYear()} lsmbooker. {t('login.copyright')}
             </p>
         </div>
     );

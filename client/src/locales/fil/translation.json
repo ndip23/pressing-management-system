@@ -641,13 +641,13 @@
     "searchCustomers": "Maghanap ng mga Customer"
   },
   "directory": {
-    "brand": "PressMark Directory",
+    "brand": "lsmbooker Directory",
     "nav": {
       "findService": "Maghanap ng Serbisyo",
       "getSoftware": "Kunin ang Software"
     },
     "footer": {
-      "aboutTitle": "PressMark Directory",
+      "aboutTitle": "lsmbooker Directory",
       "aboutText": "Ang aming layunin ay ikonekta ka sa mga mapagkakatiwalaang at de-kalidad na serbisyo ng paglalaba at pamamalantsa sa iyong lugar na pinapagana ng makabagong teknolohiya.",
       "quickLinks": "Mabilis na Mga Link",
       "searchDirectory": "Maghanap sa Directory",
@@ -679,7 +679,7 @@
       "defaultDescription": "Propesyonal na serbisyo ng pamamalantsa, paglalaba, at dry cleaning.",
       "viewDetails": "Tingnan ang Detalye",
       "contact": "Makipag-ugnayan",
-      "whatsappMessage": "Kumusta {{name}}, nakita ko kayo sa PressMark at nais kong magtanong tungkol sa inyong mga serbisyo.",
+      "whatsappMessage": "Kumusta {{name}}, nakita ko kayo sa lsmbooker at nais kong magtanong tungkol sa inyong mga serbisyo.",
       "noLocation": "Hindi magagamit"
     }
   },
@@ -800,7 +800,7 @@
           "features": [
             "Lahat ng nasa Starter Plan, at dagdag pa:",
             "3x mas maraming customer traffic mula sa iyong lugar",
-            "Priority listing sa direktoryo ng PressMark",
+            "Priority listing sa direktoryo ng lsmbooker",
             "Magdagdag ng hanggang 5 staff sa iisang account",
             "Advanced analytics at performance dashboard",
             "Mga automated na paalala sa kliyente para sa mga pickup"
@@ -836,7 +836,7 @@
       "allPlansInclude": {
         "title": "⚡ Lahat ng Plano ay May Kasamang",
         "features": [
-          "Secure na PressMark Dashboard (web, Android, at laptop versions)",
+          "Secure na lsmbooker Dashboard (web, Android, at laptop versions)",
           "Cloud-based data backup para sa mga kliyente at order",
           "Agad na makita ang sales performance at mga aktibidad ng staff",
           "Built-in na customer database at mga tool para sa promosyon",

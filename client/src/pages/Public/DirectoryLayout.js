@@ -7,7 +7,7 @@ import { Menu, X } from 'lucide-react';
 const getSaasUrl = (path = '') => {
     // If you are on production, use the subdomain
     if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        return `https://pressmark.site${path}`;
+        return `https://lsmbooker.com${path}`;
     }
     
     // ✅ FIX: Remove the '/#' prefix. If using BrowserRouter, you don't need it!
@@ -180,7 +180,7 @@ export const DirectoryFooter = () => {
                     </div>
                 </div>
                 <div className="mt-10 pt-6 border-t border-sky-700 text-center text-xs text-sky-300">
-                    <p>&copy; {new Date().getFullYear()} PressMark. {t("directory.footer.rights")}</p>
+                    <p>&copy; {new Date().getFullYear()} lsmbooker. {t("directory.footer.rights")}</p>
                     {/* Admin portal stays local */}
                     <Link to="/directory-admin/login" className="mt-2 inline-block hover:text-white hover:underline">
                         {t("directory.footer.adminPortal")}

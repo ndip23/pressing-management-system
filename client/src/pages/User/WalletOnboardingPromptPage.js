@@ -16,7 +16,7 @@ const WalletOnboardingPromptPage = () => {
   const supportEmail =
     settings?.companyInfo?.email ||
     process.env.REACT_APP_SUPPORT_EMAIL ||
-    'support@pressmark.site';
+    'support@lsmbooker.com';
 
   useEffect(() => {
     if (isWalletFunded(user?.tenant)) {

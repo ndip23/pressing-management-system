@@ -36,7 +36,7 @@ const AboutPage = () => {
                             <span className="text-apple-blue block sm:inline">Pressing Businesses.</span>
                         </h1>
                         <p data-aos="fade-up" data-aos-delay="200" className="text-base md:text-xl lg:text-2xl text-apple-gray-500 dark:text-apple-gray-400 font-medium leading-relaxed max-w-2xl mx-auto">
-                            PressMark bridges the gap between traditional craftsmanship and modern digital efficiency. We empower laundry owners to thrive in the digital age.
+                            lsmbooker bridges the gap between traditional craftsmanship and modern digital efficiency. We empower laundry owners to thrive in the digital age.
                         </p>
                     </div>
                 </div>
@@ -53,7 +53,7 @@ const AboutPage = () => {
                             </h2>
                             <div className="space-y-4 text-apple-gray-600 dark:text-apple-gray-400 text-sm md:text-lg leading-relaxed">
                                 <p>We watched businesses struggle with paper ledgers and lost tickets for years. We saw the exhaustion that came with manual management.</p>
-                                <p>PressMark was born to bring Absolute Precision to local communities. Today, we help hundreds of businesses scale without the stress.</p>
+                                <p>lsmbooker was born to bring Absolute Precision to local communities. Today, we help hundreds of businesses scale without the stress.</p>
                             </div>
                             <div className="flex gap-8 md:gap-10 pt-4">
                                 <div>

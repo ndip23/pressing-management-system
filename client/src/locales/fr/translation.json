@@ -101,7 +101,7 @@
     "quickLinks": "Liens rapides",
     "quickLinksDesc": "Accédez rapidement aux tâches courantes.",
     "helpTitle": "Aide",
-    "helpDescription": "Nouveau sur PressMark ? Relancez la visite guidée à tout moment.",
+    "helpDescription": "Nouveau sur lsmbooker ? Relancez la visite guidée à tout moment.",
     "startTour": "Visite guidée",
     "completeProfileTitle": "Complétez votre profil entreprise",
     "completeProfileDesc": "Ajoutez vos coordonnées, votre ville et votre visibilité dans l'annuaire.",
@@ -557,7 +557,7 @@
     "finish": "Terminer",
     "steps": {
       "welcome": {
-        "title": "Bienvenue sur PressMark",
+        "title": "Bienvenue sur lsmbooker",
         "description": "Votre tableau de bord pour gérer commandes, clients, paiements et votre fiche publique."
       },
       "dashboard": {
@@ -766,13 +766,13 @@
     "searchCustomers": "Rechercher des Clients"
   },
   "directory": {
-    "brand": "Annuaire PressMark",
+    "brand": "Annuaire lsmbooker",
     "nav": {
       "findService": "Trouver un service",
       "getSoftware": "Obtenir le logiciel"
     },
     "footer": {
-      "aboutTitle": "Annuaire PressMark",
+      "aboutTitle": "Annuaire lsmbooker",
       "aboutText": "Notre mission est de vous connecter à des services de pressing et de blanchisserie fiables et de haute qualité dans votre région, alimentés par la technologie moderne.",
       "quickLinks": "Liens rapides",
       "searchDirectory": "Rechercher dans l’annuaire",
@@ -804,7 +804,7 @@
       "defaultDescription": "Services professionnels de pressing, de blanchisserie et de nettoyage à sec.",
       "viewDetails": "Voir les détails",
       "contact": "Contacter",
-      "whatsappMessage": "Bonjour {{name}}, je vous ai trouvé sur PressMark et je souhaite me renseigner sur vos services.",
+      "whatsappMessage": "Bonjour {{name}}, je vous ai trouvé sur lsmbooker et je souhaite me renseigner sur vos services.",
       "noLocation": "N/D"
     }
   },
@@ -927,7 +927,7 @@
           "features": [
             "Tout ce qui est inclus dans le forfait Démarrage",
             "3x plus de trafic client depuis votre zone",
-            "Liste prioritaire dans l'annuaire PressMark",
+            "Liste prioritaire dans l'annuaire lsmbooker",
             "Ajoutez jusqu'à 5 employés, tous gérés sous un seul compte",
             "Tableau de bord avancé d'analyse et de performance",
             "Rappels automatisés aux clients pour les ramassages et les livraisons",
@@ -966,7 +966,7 @@
       "allPlansInclude": {
         "title": "⚡ Tous les forfaits incluent :",
         "features": [
-          "Tableau de bord sécurisé PressMark (versions web, Android et portable)",
+          "Tableau de bord sécurisé lsmbooker (versions web, Android et portable)",
           "Sauvegarde des données clients et commandes sur le cloud",
           "Vue instantanée des performances de vente et des activités du personnel",
           "Base de données clients intégrée et outils promotionnels",

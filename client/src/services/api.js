@@ -7,7 +7,7 @@ const getBaseUrl = () => {
   ) {
     return 'http://localhost:5000/api';
   } else {
-    return 'https://pressmark-api.onrender.com/api';
+    return 'https://lsmbooker-api.onrender.com/api';
   }
 };
 

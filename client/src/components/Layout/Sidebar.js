@@ -169,7 +169,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                         <span>Logout</span>
                     </button>
                     <p className="text-xs text-apple-gray-500 dark:text-apple-gray-400 text-center">
-                        © {new Date().getFullYear()} PressMark
+                        © {new Date().getFullYear()} lsmbooker
                     </p>
                 </div>
 
