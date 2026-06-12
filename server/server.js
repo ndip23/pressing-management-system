@@ -70,7 +70,9 @@ const corsOptions = {
         "https://www.pressmark.site",  
         "https://sys.pressmark.site",
         "https://www.sys.pressmark.site",
-        "https://pressing-management-system.vercel.app" ],
+        "https://pressing-management-system.vercel.app",
+        "https://lsmbooker.com",
+        "https://www.lsmbooker.com"],
   credentials: true,
 };
 app.use(cors(corsOptions));
