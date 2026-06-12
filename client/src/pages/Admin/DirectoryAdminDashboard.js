@@ -200,7 +200,7 @@ const DirectoryAdminDashboard = () => {
             case 'tenants':
                 return loading ? <div className="p-8 flex justify-center"><Spinner /></div> : (
                     <Card>
-                        <div className="p-4 border-b dark:border-apple-gray-700"><h2 className="font-semibold text-lg">Software Customers (Tenants)</h2><p className="text-sm text-apple-gray-500">Businesses that signed up for PressMark. Edit their public directory profile here.</p></div>
+                        <div className="p-4 border-b dark:border-apple-gray-700"><h2 className="font-semibold text-lg">Software Customers (Tenants)</h2><p className="text-sm text-apple-gray-500">Businesses that signed up for lsmbooker. Edit their public directory profile here.</p></div>
                         <div className="overflow-x-auto"><table className="min-w-full text-sm"><thead><tr><th className="px-4 py-3 text-left">Name</th><th className="px-4 py-3 text-left">City</th><th className="px-4 py-3 text-left">Listed in Directory?</th><th className="px-4 py-3 text-center">Actions</th></tr></thead><tbody className="divide-y dark:divide-apple-gray-700">
                             {tenants.map(tenant => (<tr key={tenant._id}><td className="px-4 py-2 font-medium">{tenant.name}</td><td className="px-4 py-2">{tenant.city || 'N/A'}</td><td className="px-4 py-2">{tenant.isListedInDirectory ? 'Yes' : 'No'}</td><td className="px-4 py-2 text-center"><Button size="sm" variant="ghost" onClick={() => handleOpenEditTenantModal(tenant)} title="Edit Public Profile"><Edit3 size={16} /></Button></td></tr>))}</tbody></table></div>
                     </Card>

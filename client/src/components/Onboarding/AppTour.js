@@ -41,7 +41,7 @@ const AppTour = () => {
   const handleCloseTour = () => {
     closeTour();
     setStep(0);
-    sessionStorage.removeItem('pressmark_show_app_tour');
+    sessionStorage.removeItem('lsmbooker_show_app_tour');
   };
 
   const stepKey = TOUR_STEP_KEYS[step];

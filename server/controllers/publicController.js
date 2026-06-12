@@ -23,7 +23,7 @@ const COUNTRY_CODE_TO_NAME = {
 
 const DIRECTORY_CACHE_TTL_MS = 60 * 1000;
 const directoryCache = new Map();
-const DEFAULT_WHATSAPP_CONTACT_FEE = Number.parseFloat(process.env.WALLET_CONTACT_FEE || '0.5') || 0.5;
+const DEFAULT_WHATSAPP_CONTACT_FEE = Number.parseFloat(process.env.WALLET_CONTACT_FEE || '0.2') || 0.2;
 
 // --- STEP 1: INITIATE REGISTRATION (NO OTP) ---
 const initiateRegistration = asyncHandler(async (req, res) => {

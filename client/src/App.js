@@ -8,9 +8,7 @@ import PublicLayout from './pages/Public/PublicLayout';
 import DirectoryLayout from './pages/Public/DirectoryLayout';
 import Spinner from './components/UI/Spinner';
 import DirectoryAdminRoute from './components/Auth/DirectoryAdminRoute';
-import OnboardingGate from './components/Auth/OnboardingGate';
-import OnboardingRedirect from './components/Auth/OnboardingRedirect';
-import OnboardingStepGuard from './components/Auth/OnboardingStepGuard';
+
 
 // --- LAZY-LOADED PAGE COMPONENTS ---
 const LoginPage = lazy(() => import('./pages/Auth/LoginPage'));
@@ -33,7 +31,7 @@ const ProfilePage = lazy(() => import('./pages/User/ProfilePage'));
 const BusinessProfileSetupPage = lazy(() => import('./pages/User/BusinessProfileSetupPage'));
 const WalletTopUpPage = lazy(() => import('./pages/User/WalletTopUpPage'));
 const WalletPaymentCountryPage = lazy(() => import('./pages/User/WalletPaymentCountryPage'));
-const WalletOnboardingPromptPage = lazy(() => import('./pages/User/WalletOnboardingPromptPage'));
+
 const AppSubscriptionPage = lazy(() => import('./pages/User/AppSubscriptionPage'));
 const SubscriptionRequiredPage = lazy(() => import('./pages/User/SubscriptionRequiredPage'));
 const DailyPaymentsPage = lazy(() => import('./pages/Reports/DailyPaymentsPage'));
@@ -46,6 +44,7 @@ const DirectoryAdminDashboard = lazy(() => import('./pages/Admin/DirectoryAdminD
 const VerifyPaymentPage = lazy(() => import('./pages/Public/VerifyPaymentPage'));
 const VerifyUpgradePage = lazy(() => import('./pages/Public/VerifyUpgradePage'));
 const ContactPage = lazy(() => import('./pages/Public/ContactPage')); 
+const AboutPage = lazy(() => import('./pages/Public/AboutPage')); 
 const PaymentPage = lazy(() => import('./pages/Public/PaymentPage'));
 const TermsPage = lazy(() => import('./pages/Public/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/Public/PrivacyPage'));
@@ -97,6 +96,7 @@ function App() {
                         <Route path="/signup" element={<SignUpPage />} />
                         <Route path="/demo" element={<SignUpPage />} />
                         <Route path="/login" element={<LoginPage />} />
+                        <Route path="/about" element={<AboutPage />} />
                         <Route path="/contact" element={<ContactPage />} />
                         <Route path="/payment" element={<PaymentPage />} /> 
                         <Route path="/terms" element={<TermsPage />} />
@@ -107,20 +107,19 @@ function App() {
 
                     {/* --- PROTECTED APP --- */}
                     <Route path="/app" element={<ProtectedRoute allowInactive={true}><MainLayout /></ProtectedRoute>}>
-                        <Route index element={<OnboardingRedirect />} />
+                        
                         <Route path="subscription" element={<AppSubscriptionPage />} />
                         <Route path="manage" element={<ManageSystemPage />} />
-                        <Route path="onboarding">
+                         {/*<Route path="onboarding">
                             <Route path="wallet" element={<OnboardingStepGuard requiredStep="wallet"><WalletOnboardingPromptPage /></OnboardingStepGuard>} />
                             <Route path="business-profile" element={<OnboardingStepGuard requiredStep="profile"><BusinessProfileSetupPage /></OnboardingStepGuard>} />
                             <Route path="services-pricing" element={<OnboardingStepGuard requiredStep="pricing"><AdminPricingPage /></OnboardingStepGuard>} />
-                        </Route>
+                        </Route>*/}
                         <Route path="wallet">
-                            <Route path="select-country" element={<OnboardingStepGuard requiredStep="wallet" allowWhenComplete><WalletPaymentCountryPage /></OnboardingStepGuard>} />
-                            <Route index element={<OnboardingStepGuard requiredStep="wallet" allowWhenComplete><WalletTopUpPage /></OnboardingStepGuard>} />
+                            <Route path="select-country" element={<WalletPaymentCountryPage />} />
+                            <Route index element={<WalletTopUpPage />} />
                         </Route>
                         <Route element={<ProtectedRoute />}>
-                            <Route element={<OnboardingGate />}>
                             <Route path="dashboard" element={<DashboardPage />} />
                             <Route path="orders" element={<OrdersListPage />} />
                             <Route path="orders/new" element={<CreateOrderPage />} />
@@ -134,16 +133,13 @@ function App() {
                             <Route path="inbox" element={<InboxPage />} />
                             <Route path="profile" element={<ProfilePage />} />
                             <Route path="business-profile" element={<BusinessProfileSetupPage />} />
-                            </Route>
                         </Route>
                         <Route path="admin" element={<AdminRoute />}>
-                            <Route element={<OnboardingGate />}>
                                 <Route index element={<Navigate to="settings" replace />} />
                                 <Route path="settings" element={<SettingsPage />}/>
                                 <Route path="pricing" element={<AdminPricingPage />}/>
                                 <Route path="users" element={<ManageUsersPage />}/>
                                 <Route path="directory" element={<ManageDirectoryPage />}/>
-                            </Route>
                         </Route>
                     </Route>
 

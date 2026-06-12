@@ -70,7 +70,7 @@ const BusinessDetailPage = () => {
         if (!business?.publicPhone) return;
 
         try {
-            const { data } = await contactBusinessViaWhatsAppApi(business.slug, `Hello ${business.name}, I found you on PressMark and would like to inquire about your services.`);
+            const { data } = await contactBusinessViaWhatsAppApi(business.slug, `Hello ${business.name}, I found you on lsmbooker and would like to inquire about your services.`);
             if (data?.whatsappUrl) {
                 window.open(data.whatsappUrl, '_blank');
             } else {

@@ -33,7 +33,7 @@ const SubscriptionLockOverlay = ({ onUpgradeClick }) => {
         message = "Your subscription has been canceled. Please choose a new plan to reactivate your account.";
     } else if (status === 'expired') {
         title = "Trial Expired";
-        message = "Your free trial has ended. Please pick a plan to continue using PressMark.";
+        message = "Your free trial has ended. Please pick a plan to continue using lsmbooker.";
     }
 
     return (

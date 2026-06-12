@@ -62,27 +62,63 @@ const registerUser = asyncHandler(async (req, res) => {
 // @desc    Auth user & get token (Login)
 // @route   POST /api/auth/login
 // @access  Public
+
 const loginUser = asyncHandler(async (req, res) => {
     const { username, password } = req.body;
-    if (!username || !password) { res.status(400); throw new Error('Please provide username and password.'); }
-    const user = await User.findOne({ username: username.toLowerCase() }).select('+password');
-    if (!user) { res.status(401); throw new Error('Invalid username or password.'); }
-    if (await user.matchPassword(password)) {
-        if (!user.isActive) { res.status(403); throw new Error('Your user account has been disabled.'); }
-        const tenant = await Tenant.findById(user.tenantId);
-        if (!tenant || !tenant.isActive) { res.status(403); throw new Error('This business account is inactive.'); }
-        const token = generateToken(user._id, user.username, user.role, user.tenantId);
-        res.cookie('token', token, {
-    httpOnly: true, // Prevents JS from reading it
-    secure: process.env.NODE_ENV === 'production', // true in production
-    sameSite: 'lax',
-    domain: '.pressmark.site', // <--- THIS IS THE KEY: The leading dot allows access on all subdomains
-    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-});
 
-res.json({ _id: user._id, username: user.username, role: user.role, token });
+    if (!username || !password) {
+        res.status(400);
+        throw new Error('Please provide username and password.');
+    }
+
+    // Find user and include password for comparison
+    const user = await User.findOne({ username: username.toLowerCase() }).select('+password');
+
+    if (!user) {
+        res.status(401);
+        throw new Error('Invalid username or password.');
+    }
+
+    if (await user.matchPassword(password)) {
+        if (!user.isActive) {
+            res.status(403);
+            throw new Error('Your user account has been disabled.');
+        }
+
+        const tenant = await Tenant.findById(user.tenantId);
+        if (!tenant || !tenant.isActive) {
+            res.status(403);
+            throw new Error('This business account is inactive.');
+        }
+
+        const token = generateToken(user._id, user.username, user.role, user.tenantId);
+
+        // --- COOKIE CONFIGURATION ---
+        const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // true only in production (HTTPS)
+            sameSite: 'lax',
+            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+        };
+
+        // ONLY apply domain in production. This fixes the localhost issue.
+        if (process.env.NODE_ENV === 'production') {
+            cookieOptions.domain = '.pressmark.site';
+        }
+
+        res.cookie('token', token, cookieOptions);
+
+        // Return user data and token
+        res.json({
+            _id: user._id,
+            username: user.username,
+            role: user.role,
+            tenantId: user.tenantId,
+            token
+        });
     } else {
-        res.status(401); throw new Error('Invalid username or password.');
+        res.status(401);
+        throw new Error('Invalid username or password.');
     }
 });
 

@@ -42,7 +42,7 @@ const PrivacyPage = () => {
             <p className="mb-2">Collected data is put to use to run services securely, including:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li>Authenticating login sessions and verifying directory listings.</li>
-              <li>Processing pay-outs, monitoring wallet operations, and charging fee allocations (such as the standard <strong>$0.50 USD / 300 XAF</strong> per-message transaction fee).</li>
+              <li>Processing pay-outs, monitoring wallet operations, and charging fee allocations (such as the standard <strong>$0.20 USD / 120 XAF</strong> per-message transaction fee).</li>
               <li>Sending transactional SMS and WhatsApp messages to laundry clients on behalf of subscribed Tenants.</li>
             </ul>
           </section>

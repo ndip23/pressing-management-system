@@ -42,8 +42,8 @@ export const PublicHeader = () => {
             <header className="sticky top-0 bg-white/80 dark:bg-apple-gray-900/80 backdrop-blur-md z-50 shadow-apple-sm">
                 <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
                     <Link to="/directory" className="flex items-center space-x-2">
-                    <img src="/logo.png" alt="PressFlow Logo" className="h-8 w-auto" />
-                    <span className="text-xl font-bold text-apple-gray-800 dark:text-apple-gray-100">PressFlow</span>
+                    <img src="/logo.png" alt="lsmbooker Logo" className="h-8 w-auto" />
+                    <span className="text-xl font-bold text-apple-gray-800 dark:text-apple-gray-100">lsmbooker</span>
                 </Link>
                     
                     {/* Desktop Navigation */}
@@ -51,7 +51,9 @@ export const PublicHeader = () => {
                        {/* <Link to="/directory" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.home')}</Link>*/}
                        < Link to="/add-your-buisness" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.add')}</Link>
                         <Link to="/features" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.features')}</Link>
-                        <Link to="/demo" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">Demo</Link>
+                        <Link to="/contact" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.contact')}</Link>
+                        <Link to="/about" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.about')}</Link>
+                        {/*<Link to="/demo" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">Demo</Link>*/}
                         {/*<Link to="/pricing" className="text-sm font-medium hover:text-apple-blue transition-colors dark:text-white">{t('public.header.pricing')}</Link>*/}
                     </div>
                     
@@ -123,12 +125,20 @@ export const PublicHeader = () => {
                                     {t('public.header.features')}
                                 </Link>
                                 <Link 
-                                    to="/pricing" 
+                                    to="/contact" 
                                     className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
                                     onClick={closeMobileMenu}
                                 >
-                                    {t('public.header.pricing')}
+                                    {t('public.header.contact')}
                                 </Link>
+                                 <Link 
+                                    to="/about" 
+                                    className="block px-4 py-3 text-lg font-medium text-apple-gray-700 dark:text-apple-gray-300 hover:text-apple-blue hover:bg-apple-gray-50 dark:hover:bg-apple-gray-800 rounded-lg transition-all"
+                                    onClick={closeMobileMenu}
+                                >
+                                    {t('public.header.about')}
+                                </Link>
+                                
                                 
                                 {/* Language Switcher in Mobile Menu */}
                                 <div className="px-4 py-3">
@@ -189,7 +199,7 @@ export const PublicFooter = () => {
     return (
         <footer className="bg-apple-gray-100 dark:bg-black/20">
             <div className="container mx-auto px-6 py-8 text-center text-sm text-apple-gray-500 dark:text-apple-gray-400">
-                <p>&copy; {new Date().getFullYear()} PressMark. {t('public.footer.allRightsReserved')}</p>
+                <p>&copy; {new Date().getFullYear()} lsmbooker. {t('public.footer.allRightsReserved')}</p>
                 <div className="mt-4 space-x-6">
                     <Link to="/privacy" className="hover:text-apple-blue">{t('public.footer.privacyPolicy')}</Link>
                     <Link to="/terms" className="hover:text-apple-blue">{t('public.footer.termsOfService')}</Link>

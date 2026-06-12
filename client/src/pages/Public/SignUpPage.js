@@ -1,4 +1,3 @@
-// client/src/pages/Public/SignUpPage.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -12,8 +11,6 @@ import PhoneInput from '../../components/UI/PhoneInput';
 import {  PublicFooter } from './PublicLayout'; 
 import { COUNTRY_TO_CURRENCY, SUPPORTED_COUNTRIES } from '../../utils/currencyMap';
 
-
-// --- Step Components ---
 const Step1AdminAccount = ({ data, setData, onNext }) => {
     const { t } = useTranslation();
     const [password, setPassword] = useState('');
@@ -52,55 +49,28 @@ const Step1AdminAccount = ({ data, setData, onNext }) => {
 const Step2CompanyInfo = ({ data, setData, onNext, onPrev }) => {
     const { t } = useTranslation();
     const [error, setError] = useState('');
-    
     const handleNext = () => {
         setError('');
         if (!data.name) { setError(t('signup.step2.errors.nameRequired')); return; }
-        // Ensure currencySymbol exists before moving on
         if (!data.currencySymbol) { setError(t('signup.step2.errors.currencyRequired')); return; }
         onNext();
     };
-    
     const handleCountryChange = (countryCode) => {
-        // 1. Get the currency from your map
         const newCurrency = COUNTRY_TO_CURRENCY[countryCode] || 'USD';
-        
-        // 2. Set the currency for display/storage
         setData('setTopLevel', 'currencySymbol', newCurrency);
-        
-        // 3. IMPORTANT: Explicitly set the countryCode so the backend knows which country it is
         setData('companyInfo', 'countryCode', countryCode); 
     };
-    
     return (
         <div className="space-y-4 animate-fade-in">
             <div className="flex items-center space-x-3 mb-4">
                 <div className="bg-apple-blue text-white rounded-full p-2"><Building size={20} /></div>
                 <h3 className="font-semibold text-xl dark:text-white">{t('signup.step2.title')}</h3>
             </div>
-            
             {error && <p className="text-sm text-red-500 p-2 bg-red-100 dark:bg-red-900/30 rounded-md">{error}</p>}
-            
             <Input label={t('signup.step2.businessName')} name="name" value={data.name} onChange={e => setData('companyInfo', 'name', e.target.value)} />
             <Input label={t('signup.step2.businessAddress')} name="address" value={data.address} onChange={e => setData('companyInfo', 'address', e.target.value)} />
-            
-            {/* PhoneInput passes countryCode to onCountryChange automatically */}
-            <PhoneInput 
-                label={t('signup.step2.businessPhone')} 
-                value={data.phone} 
-                onChange={(value) => setData('companyInfo', 'phone', value)} 
-                onCountryChange={handleCountryChange} 
-                onlyCountries={SUPPORTED_COUNTRIES} 
-            />
-            
-            <Input 
-                label={t('signup.step2.currencySymbol')} 
-                name="currencySymbol" 
-                value={data.currencySymbol} 
-                onChange={e => setData('setTopLevel', 'currencySymbol', e.target.value)} 
-                disabled={true} 
-            />
-            
+            <PhoneInput label={t('signup.step2.businessPhone')} value={data.phone} onChange={(value) => setData('companyInfo', 'phone', value)} onCountryChange={handleCountryChange} onlyCountries={SUPPORTED_COUNTRIES} />
+            <Input label={t('signup.step2.currencySymbol')} name="currencySymbol" value={data.currencySymbol} onChange={e => setData('setTopLevel', 'currencySymbol', e.target.value)} disabled={true} />
             <div className="flex justify-between pt-4">
                 <Button variant="secondary" onClick={onPrev} iconLeft={<ArrowLeft size={16} />}>{t('signup.step2.backButton')}</Button>
                 <Button onClick={handleNext} iconRight={<ArrowRight size={16} />}>Review & Confirm</Button>
@@ -109,10 +79,8 @@ const Step2CompanyInfo = ({ data, setData, onNext, onPrev }) => {
     );
 };
 
-// 🌟 STEP 3 IS NOW THE FINAL CONFIRMATION STEP 🌟
 const Step3Confirmation = ({ data, onPrev, onConfirm, isSubmitting }) => {
     const { t } = useTranslation();
-    
     return (
         <div className="space-y-4 animate-fade-in">
             <div className="flex items-center space-x-3 mb-4"><div className="bg-apple-blue text-white rounded-full p-2"><CheckCircle2 size={20} /></div><h3 className="font-semibold text-xl">{t('signup.step4.title')}</h3></div>
@@ -130,10 +98,9 @@ const Step3Confirmation = ({ data, onPrev, onConfirm, isSubmitting }) => {
     );
 };
 
-// --- Main SignUpPage Component ---
 const SignUpPage = () => {
     const { t } = useTranslation();
-    const { login } = useAuth();
+    const { loginWithToken } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -148,15 +115,14 @@ const SignUpPage = () => {
 
     const [formData, setFormData] = useState({
         adminUser: { username: '', password: '', email: '' },
-        companyInfo: { name: '', address: '', phone: '' },
+        companyInfo: { name: '', address: '', phone: '', countryCode: '' },
         currencySymbol: 'FCFA',
         itemTypes: [],
         serviceTypes: [],
-        priceList: [], // Will be empty until they set it in the admin dashboard
+        priceList: [],
         plan: planCapitalized, 
     });
 
-    // We still populate default item/service names in the background so the backend doesn't crash
     useEffect(() => {
         if (formData.itemTypes.length === 0 && formData.serviceTypes.length === 0) {
             setFormData(prev => ({
@@ -173,10 +139,7 @@ const SignUpPage = () => {
         } else {
             setFormData(prev => ({
                 ...prev,
-                [section]: {
-                    ...prev[section],
-                    [field]: value
-                }
+                [section]: { ...prev[section], [field]: value }
             }));
         }
     };
@@ -189,50 +152,54 @@ const SignUpPage = () => {
         }
     };
 
-    // ONLY 3 STEPS NOW
     const nextStep = () => setStep(prev => Math.min(prev + 1, 3)); 
     const prevStep = () => setStep(prev => Math.max(prev - 1, 1));
-const handleInitiateRegistration = async () => {
-    setIsSubmitting(true);
-    setError('');
-    try {
-        // ✅ Explicitly set the exact key
-        localStorage.setItem('registration_data', JSON.stringify(formData));
-        
-        const { data } = await initiateRegistrationApi(formData);
 
-        if (data.paymentRequired) {
-            navigate(`/payment?plan=${formData.plan.toLowerCase()}&email=${formData.adminUser.email}`);
-        } else {
-            login(data);
-            navigate('/app/business-profile', { state: { fromSignup: true } });
+    const handleInitiateRegistration = async () => {
+        setIsSubmitting(true);
+        setError('');
+        try {
+            const { data } = await initiateRegistrationApi(formData);
+
+            if (data.paymentRequired) {
+                localStorage.setItem('registration_data', JSON.stringify(formData));
+                navigate(`/payment?plan=${formData.plan.toLowerCase()}&email=${formData.adminUser.email}`);
+            } else {
+                // 1. Set token in localStorage immediately
+                localStorage.setItem('token', data.token);
+                
+                // 2. Await the logic to fetch user profile so context is READY
+                await loginWithToken(data.token);
+                
+                // 3. Clear temp data
+                localStorage.removeItem('registration_data');
+                
+                // 4. Navigate specifically to /app/dashboard
+                navigate('/app/dashboard', { replace: true, state: { fromSignup: true } });
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Registration failed');
+        } finally {
+            setIsSubmitting(false);
         }
-    } catch (err) {
-        setError(err.response?.data?.message || 'Registration failed');
-        setStep(1);
-    } finally {
-        setIsSubmitting(false);
-    }
-};
+    };
     
     const renderStep = () => {
         switch (step) {
             case 1: return <Step1AdminAccount data={formData.adminUser} setData={updateFormData} onNext={nextStep} />;
             case 2: return <Step2CompanyInfo data={{...formData.companyInfo, currencySymbol: formData.currencySymbol}} setData={handleSetDataForStep2} onNext={nextStep} onPrev={prevStep} />;
-            case 3: return <Step3Confirmation data={formData} onPrev={prevStep} onConfirm={handleInitiateRegistration} isSubmitting={isSubmitting} plan={planCapitalized} />;
+            case 3: return <Step3Confirmation data={formData} onPrev={prevStep} onConfirm={handleInitiateRegistration} isSubmitting={isSubmitting} />;
             default: return <Step1AdminAccount data={formData.adminUser} setData={updateFormData} onNext={nextStep} />;
         }
     };
 
     return (
         <div className="bg-apple-gray-50 dark:bg-apple-gray-950 min-h-screen flex flex-col">
-
             <main className="flex-grow flex flex-col items-center justify-center p-4 py-12">
                 <Card className="w-full max-w-3xl shadow-apple-lg border border-apple-gray-200 dark:border-apple-gray-800">
                     <div className="flex items-center p-4 border-b dark:border-apple-gray-700 bg-apple-gray-50/50 dark:bg-apple-gray-900/50">
                         <h2 className="text-xl font-bold text-center flex-grow dark:text-white">{t('signup.title')}</h2>
                         <span className="text-sm font-medium text-apple-gray-500 bg-white dark:bg-apple-gray-800 px-3 py-1 rounded-full shadow-sm border border-apple-gray-200 dark:border-apple-gray-700">
-                            {/* Adjusted to say out of 3 */}
                             {step < 3 ? `Step ${step} of 3` : t('signup.finalStep')}
                         </span>
                     </div>
@@ -240,7 +207,6 @@ const handleInitiateRegistration = async () => {
                     <div className="p-6 md:p-8">{renderStep()}</div>
                 </Card>
             </main>
-
             <PublicFooter />
         </div>
     );

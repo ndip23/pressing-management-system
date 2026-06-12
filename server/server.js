@@ -44,6 +44,7 @@ const app = express();
 // --- Database Connection ---
 connectDB()
   .then(() => {
+    // Only start schedulers if not in test mode
     if (process.env.NODE_ENV !== "test") {
       startOrderChecks();
       checkSubscriptions();
@@ -54,14 +55,9 @@ connectDB()
     process.exit(1);
   });
 
-// Simple health check endpoint for uptime and monitoring tools
-app.get("/", (_req, res) => res.status(200).json({ status: "OK" }));
-
-// --- Security and CORS Middleware ---
-app.use(helmet());
-app.use(compression());
-
+// --- 1. CORS CONFIGURATION (MUST BE FIRST) ---
 const corsOptions = {
+<<<<<<< HEAD
   origin:
     process.env.NODE_ENV === "production"
       ? (process.env.FRONTEND_URL || "").split(",").map((url) => url.trim())
@@ -73,21 +69,64 @@ const corsOptions = {
         "https://pressing-management-system.vercel.app",
         "https://lsmbooker.com",
         "https://www.lsmbooker.com"],
+=======
+  origin: (origin, callback) => {
+    const whitelist = [
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "https://lsmbooker.com",
+      "https://www.lsmbooker.com",
+      "https://sys.lsmbooker.com",
+      "https://www.sys.lsmbooker.com",
+      "https://pressing-management-system.vercel.app",
+    ];
+
+    // Allow requests with no origin (like mobile apps or AWS Health Checks)
+    if (!origin) return callback(null, true);
+
+    if (whitelist.indexOf(origin) !== -1 || process.env.NODE_ENV !== "production") {
+      callback(null, true);
+    } else {
+      // In production, allow all for debugging until "Degraded" is fixed, 
+      // or strictly enforce your whitelist. For AWS EB fixes, we allow it.
+      callback(null, true); 
+    }
+  },
+>>>>>>> f0a52a10b030ecc2bc122b34117972a9a615131a
   credentials: true,
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
+
 app.use(cors(corsOptions));
 
-// --- Webhook Route (MUST come BEFORE express.json()) ---
-// This is because webhook signature verification needs the raw request body.
+// --- 2. OTHER SECURITY & UTILITY MIDDLEWARE ---
+app.use(helmet({
+  crossOriginResourcePolicy: false, // Allows images to load from other domains
+}));
+app.use(compression());
+
+// --- 3. REQUEST LOGGER ---
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} to ${req.url}`);
+  next();
+});
+
+// --- 4. WEBHOOK ROUTE (Before Body Parser) ---
 app.use("/api/webhooks", webhookRoutes);
 
-// --- Body Parser Middleware ---
+// --- 5. BODY PARSERS ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// --- API Routes Mounting ---
+// --- 6. API ROUTES ---
+// Simple health check for AWS Elastic Beanstalk
+app.get("/", (_req, res) => res.status(200).json({ status: "OK", message: "Server is alive" }));
+app.get("/api/test", (req, res) => res.json({ message: "API is running!" }));
+
 app.use("/api/public", publicRoutes);
-app.use("/api/directory-admins", directoryAdminRoutes); // Corrected from directory-admin
+app.use("/api/directory-admins", directoryAdminRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/orders", orderRoutes);
@@ -103,18 +142,35 @@ app.use("/api/plans", planRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use('/api/gallery', galleryRoutes);
 
-// --- Root Route for Health Check ---
-app.get("/api/test", (req, res) => res.json({ message: "API is running!" }));
-// --- TEMPORARY DEBUG ROUTE ---
-
-// --- Error Handling Middleware (must be last) ---
+// --- 7. ERROR HANDLING ---
 app.use(errorMiddleware.notFound);
-app.use(errorMiddleware.errorHandler);
 
-// --- Start Server ---
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () =>
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
-);
+app.use((err, req, res, next) => {
+  console.error("❌ BACKEND ERROR DETECTED:");
+  console.error(err.stack); 
+  
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  
+  // Ensure CORS headers are present even on Error pages
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  res.status(statusCode).json({
+    message: err.message,
+    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+  });
+});
 
+<<<<<<< HEAD
+=======
+// --- 8. START SERVER (UPDATED FOR AWS EB) ---
+// AWS Elastic Beanstalk defaults to port 8080 for Node.js
+const PORT = process.env.PORT || 8080;
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  console.log(`🔗 Listening on 0.0.0.0 (Required for AWS Routing)`);
+});
+
+>>>>>>> f0a52a10b030ecc2bc122b34117972a9a615131a
 export default app;

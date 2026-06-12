@@ -147,7 +147,7 @@ const FeaturesPage = () => {
                         <p className="text-lg text-apple-gray-600 dark:text-apple-gray-400 max-w-2xl mx-auto mb-8">
                             {t('public.features.cta.subtitle')}
                         </p>
-                        <Link to="/pricing">
+                        <Link to="/signup">
                             <Button variant="primary" size="lg">{t('public.features.cta.getStartedFree')}</Button>
                         </Link>
                     </div>
