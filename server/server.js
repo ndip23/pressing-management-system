@@ -57,19 +57,6 @@ connectDB()
 
 // --- 1. CORS CONFIGURATION (MUST BE FIRST) ---
 const corsOptions = {
-<<<<<<< HEAD
-  origin:
-    process.env.NODE_ENV === "production"
-      ? (process.env.FRONTEND_URL || "").split(",").map((url) => url.trim())
-      : ["http://localhost:3000",
-        "https://pressmark.site",      
-        "https://www.pressmark.site",  
-        "https://sys.pressmark.site",
-        "https://www.sys.pressmark.site",
-        "https://pressing-management-system.vercel.app",
-        "https://lsmbooker.com",
-        "https://www.lsmbooker.com"],
-=======
   origin: (origin, callback) => {
     const whitelist = [
       "http://localhost:3000",
@@ -79,6 +66,10 @@ const corsOptions = {
       "https://sys.lsmbooker.com",
       "https://www.sys.lsmbooker.com",
       "https://pressing-management-system.vercel.app",
+      "https://pressmark.site",
+      "https://www.pressmark.site",
+      "https://sys.pressmark.site",
+      "https://www.sys.pressmark.site",
     ];
 
     // Allow requests with no origin (like mobile apps or AWS Health Checks)
@@ -87,12 +78,10 @@ const corsOptions = {
     if (whitelist.indexOf(origin) !== -1 || process.env.NODE_ENV !== "production") {
       callback(null, true);
     } else {
-      // In production, allow all for debugging until "Degraded" is fixed, 
-      // or strictly enforce your whitelist. For AWS EB fixes, we allow it.
-      callback(null, true); 
+      // Allow all in production for debugging
+      callback(null, true);
     }
   },
->>>>>>> f0a52a10b030ecc2bc122b34117972a9a615131a
   credentials: true,
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   preflightContinue: false,
@@ -161,8 +150,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-<<<<<<< HEAD
-=======
 // --- 8. START SERVER (UPDATED FOR AWS EB) ---
 // AWS Elastic Beanstalk defaults to port 8080 for Node.js
 const PORT = process.env.PORT || 8080;
@@ -172,5 +159,4 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🔗 Listening on 0.0.0.0 (Required for AWS Routing)`);
 });
 
->>>>>>> f0a52a10b030ecc2bc122b34117972a9a615131a
 export default app;
